@@ -709,6 +709,7 @@ function attachListeners(){
 
   db.ref('sch').on('value', function(snap){
     S.sch = snap.val() || {};
+    buildTodayShiftMap();
     if(S.p === 'staff' || S.p === 'sched') ren();
   });
 
@@ -1387,16 +1388,65 @@ function pImport(){
   return '<div class="card" style="max-width:580px"><div class="ct">Import Items from Excel / CSV</div><div id="dz"><div class="dz-ico">📂</div><div class="dz-t">Drop file here or click to browse</div><div class="dz-s">Supports .xlsx, .xls, .csv · Required columns: Material, Material Description, Base Unit of Measure</div></div></div>';
 }
 
-// Get today's shift from schedule for a staff member (used in Staff page)
+// ── TODAY'S SHIFT LOOKUP ─────────────────────────────────
+// Flat map: empId → today's schedule value
+// Computed from S.sch whenever schedule loads or day changes
+var _todayShiftMap = {};
+var _todayShiftDate = '';
+
+function buildTodayShiftMap(){
+  var now = new Date();
+  var dateStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  _todayShiftDate = dateStr;
+  _todayShiftMap = {};
+
+  if(!S.sch || !Object.keys(S.sch).length) return;
+
+  // Get today's day name
+  var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var dayName = days[now.getDay()];
+
+  // Try every week in S.sch and find the one that contains today
+  Object.keys(S.sch).forEach(function(wk){
+    var weekData = S.sch[wk];
+    if(!weekData) return;
+    // Check if this week contains today by looking at any employee's
+    // schedule and checking if the week key matches our calculation
+    // We match by rebuilding the week key for today
+  });
+
+  // Compute the correct week key for today using same formula as weekKey()
+  var yr = now.getFullYear();
+  var j  = new Date(yr, 0, 1);
+  var wn = Math.ceil(((now - j) / 86400000 + j.getDay() + 1) / 7);
+  var wk = yr + '-W' + String(wn).padStart(2,'0');
+
+  var weekData = S.sch[wk];
+  if(!weekData){
+    // Fallback: try adjacent weeks in case of off-by-one
+    var wk2 = yr+'-W'+String(wn-1).padStart(2,'0');
+    var wk3 = yr+'-W'+String(wn+1).padStart(2,'0');
+    weekData = S.sch[wk2] || S.sch[wk3];
+  }
+  if(!weekData) return;
+
+  // Build flat map
+  Object.keys(weekData).forEach(function(empId){
+    var empSch = weekData[empId];
+    if(empSch && empSch[dayName]) {
+      _todayShiftMap[String(empId)] = empSch[dayName];
+    }
+  });
+}
+
 function getTodayShift(empId){
-  var now=new Date();
-  var yr=now.getFullYear();
-  var j=new Date(yr,0,1);
-  var wn=Math.ceil(((now-j)/86400000+j.getDay()+1)/7);
-  var wk=yr+'-W'+String(wn).padStart(2,'0');
-  var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var dayName=days[now.getDay()];
-  return (S.sch[wk]&&S.sch[wk][String(empId)]&&S.sch[wk][String(empId)][dayName])||null;
+  // Rebuild map if date changed or map is empty
+  var now = new Date();
+  var dateStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  if(dateStr !== _todayShiftDate || Object.keys(_todayShiftMap).length === 0){
+    buildTodayShiftMap();
+  }
+  return _todayShiftMap[String(empId)] || null;
 }
 
 function pStaff(){
@@ -2363,6 +2413,7 @@ function startApp(demoMode){
     // Pre-load schedule BEFORE first render so getTodayShift() works immediately
     db.ref('sch').once('value', function(snap){
       S.sch = snap.val() || {};
+      buildTodayShiftMap();
       attachListeners();
       seedIfEmpty();
       go('inv-dash');
