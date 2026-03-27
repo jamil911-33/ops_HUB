@@ -2714,26 +2714,24 @@ async function sendAI(preset){
     var bodyObj = {
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 600,
-      system: sysPr.slice(0, 1500),
+      system: sysPr.slice(0, 1200),
       messages: msgs
     };
 
-    // Google Apps Script - send as GET with encoded parameter (avoids all CORS issues on Safari)
-    var encoded = encodeURIComponent(JSON.stringify(bodyObj));
-    var resp = await fetch(AI_PROXY_URL + '?body=' + encoded, {
-      method: 'GET',
-      redirect: 'follow'
-    });
+    var bodyStr = JSON.stringify(bodyObj);
+    var url = AI_PROXY_URL + '?body=' + encodeURIComponent(bodyStr);
 
-    var txt = await resp.text();
+    var resp = await fetch(url, { method: 'GET', redirect: 'follow' });
+    var txt  = await resp.text();
+
     var data;
-    try { data = JSON.parse(txt); } catch(e){ throw new Error('Response: ' + txt.slice(0,200)); }
+    try { data = JSON.parse(txt); }
+    catch(e){ throw new Error('Parse error: ' + txt.slice(0, 150)); }
 
-    // Check for API error
     if(data.error){ throw new Error(data.error.message || JSON.stringify(data.error)); }
 
-    var raw = (data.content && data.content[0] && data.content[0].text);
-    if(!raw){ throw new Error('Empty response. Raw: ' + JSON.stringify(data).slice(0,200)); }
+    var raw = data.content && data.content[0] && data.content[0].text;
+    if(!raw) throw new Error('No content in response: ' + JSON.stringify(data).slice(0,150));
 
     // Parse ACTION blocks
     var actions = [];
