@@ -613,16 +613,16 @@ select.fi-s{cursor:pointer}
   <!-- Quick actions -->
 
   <div id="ai-quick">
-    <button class="ai-chip" data-q="ما حالة المبيعات هذا الشهر؟">📊 المبيعات</button>
-    <button class="ai-chip" data-q="من الغائبون اليوم؟">👥 الغياب</button>
-    <button class="ai-chip" data-q="ما المواد التي وصلت للحد الأدنى؟">🚨 المخزون</button>
-    <button class="ai-chip" data-q="أعطني تقرير الهدر هذا الشهر">🗑 الهدر</button>
-    <button class="ai-chip" data-q="من البطاقات الصحية المنتهية؟">💳 الصحة</button>
-    <button class="ai-chip" data-q="ما الفواتير المستحقة؟">📄 الفواتير</button>
+    <button class="ai-chip" data-q="What are this month's sales vs last month?">📊 Sales</button>
+    <button class="ai-chip" data-q="Who is absent today?">👥 Absences</button>
+    <button class="ai-chip" data-q="Which items have reached minimum stock level?">🚨 Low Stock</button>
+    <button class="ai-chip" data-q="Give me the wastage report for this month">🗑 Wastage</button>
+    <button class="ai-chip" data-q="Which health cards are expired or expiring soon?">💳 Health Cards</button>
+    <button class="ai-chip" data-q="What invoices are pending or overdue?">📄 Invoices</button>
   </div>
 
   <div id="ai-input-row">
-    <textarea id="ai-inp" placeholder="اسأل أي شيء أو اطلب إدخال بيانات…" rows="1"></textarea>
+    <textarea id="ai-inp" placeholder="Ask anything or request data entry…" rows="1"></textarea>
     <button id="ai-send" onclick="sendAI()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
@@ -2533,7 +2533,7 @@ function toggleAI(){
   fab.classList.toggle('open', aiOpen);
   ico.textContent = aiOpen ? '✕' : '✦';
   if(aiOpen && !document.getElementById('ai-msgs').children.length){
-    addAIMsg('bot', '👋 مرحباً! أنا مساعدك الذكي لـ Ops Hub.\n\nيمكنني مساعدتك في:\n• **تحليل البيانات** — مبيعات، مخزون، موظفين\n• **إدخال البيانات** — فواتير، مصروفات، سجلات\n• **التقارير الفورية** — يومية، أسبوعية، شهرية\n\nاسألني بالعربية أو الإنجليزية! 🚀');
+    addAIMsg('bot', '👋 Hello! I\'m your Ops Hub AI Assistant.\n\nI can help you with:\n• **Reports** — sales, inventory, staff, wastage\n• **Data entry** — invoices, expenses, reminders\n• **Quick analysis** — trends, alerts, comparisons\n\nAsk me anything in English or Arabic! 🚀');
   }
   if(aiOpen) setTimeout(function(){ document.getElementById('ai-inp').focus(); }, 100);
 }
@@ -2662,24 +2662,24 @@ function buildContext(){
 }
 
 function buildSystemPrompt(ctx){
-  return 'You are an intelligent restaurant operations assistant embedded in "Ops Hub" — a restaurant management system.\n\n' +
-'CURRENT LIVE DATA SNAPSHOT:\n'+JSON.stringify(ctx, null, 2)+'\n\n'+
+  return 'You are an intelligent restaurant operations assistant embedded in "Ops Hub".\n\n' +
+'CURRENT LIVE DATA:\n'+JSON.stringify(ctx, null, 2)+'\n\n'+
 'CAPABILITIES:\n'+
-'1. ANALYSIS & REPORTS: Analyze the data above and give insights in clear, concise Arabic or English.\n'+
-'2. DATA ENTRY: When user wants to add data, respond with a JSON action block like:\n'+
-'   <ACTION>{"type":"add_sales","date":"2026-03-27","actual":45000,"target":50000}</ACTION>\n'+
-'   <ACTION>{"type":"add_pc","date":"2026-03-27","description":"قهوة","forwhat":"Management","amount":120,"category":"Management"}</ACTION>\n'+
-'   <ACTION>{"type":"add_reminder","text":"تجديد عقد التوريد","date":"2026-04-15","priority":"high"}</ACTION>\n'+
+'1. ANALYSIS & REPORTS: Analyze the data and give concise insights in English only.\n'+
+'2. DATA ENTRY: When user wants to add data, respond with a JSON action block:\n'+
+'   <ACTION>{"type":"add_sales","date":"'+TODAY+'","actual":45000,"target":50000}</ACTION>\n'+
+'   <ACTION>{"type":"add_pc","date":"'+TODAY+'","description":"Coffee","forwhat":"Management","amount":120,"category":"Management"}</ACTION>\n'+
+'   <ACTION>{"type":"add_reminder","text":"Renew supplier contract","date":"2026-04-15","priority":"high"}</ACTION>\n'+
 '   <ACTION>{"type":"add_pull","item":"Tomatoes","qty":5,"unit":"kg","by":"KHALED AHMED"}</ACTION>\n'+
 '   <ACTION>{"type":"add_wastage","item":"Bread","qty":2,"unit":"kg","reason":"Expired","value":30,"by":"KHALED AHMED"}</ACTION>\n'+
-'3. NAVIGATION: If user asks to go somewhere, include: <NAV>pagename</NAV> (pages: inv-dash, items, moves, orders, alerts, staff, sched, ts, health, sales, pc, inv, pullout, wastage)\n\n'+
+'3. NAVIGATION: <NAV>pagename</NAV> (pages: inv-dash, items, moves, orders, alerts, staff, sched, ts, health, sales, pc, inv, pullout, wastage)\n\n'+
 'RULES:\n'+
-'- Reply in the same language the user uses (Arabic or English)\n'+
-'- Be concise and practical\n'+
+'- ALWAYS reply in English only, regardless of what language the user writes in\n'+
+'- Be concise and practical — no long paragraphs\n'+
 '- Format numbers with commas and SAR currency\n'+
 '- Use emojis to make responses scannable\n'+
-'- If asked to add data, confirm what you will add before including the ACTION block\n'+
-'- For reports, use structured lists with key metrics\n'+
+'- For data entry, confirm what you will add then include the ACTION block\n'+
+'- For reports, use bullet points with key metrics\n'+
 '- Today is '+TODAY+', current month is '+ctx.month;
 }
 
@@ -2706,17 +2706,27 @@ async function sendAI(preset){
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
       system: sysPr,
-      messages: aiHistory.slice(-10) // Keep last 10 for context
+      messages: aiHistory.slice(-10)
     };
 
     var resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': '',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify(body)
     });
 
+    if(!resp.ok){
+      var errData = await resp.json().catch(function(){ return {}; });
+      throw new Error(errData.error && errData.error.message ? errData.error.message : 'HTTP '+resp.status);
+    }
+
     var data = await resp.json();
-    var raw  = (data.content && data.content[0] && data.content[0].text) || 'عذراً، حدث خطأ.';
+    var raw  = (data.content && data.content[0] && data.content[0].text) || 'Sorry, no response received.';
 
     // Parse ACTION blocks
     var actions = [];
@@ -2754,7 +2764,7 @@ async function sendAI(preset){
     }
     if(navTarget){
       actionBtns.push({
-        label: '→ افتح الصفحة',
+        label: '→ Go to page',
         fn: 'go("'+navTarget+'")'
       });
     }
@@ -2763,7 +2773,7 @@ async function sendAI(preset){
 
   }catch(e){
     removeThinking();
-    addAIMsg('bot', '❌ خطأ في الاتصال: '+e.message);
+    addAIMsg('bot', '❌ Connection error: '+e.message+'\n\nPlease check your internet connection and try again.');
   }
 
   aiThinking = false;
