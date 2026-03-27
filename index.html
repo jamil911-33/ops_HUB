@@ -709,15 +709,8 @@ function attachListeners(){
 
   db.ref('sch').on('value', function(snap){
     S.sch = snap.val() || {};
-    // Re-render staff and sched pages so today's shift shows correctly
     if(S.p === 'staff' || S.p === 'sched') ren();
   });
-
-  // Also re-render staff page 1.5s after load to catch any async schedule data
-  // that arrives after initial render
-  setTimeout(function(){
-    if(S.p === 'staff' && Object.keys(S.sch).length > 0) ren();
-  }, 1500);
 
   db.ref('tsAtt').on('value', function(snap){
     S.tsAtt = snap.val() || {};
@@ -2367,16 +2360,20 @@ function startApp(demoMode){
   document.getElementById('app').style.display='flex';
 
   if(!demoMode){
-    attachListeners();
-    seedIfEmpty();
+    // Pre-load schedule BEFORE first render so getTodayShift() works immediately
+    db.ref('sch').once('value', function(snap){
+      S.sch = snap.val() || {};
+      attachListeners();
+      seedIfEmpty();
+      go('inv-dash');
+      updateBadges();
+    });
   } else {
-    // Demo mode with empty state
     updateConnStatus(false);
     toast('⚡ وضع التجربة — البيانات لن تُحفظ','warning');
+    go('inv-dash');
+    updateBadges();
   }
-
-  go('inv-dash');
-  updateBadges();
 }
 </script>
 </body>
