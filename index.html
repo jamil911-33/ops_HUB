@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -9,9 +10,13 @@
 <!-- ══════════════════════════════════════════════════════════
      🔥 FIREBASE SDK
      ══════════════════════════════════════════════════════════ -->
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
@@ -309,12 +314,14 @@ select.fi-s{cursor:pointer}
 }
 .menu-btn{display:none;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:4px 8px}
 </style>
+
 </head>
 <body>
 
 <!-- ══════════════════════════════════════════
      🔧 FIREBASE SETUP SCREEN
 ══════════════════════════════════════════ -->
+
 <div id="setup-screen">
   <div class="setup-card">
     <div style="font-size:36px;margin-bottom:12px">🔥</div>
@@ -324,51 +331,56 @@ select.fi-s{cursor:pointer}
       يجب ربطه بـ Firebase. اتبع الخطوات التالية مرة واحدة فقط:
     </div>
 
-    <div class="setup-step">
-      <strong>1.</strong> اذهب إلى <strong>console.firebase.google.com</strong> → أنشئ مشروعاً جديداً
-    </div>
-    <div class="setup-step">
-      <strong>2.</strong> من المشروع → <strong>Realtime Database</strong> → Create Database → Start in <strong>test mode</strong>
-    </div>
-    <div class="setup-step">
-      <strong>3.</strong> Project Settings ← ⚙️ → Add App → Web → انسخ <strong>apiKey</strong> و <strong>databaseURL</strong>
-    </div>
-    <div class="setup-step">
-      <strong>4.</strong> الصق البيانات أدناه واضغط <strong>Connect</strong>
-    </div>
+```
+<div class="setup-step">
+  <strong>1.</strong> اذهب إلى <strong>console.firebase.google.com</strong> → أنشئ مشروعاً جديداً
+</div>
+<div class="setup-step">
+  <strong>2.</strong> من المشروع → <strong>Realtime Database</strong> → Create Database → Start in <strong>test mode</strong>
+</div>
+<div class="setup-step">
+  <strong>3.</strong> Project Settings ← ⚙️ → Add App → Web → انسخ <strong>apiKey</strong> و <strong>databaseURL</strong>
+</div>
+<div class="setup-step">
+  <strong>4.</strong> الصق البيانات أدناه واضغط <strong>Connect</strong>
+</div>
 
-    <div style="margin-top:20px">
-      <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">API Key</label>
-      <input class="setup-input" id="cfg-apikey" placeholder="AIzaSy...">
-      
-      <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Auth Domain</label>
-      <input class="setup-input" id="cfg-authdomain" placeholder="your-app.firebaseapp.com">
-      
-      <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Database URL</label>
-      <input class="setup-input" id="cfg-dburl" placeholder="https://your-app-default-rtdb.firebaseio.com">
-      
-      <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Project ID</label>
-      <input class="setup-input" id="cfg-projectid" placeholder="your-app-id">
-    </div>
+<div style="margin-top:20px">
+  <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">API Key</label>
+  <input class="setup-input" id="cfg-apikey" placeholder="AIzaSy...">
+  
+  <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Auth Domain</label>
+  <input class="setup-input" id="cfg-authdomain" placeholder="your-app.firebaseapp.com">
+  
+  <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Database URL</label>
+  <input class="setup-input" id="cfg-dburl" placeholder="https://your-app-default-rtdb.firebaseio.com">
+  
+  <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Project ID</label>
+  <input class="setup-input" id="cfg-projectid" placeholder="your-app-id">
+</div>
 
-    <div class="setup-err" id="setup-err">❌ خطأ في الاتصال. تحقق من البيانات وحاول مجدداً.</div>
+<div class="setup-err" id="setup-err">❌ خطأ في الاتصال. تحقق من البيانات وحاول مجدداً.</div>
 
-    <div style="display:flex;gap:10px;margin-top:4px">
-      <button class="btn" id="btn-connect" style="flex:1;justify-content:center">🔗 Connect to Firebase</button>
-      <button class="btn s" id="btn-demo" style="flex:1;justify-content:center">⚡ تجربة بدون Firebase</button>
-    </div>
-    <div class="setup-note" style="margin-top:10px;text-align:center">
-      يتم حفظ الإعدادات في المتصفح للاستخدام التلقائي مستقبلاً
-    </div>
+<div style="display:flex;gap:10px;margin-top:4px">
+  <button class="btn" id="btn-connect" style="flex:1;justify-content:center">🔗 Connect to Firebase</button>
+  <button class="btn s" id="btn-demo" style="flex:1;justify-content:center">⚡ تجربة بدون Firebase</button>
+</div>
+<div class="setup-note" style="margin-top:10px;text-align:center">
+  يتم حفظ الإعدادات في المتصفح للاستخدام التلقائي مستقبلاً
+</div>
+```
+
   </div>
 </div>
 
 <!-- ══════════════════════════════════════════
      🏠 MAIN APP
 ══════════════════════════════════════════ -->
+
 <div id="app" style="display:none">
 
 <!-- SIDEBAR -->
+
 <div id="sb">
   <div class="logo">
     <div class="logo-mark">⚡</div>
@@ -394,22 +406,25 @@ select.fi-s{cursor:pointer}
     <button data-p="report"><span class="ico">📅</span>Monthly Report</button>
     <button data-p="import"><span class="ico">📂</span>Import Data</button>
 
-    <div class="ns">Operations</div>
-    <button data-p="pullout"><span class="ico">📤</span>Pull-Out Log</button>
-    <button data-p="wastage"><span class="ico">🗑</span>Wastage</button>
-    <button data-p="wares"><span class="ico">🍽</span>Small Wares</button>
+```
+<div class="ns">Operations</div>
+<button data-p="pullout"><span class="ico">📤</span>Pull-Out Log</button>
+<button data-p="wastage"><span class="ico">🗑</span>Wastage</button>
+<button data-p="wares"><span class="ico">🍽</span>Small Wares</button>
 
-    <div class="ns">Team</div>
-    <button data-p="staff"><span class="ico">👥</span>Staff</button>
-    <button data-p="sched"><span class="ico">🗓</span>Schedule</button>
-    <button data-p="ts"><span class="ico">⏱</span>Time Sheet</button>
-    <button data-p="health"><span class="ico">💳</span>Health Cards</button>
-    <button data-p="sales"><span class="ico">💰</span>Sales</button>
-    <button data-p="pc"><span class="ico">🧾</span>Petty Cash</button>
-    <button data-p="inv"><span class="ico">📄</span>Invoices</button>
+<div class="ns">Team</div>
+<button data-p="staff"><span class="ico">👥</span>Staff</button>
+<button data-p="sched"><span class="ico">🗓</span>Schedule</button>
+<button data-p="ts"><span class="ico">⏱</span>Time Sheet</button>
+<button data-p="health"><span class="ico">💳</span>Health Cards</button>
+<button data-p="sales"><span class="ico">💰</span>Sales</button>
+<button data-p="pc"><span class="ico">🧾</span>Petty Cash</button>
+<button data-p="inv"><span class="ico">📄</span>Invoices</button>
 
-    <div class="ns">Mobile</div>
-    <button data-p="qr-checkin"><span class="ico">📱</span>QR Check-In</button>
+<div class="ns">Mobile</div>
+<button data-p="qr-checkin"><span class="ico">📱</span>QR Check-In</button>
+```
+
   </nav>
   <div class="sb-foot">
     <div class="sb-clock" id="clock">--:--:--</div>
@@ -427,6 +442,7 @@ select.fi-s{cursor:pointer}
 </div>
 
 <!-- MAIN -->
+
 <div id="main">
   <div id="topbar">
     <button class="menu-btn" id="menu-toggle">☰</button>
@@ -458,12 +474,14 @@ select.fi-s{cursor:pointer}
 </div>
 
 <!-- TBL MODAL -->
+
 <div id="mo"><div id="mb">
   <div class="mh"><span class="mh-t" id="mtit"></span><button class="mx" id="mcl">×</button></div>
   <div id="mbod"></div>
 </div></div>
 
 <!-- DEL BAR -->
+
 <div id="del-bar">
   <span style="font-size:12px;font-family:var(--mono)">Delete this record?</span>
   <button id="del-yes" class="btn d sm">Delete</button>
@@ -471,6 +489,7 @@ select.fi-s{cursor:pointer}
 </div>
 
 <!-- INV ITEM MODAL -->
+
 <div class="overlay hide" id="item-modal">
   <div class="omodal">
     <div class="oh"><h3 id="item-modal-t">Add Product</h3><button class="mx" id="close-item-modal">×</button></div>
@@ -500,6 +519,7 @@ select.fi-s{cursor:pointer}
 </div>
 
 <!-- ORDER MODAL -->
+
 <div class="overlay hide" id="order-modal">
   <div class="omodal wide">
     <div class="oh"><h3>New Purchase Order</h3><button class="mx" id="close-order-modal">×</button></div>
@@ -541,6 +561,7 @@ select.fi-s{cursor:pointer}
 </div>
 
 <!-- RECV CONFIRM MODAL -->
+
 <div class="overlay hide" id="recv-modal">
   <div class="omodal" style="width:400px">
     <div class="oh"><h3 id="recv-modal-t">Confirm Receipt</h3><button class="mx" id="close-recv-modal">×</button></div>
@@ -559,6 +580,195 @@ select.fi-s{cursor:pointer}
 <div id="toasts"></div>
 <div id="ctx-menu"></div>
 <input type="file" id="file-inp" accept=".csv,.xlsx,.xls" style="display:none">
+
+<!-- ══════════════════════════════════════════════════════════
+     🤖 AI ASSISTANT
+══════════════════════════════════════════════════════════ -->
+
+<!-- Floating Button -->
+
+<button id="ai-fab" onclick="toggleAI()" title="AI Assistant">
+  <span id="ai-fab-ico">✦</span>
+</button>
+
+<!-- Chat Panel -->
+
+<div id="ai-panel" class="ai-hidden">
+  <div id="ai-header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="ai-logo">✦</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#e6edf3">Ops Assistant</div>
+        <div style="font-size:10px;color:#7d8590;font-family:var(--mono)">Powered by Claude AI</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="ai-hbtn" onclick="clearAIChat()" title="Clear chat">🗑</button>
+      <button class="ai-hbtn" onclick="toggleAI()" title="Close">✕</button>
+    </div>
+  </div>
+
+  <div id="ai-msgs"></div>
+
+  <!-- Quick actions -->
+
+  <div id="ai-quick">
+    <button class="ai-chip" data-q="ما حالة المبيعات هذا الشهر؟">📊 المبيعات</button>
+    <button class="ai-chip" data-q="من الغائبون اليوم؟">👥 الغياب</button>
+    <button class="ai-chip" data-q="ما المواد التي وصلت للحد الأدنى؟">🚨 المخزون</button>
+    <button class="ai-chip" data-q="أعطني تقرير الهدر هذا الشهر">🗑 الهدر</button>
+    <button class="ai-chip" data-q="من البطاقات الصحية المنتهية؟">💳 الصحة</button>
+    <button class="ai-chip" data-q="ما الفواتير المستحقة؟">📄 الفواتير</button>
+  </div>
+
+  <div id="ai-input-row">
+    <textarea id="ai-inp" placeholder="اسأل أي شيء أو اطلب إدخال بيانات…" rows="1"></textarea>
+    <button id="ai-send" onclick="sendAI()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<style>
+/* ══ AI FAB ══ */
+#ai-fab{
+  position:fixed;bottom:50px;right:22px;z-index:500;
+  width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#f0a500,#c8700a);
+  color:#fff;font-size:22px;
+  box-shadow:0 4px 20px rgba(240,165,0,.45),0 0 0 0 rgba(240,165,0,.3);
+  transition:all .2s;display:flex;align-items:center;justify-content:center;
+  animation:fabPulse 3s infinite;
+}
+#ai-fab:hover{transform:scale(1.1);box-shadow:0 6px 28px rgba(240,165,0,.6);}
+#ai-fab.open{background:linear-gradient(135deg,#3d444d,#22272e);animation:none;box-shadow:0 4px 16px rgba(0,0,0,.4);}
+@keyframes fabPulse{0%,100%{box-shadow:0 4px 20px rgba(240,165,0,.45),0 0 0 0 rgba(240,165,0,.3)}50%{box-shadow:0 4px 20px rgba(240,165,0,.45),0 0 0 8px rgba(240,165,0,.0)}}
+
+/* ══ PANEL ══ */
+#ai-panel{
+  position:fixed;bottom:116px;right:22px;z-index:499;
+  width:380px;max-width:calc(100vw - 28px);
+  background:#161b22;border:1px solid #30363d;border-radius:16px;
+  box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 0 1px rgba(240,165,0,.08);
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:opacity .2s,transform .2s;
+  max-height:calc(100vh - 140px);
+}
+#ai-panel.ai-hidden{opacity:0;pointer-events:none;transform:translateY(12px) scale(.97);}
+
+/* ══ HEADER ══ */
+#ai-header{
+  padding:12px 14px;border-bottom:1px solid #30363d;
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(90deg,rgba(240,165,0,.06),transparent);
+  flex-shrink:0;
+}
+#ai-logo{
+  width:32px;height:32px;border-radius:9px;
+  background:linear-gradient(135deg,#f0a500,#c8700a);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;
+  box-shadow:0 0 12px rgba(240,165,0,.3);
+}
+.ai-hbtn{background:none;border:none;color:#7d8590;cursor:pointer;font-size:14px;padding:4px 7px;border-radius:6px;transition:all .15s;}
+.ai-hbtn:hover{background:#22272e;color:#e6edf3;}
+
+/* ══ MESSAGES ══ */
+#ai-msgs{
+  flex:1;overflow-y:auto;padding:14px;
+  display:flex;flex-direction:column;gap:10px;
+  min-height:200px;
+}
+#ai-msgs::-webkit-scrollbar{width:3px;}
+#ai-msgs::-webkit-scrollbar-thumb{background:#3d444d;border-radius:3px;}
+
+.ai-msg{display:flex;gap:9px;animation:msgIn .2s ease;}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.ai-msg.user{flex-direction:row-reverse;}
+.ai-bubble{
+  max-width:85%;padding:10px 13px;border-radius:12px;
+  font-size:12.5px;line-height:1.65;
+}
+.ai-msg.user .ai-bubble{
+  background:linear-gradient(135deg,rgba(240,165,0,.18),rgba(240,165,0,.1));
+  border:1px solid rgba(240,165,0,.25);color:#e6edf3;
+  border-radius:12px 12px 3px 12px;
+}
+.ai-msg.bot .ai-bubble{
+  background:#1c2128;border:1px solid #30363d;color:#e6edf3;
+  border-radius:12px 12px 12px 3px;
+}
+.ai-msg.bot .ai-bubble.thinking{color:#7d8590;font-style:italic;}
+.ai-av{
+  width:26px;height:26px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;margin-top:2px;
+}
+.ai-msg.user .ai-av{background:rgba(240,165,0,.2);color:#f0a500;}
+.ai-msg.bot .ai-av{background:linear-gradient(135deg,#f0a500,#c8700a);color:#fff;font-size:10px;}
+
+/* Action buttons inside message */
+.ai-action-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  margin-top:8px;margin-right:4px;
+  padding:5px 11px;border-radius:7px;border:none;cursor:pointer;
+  font-size:11px;font-weight:600;font-family:var(--font);
+  background:rgba(240,165,0,.12);color:#f5be45;
+  border:1px solid rgba(240,165,0,.25);transition:all .15s;
+}
+.ai-action-btn:hover{background:rgba(240,165,0,.22);}
+.ai-action-btn.g{background:rgba(63,185,80,.1);color:#3fb950;border-color:rgba(63,185,80,.25);}
+.ai-action-btn.g:hover{background:rgba(63,185,80,.2);}
+
+/* ══ QUICK CHIPS ══ */
+#ai-quick{
+  padding:8px 12px;display:flex;flex-wrap:wrap;gap:5px;
+  border-top:1px solid #30363d;flex-shrink:0;
+  background:#0d1117;
+}
+.ai-chip{
+  padding:4px 10px;border-radius:20px;border:1px solid #30363d;
+  background:transparent;color:#8b949e;font-size:11px;cursor:pointer;
+  font-family:var(--font);transition:all .15s;white-space:nowrap;
+}
+.ai-chip:hover{border-color:#f0a500;color:#f0a500;background:rgba(240,165,0,.06);}
+
+/* ══ INPUT ══ */
+#ai-input-row{
+  padding:10px 12px;border-top:1px solid #30363d;
+  display:flex;gap:8px;align-items:flex-end;flex-shrink:0;
+  background:#161b22;
+}
+#ai-inp{
+  flex:1;background:#0d1117;border:1px solid #3d444d;border-radius:10px;
+  padding:9px 12px;color:#e6edf3;font-size:12.5px;font-family:var(--font);
+  outline:none;resize:none;line-height:1.5;max-height:100px;
+  transition:border-color .2s;
+}
+#ai-inp:focus{border-color:#f0a500;}
+#ai-inp::placeholder{color:#7d8590;}
+#ai-send{
+  width:36px;height:36px;border-radius:10px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#f0a500,#c8700a);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .15s;box-shadow:0 2px 8px rgba(240,165,0,.3);
+}
+#ai-send:hover{filter:brightness(1.15);transform:translateY(-1px);}
+#ai-send:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* ══ REPORT CARDS ══ */
+.ai-report{background:#0d1117;border:1px solid #30363d;border-radius:9px;padding:10px 13px;margin-top:8px;}
+.ai-report-title{font-size:10px;font-weight:700;color:#7d8590;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-family:var(--mono);}
+.ai-stat{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #22272e;font-size:12px;}
+.ai-stat:last-child{border-bottom:none;}
+.ai-stat-val{font-weight:700;font-family:var(--mono);}
+
+@media(max-width:480px){
+  #ai-panel{width:calc(100vw - 16px);right:8px;bottom:108px;}
+  #ai-fab{right:14px;bottom:46px;}
+}
+</style>
 
 <script>
 // ════════════════════════════════════════════════════════════
@@ -2308,8 +2518,325 @@ function bindPg(){
 }
 
 // ════════════════════════════════════════════════════════════
-// 🚀 INIT
+// 🤖 AI ASSISTANT
 // ════════════════════════════════════════════════════════════
+var aiOpen = false;
+var aiHistory = [];
+var aiThinking = false;
+
+function toggleAI(){
+  aiOpen = !aiOpen;
+  var panel = document.getElementById('ai-panel');
+  var fab   = document.getElementById('ai-fab');
+  var ico   = document.getElementById('ai-fab-ico');
+  panel.classList.toggle('ai-hidden', !aiOpen);
+  fab.classList.toggle('open', aiOpen);
+  ico.textContent = aiOpen ? '✕' : '✦';
+  if(aiOpen && !document.getElementById('ai-msgs').children.length){
+    addAIMsg('bot', '👋 مرحباً! أنا مساعدك الذكي لـ Ops Hub.\n\nيمكنني مساعدتك في:\n• **تحليل البيانات** — مبيعات، مخزون، موظفين\n• **إدخال البيانات** — فواتير، مصروفات، سجلات\n• **التقارير الفورية** — يومية، أسبوعية، شهرية\n\nاسألني بالعربية أو الإنجليزية! 🚀');
+  }
+  if(aiOpen) setTimeout(function(){ document.getElementById('ai-inp').focus(); }, 100);
+}
+
+function clearAIChat(){
+  aiHistory = [];
+  document.getElementById('ai-msgs').innerHTML = '';
+  addAIMsg('bot', '👋 تم مسح المحادثة. كيف يمكنني مساعدتك؟');
+}
+
+function addAIMsg(role, text, actions){
+  var msgs = document.getElementById('ai-msgs');
+  var div  = document.createElement('div');
+  div.className = 'ai-msg ' + role;
+
+  var av = role === 'bot'
+    ? '<div class="ai-av">✦</div>'
+    : '<div class="ai-av" style="font-size:13px">👤</div>';
+
+  // Format markdown-style bold and newlines
+  var formatted = String(text)
+    .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#f5be45">$1</strong>')
+    .replace(/\n/g, '<br>');
+
+  var actHtml = '';
+  if(actions && actions.length){
+    actHtml = '<div style="margin-top:8px">';
+    actions.forEach(function(a){
+      actHtml += '<button class="ai-action-btn'+(a.cls?' '+a.cls:'')+'" onclick="'+a.fn+'">'+a.label+'</button>';
+    });
+    actHtml += '</div>';
+  }
+
+  div.innerHTML = av + '<div class="ai-bubble'+(role==='bot'&&text==='...'?' thinking':'')+'">'+formatted+actHtml+'</div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function removeThinking(){
+  var msgs = document.getElementById('ai-msgs');
+  var thinking = msgs.querySelector('.thinking');
+  if(thinking) thinking.parentElement.remove();
+}
+
+// Build context snapshot from live Firebase data
+function buildContext(){
+  var now = new Date();
+  var mth = mthKey(0), lmth = mthKey(-1);
+  var cy  = now.getFullYear();
+
+  // Sales
+  var tA=0, lA=0, ytd=0;
+  S.sales.forEach(function(e){
+    if(!e.date) return;
+    if(e.date.indexOf(mth)===0) tA += (+e.actual||0);
+    if(e.date.indexOf(lmth)===0) lA += (+e.actual||0);
+    if(parseInt(e.date)===cy) ytd += (+e.actual||0);
+  });
+
+  // Staff
+  var act=0, onL=0, onLeaveNames=[];
+  S.staff.forEach(function(m){
+    if(m.status==='Active') act++;
+    else if(m.status==='On Leave'){ onL++; onLeaveNames.push(m.name); }
+  });
+
+  // Attendance today
+  var mk = TODAY.slice(0,7);
+  var present=0, absent=0, late=0;
+  S.tsEmps.forEach(function(e){
+    var recs=(S.tsAtt[e.id]&&S.tsAtt[e.id][mk])||[];
+    if(!Array.isArray(recs)) recs=Object.values(recs).filter(Boolean);
+    var rec=null; for(var i=0;i<recs.length;i++) if(recs[i].date===TODAY){rec=recs[i];break;}
+    if(!rec) absent++;
+    else if(rec.st==='present') present++;
+    else if(rec.st==='late') late++;
+    else if(rec.st==='absent') absent++;
+  });
+
+  // Inventory
+  var lowItems = items.filter(function(i){ return i.min>0 && i.qty<=i.min; });
+  var stockVal = items.reduce(function(a,i){ return a+(i.qty*(+i.price||0)); }, 0);
+
+  // Health
+  var expH=[], soonH=[];
+  S.health.forEach(function(h){
+    var d=drem(h.medExp);
+    if(d===null) return;
+    if(d<0) expH.push(h.name+' (منتهية منذ '+Math.abs(d)+' يوم)');
+    else if(d<=30) soonH.push(h.name+' (تنتهي خلال '+d+' يوم)');
+  });
+
+  // Petty cash this month
+  var pcTot=0;
+  S.pc.forEach(function(p){ if(p.date&&p.date.indexOf(mth)===0) pcTot+=(+p.amount||0); });
+
+  // Wastage this month
+  var wasteTot=0, wasteCount=0;
+  S.waste.forEach(function(w){ if(w.date&&w.date.indexOf(mth)===0){ wasteTot+=(+w.value||0); wasteCount++; }});
+
+  // Invoices
+  var invPend=0, invOver=0;
+  S.invoices.forEach(function(v){
+    if(v.status==='Pending'||v.status==='Received') invPend+=(+v.amount||0);
+    if(v.status==='Overdue') invOver+=(+v.amount||0);
+  });
+
+  // Pending orders
+  var pendOrders = orders.filter(function(o){ return o.status==='pending'||o.status==='partial'; });
+
+  return {
+    today: TODAY,
+    month: mth,
+    sales: { thisMonth: tA, lastMonth: lA, ytd: ytd },
+    staff: { total: S.staff.length, active: act, onLeave: onL, onLeaveNames: onLeaveNames },
+    attendance: { present: present, absent: absent, late: late, total: S.tsEmps.length },
+    inventory: { totalItems: items.length, lowStock: lowItems.length, lowItemNames: lowItems.slice(0,10).map(function(i){return i.name+' ('+i.qty+'/'+i.min+' '+i.unit+')'}), stockValue: stockVal },
+    health: { expired: expH.length, expiredNames: expH, expiringSoon: soonH.length, expiringSoonNames: soonH },
+    pettyCash: { thisMonth: pcTot },
+    wastage: { thisMonth: wasteTot, count: wasteCount },
+    invoices: { pendingAmount: invPend, overdueAmount: invOver },
+    pendingOrders: pendOrders.length,
+    reminders: S.rem.filter(function(r){ return !r.done; }).length
+  };
+}
+
+function buildSystemPrompt(ctx){
+  return 'You are an intelligent restaurant operations assistant embedded in "Ops Hub" — a restaurant management system.\n\n' +
+'CURRENT LIVE DATA SNAPSHOT:\n'+JSON.stringify(ctx, null, 2)+'\n\n'+
+'CAPABILITIES:\n'+
+'1. ANALYSIS & REPORTS: Analyze the data above and give insights in clear, concise Arabic or English.\n'+
+'2. DATA ENTRY: When user wants to add data, respond with a JSON action block like:\n'+
+'   <ACTION>{"type":"add_sales","date":"2026-03-27","actual":45000,"target":50000}</ACTION>\n'+
+'   <ACTION>{"type":"add_pc","date":"2026-03-27","description":"قهوة","forwhat":"Management","amount":120,"category":"Management"}</ACTION>\n'+
+'   <ACTION>{"type":"add_reminder","text":"تجديد عقد التوريد","date":"2026-04-15","priority":"high"}</ACTION>\n'+
+'   <ACTION>{"type":"add_pull","item":"Tomatoes","qty":5,"unit":"kg","by":"KHALED AHMED"}</ACTION>\n'+
+'   <ACTION>{"type":"add_wastage","item":"Bread","qty":2,"unit":"kg","reason":"Expired","value":30,"by":"KHALED AHMED"}</ACTION>\n'+
+'3. NAVIGATION: If user asks to go somewhere, include: <NAV>pagename</NAV> (pages: inv-dash, items, moves, orders, alerts, staff, sched, ts, health, sales, pc, inv, pullout, wastage)\n\n'+
+'RULES:\n'+
+'- Reply in the same language the user uses (Arabic or English)\n'+
+'- Be concise and practical\n'+
+'- Format numbers with commas and SAR currency\n'+
+'- Use emojis to make responses scannable\n'+
+'- If asked to add data, confirm what you will add before including the ACTION block\n'+
+'- For reports, use structured lists with key metrics\n'+
+'- Today is '+TODAY+', current month is '+ctx.month;
+}
+
+async function sendAI(preset){
+  var inp  = document.getElementById('ai-inp');
+  var msg  = preset || inp.value.trim();
+  if(!msg || aiThinking) return;
+
+  inp.value = '';
+  inp.style.height = 'auto';
+  aiThinking = true;
+  document.getElementById('ai-send').disabled = true;
+
+  addAIMsg('user', msg);
+  var thinkEl = addAIMsg('bot', '...');
+
+  aiHistory.push({ role:'user', content: msg });
+
+  try{
+    var ctx = buildContext();
+    var sysPr = buildSystemPrompt(ctx);
+
+    var body = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: sysPr,
+      messages: aiHistory.slice(-10) // Keep last 10 for context
+    };
+
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    var data = await resp.json();
+    var raw  = (data.content && data.content[0] && data.content[0].text) || 'عذراً، حدث خطأ.';
+
+    // Parse ACTION blocks
+    var actions = [];
+    var displayText = raw.replace(/<ACTION>([\s\S]*?)<\/ACTION>/g, function(_, json){
+      try{
+        var act = JSON.parse(json.trim());
+        actions.push(act);
+      }catch(e){}
+      return '';
+    });
+
+    // Parse NAV blocks
+    var navTarget = null;
+    displayText = displayText.replace(/<NAV>([\s\S]*?)<\/NAV>/g, function(_, page){
+      navTarget = page.trim();
+      return '';
+    });
+
+    displayText = displayText.trim();
+
+    removeThinking();
+    aiHistory.push({ role:'assistant', content: raw });
+
+    // Build action buttons for confirmable actions
+    var actionBtns = [];
+    if(actions.length){
+      actions.forEach(function(act, i){
+        var label = aiActionLabel(act);
+        actionBtns.push({
+          label: '✅ ' + label,
+          cls: 'g',
+          fn: 'executeAIAction('+JSON.stringify(act)+')'
+        });
+      });
+    }
+    if(navTarget){
+      actionBtns.push({
+        label: '→ افتح الصفحة',
+        fn: 'go("'+navTarget+'")'
+      });
+    }
+
+    addAIMsg('bot', displayText, actionBtns.length ? actionBtns : null);
+
+  }catch(e){
+    removeThinking();
+    addAIMsg('bot', '❌ خطأ في الاتصال: '+e.message);
+  }
+
+  aiThinking = false;
+  document.getElementById('ai-send').disabled = false;
+}
+
+function aiActionLabel(act){
+  var t = act.type;
+  if(t==='add_sales') return 'إضافة مبيعات '+fsar(act.actual)+' — '+act.date;
+  if(t==='add_pc') return 'إضافة مصروف '+fsar(act.amount)+' — '+act.description;
+  if(t==='add_reminder') return 'إضافة تذكير: '+act.text;
+  if(t==='add_pull') return 'تسجيل سحب: '+act.item+' '+act.qty+' '+act.unit;
+  if(t==='add_wastage') return 'تسجيل هدر: '+act.item+' '+act.qty+' '+act.unit;
+  return 'تنفيذ الإجراء';
+}
+
+function executeAIAction(act){
+  var t = act.type;
+  try{
+    if(t === 'add_sales'){
+      var dup = S.sales.find(function(s){ return s.date===act.date; });
+      if(dup){ toast('يوجد إدخال لهذا التاريخ، سيتم التحديث','warning'); S.sales = S.sales.filter(function(s){return s.date!==act.date;}); }
+      S.sales.push({ id:uid(), date:act.date, actual:parseFloat(act.actual)||0, target:parseFloat(act.target)||0 });
+      saveStaffCollection('sales');
+      toast('✅ تم إضافة المبيعات بنجاح','success');
+      if(S.p==='sales'||S.p==='inv-dash') ren();
+    }
+    else if(t === 'add_pc'){
+      S.pc.push({ id:uid(), date:act.date||TODAY, description:act.description||'', forwhat:act.forwhat||'', category:act.category||'Miscellaneous', amount:parseFloat(act.amount)||0, remarks:act.remarks||'' });
+      saveStaffCollection('pc');
+      toast('✅ تم إضافة المصروف بنجاح','success');
+      if(S.p==='pc') ren();
+    }
+    else if(t === 'add_reminder'){
+      S.rem.push({ id:uid(), text:act.text||'', date:act.date||TODAY, priority:act.priority||'medium', done:false });
+      saveStaffCollection('rem');
+      toast('✅ تم إضافة التذكير بنجاح','success');
+    }
+    else if(t === 'add_pull'){
+      S.pull.push({ id:uid(), date:act.date||TODAY, item:act.item||'', qty:parseFloat(act.qty)||0, unit:act.unit||'', by:act.by||'' });
+      saveStaffCollection('pull');
+      toast('✅ تم تسجيل السحب بنجاح','success');
+      if(S.p==='pullout') ren();
+    }
+    else if(t === 'add_wastage'){
+      S.waste.push({ id:uid(), date:act.date||TODAY, item:act.item||'', qty:parseFloat(act.qty)||0, unit:act.unit||'', reason:act.reason||'', value:parseFloat(act.value)||0, by:act.by||'' });
+      saveStaffCollection('waste');
+      toast('✅ تم تسجيل الهدر بنجاح','success');
+      if(S.p==='wastage') ren();
+    }
+    addAIMsg('bot', '✅ تم التنفيذ بنجاح وحُفظت البيانات في Firebase مباشرةً!');
+  }catch(e){
+    toast('خطأ: '+e.message,'error');
+  }
+}
+
+// Wire up chips and keyboard
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('.ai-chip').forEach(function(btn){
+    btn.onclick = function(){ sendAI(btn.dataset.q); };
+  });
+
+  var inp = document.getElementById('ai-inp');
+  if(inp){
+    inp.addEventListener('keydown', function(e){
+      if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendAI(); }
+    });
+    inp.addEventListener('input', function(){
+      this.style.height='auto';
+      this.style.height=Math.min(this.scrollHeight,100)+'px';
+    });
+  }
+});
 window.onload = function(){
   // Clock
   function updateClock(){
@@ -2422,5 +2949,6 @@ function startApp(demoMode){
   }
 }
 </script>
+
 </body>
 </html>
