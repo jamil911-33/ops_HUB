@@ -297,33 +297,84 @@ var MK = TODAY.slice(0,7);
 
 var tsEmps=[], tsAtt={}, tsLeaves=[], schedule={}, staffList=[], selectedId=null, teamFilter='all';
 
-// ── SHIFT-AWARE LATE DETECTION ──────────────────────────
-// Reads each employee's shift from the Staff page (e.g. "9AM-5PM", "14:00-22:00")
-// Parses the start time and adds a 15-minute grace period.
-// Falls back to 09:00 if no shift is recorded.
-function getShiftDeadline(empId){
-  var sf=null;
-  for(var i=0;i<staffList.length;i++) if(String(staffList[i].id)===String(empId)){sf=staffList[i];break;}
-  if(!sf||!sf.shift) return '09:15'; // default grace
+// ── SHIFT-AWARE LATE DETECTION ───────────────────────────
+// Priority:
+//   1. Today's entry in the schedule (e.g. "1 PM", "8 AM", "OFF", "ON LEAVE")
+//   2. staff.shift default (e.g. "5 PM", "8 AM")
+//   3. Fallback: 09:00
+//
+// Returns deadline string "HH:MM" (includes 15-min grace).
+// Returns null if employee is OFF or ON LEAVE today.
 
-  var raw=sf.shift.trim();
-  // Supports: "9AM-5PM"  "9:00AM"  "09:00-17:00"  "2PM"  "14:00"  "9 AM - 5 PM"
+function getTodayScheduleValue(empId){
+  // Use LIVE date (not TODAY string) to avoid any string-parse timezone issues
+  var now = new Date();
+  var yr  = now.getFullYear();
+  var j   = new Date(yr, 0, 1);
+  // Same formula as weekKey() in ops-hub-firebase.html
+  var wn  = Math.ceil(((now - j) / 86400000 + j.getDay() + 1) / 7);
+  var wk  = yr + '-W' + String(wn).padStart(2,'0');
+  // Day name using live getDay()
+  var days    = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var dayName = days[now.getDay()];
+  var val = (schedule[wk] && schedule[wk][String(empId)] && schedule[wk][String(empId)][dayName]) || '';
+  return val.trim();
+}
+
+function parseShiftTime(raw){
+  // Returns deadline "HH:MM" with 15-min grace, or null if OFF/LEAVE/empty
+  if(!raw) return null;
+  var r=raw.trim().toUpperCase();
+  if(r==='OFF'||r==='DAY OFF'||r==='ON LEAVE'||r==='LEAVE') return null;
+
+  // Match first time in string — e.g. "1 PM", "8 AM", "13:00", "1PM-9PM"
   var m=raw.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-  if(!m) return '09:15';
+  if(!m) return null;
 
   var hr=parseInt(m[1]), min=parseInt(m[2]||'0'), ampm=(m[3]||'').toLowerCase();
   if(ampm==='pm'&&hr!==12) hr+=12;
   if(ampm==='am'&&hr===12) hr=0;
-  // No am/pm: treat 1–7 as afternoon (e.g. "2-10" → 14:00)
+  // No am/pm marker: treat 1–7 as PM (common in restaurant shifts)
   if(!ampm&&hr>=1&&hr<=7) hr+=12;
 
   // Add 15-min grace
-  var tot=hr*60+min+15, gh=Math.floor(tot/60)%24, gm=tot%60;
+  var tot=hr*60+min+15;
+  var gh=Math.floor(tot/60)%24, gm=tot%60;
   return String(gh).padStart(2,'0')+':'+String(gm).padStart(2,'0');
 }
 
+function getShiftDeadline(empId){
+  // 1. Try today's schedule cell
+  var todaySch=getTodayScheduleValue(empId);
+  if(todaySch){
+    var d=parseShiftTime(todaySch);
+    if(d) return d;
+    // If OFF/LEAVE in schedule → treat as day off (handled by caller)
+    return null;
+  }
+  // 2. Fallback to staff.shift default
+  var sf=null;
+  for(var i=0;i<staffList.length;i++) if(String(staffList[i].id)===String(empId)){sf=staffList[i];break;}
+  if(sf&&sf.shift){
+    var d2=parseShiftTime(sf.shift);
+    if(d2) return d2;
+  }
+  // 3. Final fallback
+  return '09:15';
+}
+
 function isLate(empId, checkInTime){
-  return checkInTime > getShiftDeadline(empId);
+  var deadline=getShiftDeadline(empId);
+  if(!deadline) return false; // OFF/LEAVE → not late
+  return checkInTime > deadline;
+}
+
+// Also update isScheduledOff to use same schedule lookup
+function isScheduledOffToday(empId){
+  var val=getTodayScheduleValue(empId);
+  if(!val) return false;
+  var u=val.trim().toUpperCase();
+  return u==='OFF'||u==='DAY OFF';
 }
 
 // CLOCK
@@ -359,22 +410,22 @@ function getTodayRec(eid){
 }
 
 function isOnLeave(eid){
+  // Check approved leave requests
   for(var i=0;i<tsLeaves.length;i++){
     var l=tsLeaves[i];
     if(String(l.empId)===String(eid)&&l.status==='approved'&&l.start<=TODAY&&l.end>=TODAY) return true;
+  }
+  // Also check if schedule says ON LEAVE today
+  var val=getTodayScheduleValue(eid);
+  if(val){
+    var u=val.trim().toUpperCase();
+    if(u==='ON LEAVE'||u==='LEAVE') return true;
   }
   return false;
 }
 
 function isScheduledOff(eid){
-  var d=new Date(TODAY+'T00:00:00'); var sun=new Date(d); sun.setDate(d.getDate()-d.getDay());
-  var yr=sun.getFullYear(); var j=new Date(yr,0,1);
-  var wn=Math.ceil(((sun-j)/86400000+j.getDay()+1)/7);
-  var wk=yr+'-W'+String(wn).padStart(2,'0');
-  var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var day=days[new Date(TODAY+'T00:00:00').getDay()];
-  var val=(schedule[wk]&&schedule[wk][String(eid)]&&schedule[wk][String(eid)][day])||'';
-  return val.toLowerCase()==='off'||val.toLowerCase()==='day off';
+  return isScheduledOffToday(eid);
 }
 
 function saveAtt(eid,rec){
@@ -437,18 +488,25 @@ function updateStatusCard(){
   if(!emp){sc.className='status-card';area.style.display='none';return;}
   area.style.display='block'; ba.style.display='none'; bi.disabled=false; bo.disabled=false;
   var rec=getTodayRec(selectedId), onLeave=isOnLeave(selectedId), offDay=isScheduledOff(selectedId);
+  var todayShift=getTodayScheduleValue(selectedId);
+  var deadline=getShiftDeadline(selectedId);
+  // Display label: schedule value, or staff.shift as fallback
+  var shiftLabel=todayShift||(function(){for(var i=0;i<staffList.length;i++)if(String(staffList[i].id)===String(selectedId))return staffList[i].shift||'';return '';})();
 
   if(onLeave||offDay){
     sc.className='status-card show leave'; ico.textContent=onLeave?'🗓':'📴'; nm.textContent=emp.name;
-    info.innerHTML=onLeave?'On approved leave today — <strong>'+TODAY+'</strong>':'Scheduled Day Off — <strong>'+TODAY+'</strong>';
+    info.innerHTML=(onLeave?'On approved leave today':'Scheduled Day Off')+' — <strong>'+TODAY+'</strong>';
     bi.disabled=true; bo.disabled=true;
   } else if(!rec){
     sc.className='status-card show notyet'; ico.textContent='⏳'; nm.textContent=emp.name;
-    info.innerHTML='No attendance recorded yet today';
+    info.innerHTML='Not recorded yet'
+      +(shiftLabel?' &nbsp;·&nbsp; Shift: <strong style="color:var(--gold)">'+shiftLabel+'</strong>':'')
+      +(deadline?' &nbsp;·&nbsp; Deadline: <strong style="color:var(--acc)">'+deadline+'</strong>':'');
     bi.disabled=false; bo.disabled=true; ba.style.display='flex';
   } else if(rec.st==='absent'){
     sc.className='status-card show absent'; ico.textContent='❌'; nm.textContent=emp.name;
-    info.innerHTML='Marked absent — <strong>'+TODAY+'</strong>';
+    info.innerHTML='Marked absent — <strong>'+TODAY+'</strong>'
+      +(shiftLabel?' &nbsp;·&nbsp; Shift: <strong style="color:var(--gold)">'+shiftLabel+'</strong>':'');
     bi.disabled=false; bo.disabled=true;
   } else {
     sc.className='status-card show '+(rec.st==='late'?'late':'present');
@@ -457,6 +515,7 @@ function updateStatusCard(){
     if(rec.co) lines+='&emsp;Check-out: <strong style="color:var(--blu)">'+rec.co+'</strong>';
     else lines+='&emsp;Not checked out yet';
     lines+='<br>Status:&nbsp; '+(rec.st==='late'?'<span style="color:var(--gold);font-weight:700">Late</span>':'<span style="color:var(--grn);font-weight:700">Present</span>');
+    if(shiftLabel) lines+='&emsp;Shift: <strong style="color:var(--acc)">'+shiftLabel+'</strong>';
     info.innerHTML=lines; bi.disabled=!!rec.ci; bo.disabled=!!rec.co;
   }
 }
