@@ -603,6 +603,7 @@ select.fi-s{cursor:pointer}
       </div>
     </div>
     <div style="display:flex;gap:6px">
+      <button class="ai-hbtn" id="ai-key-btn" onclick="showAIKeyPrompt()" title="Set API Key">🔑</button>
       <button class="ai-hbtn" onclick="clearAIChat()" title="Clear chat">🗑</button>
       <button class="ai-hbtn" onclick="toggleAI()" title="Close">✕</button>
     </div>
@@ -2533,7 +2534,7 @@ function toggleAI(){
   fab.classList.toggle('open', aiOpen);
   ico.textContent = aiOpen ? '✕' : '✦';
   if(aiOpen && !document.getElementById('ai-msgs').children.length){
-    addAIMsg('bot', '👋 Hello! I\'m your Ops Hub AI Assistant.\n\nI can help you with:\n• **Reports** — sales, inventory, staff, wastage\n• **Data entry** — invoices, expenses, reminders\n• **Quick analysis** — trends, alerts, comparisons\n\nAsk me anything in English or Arabic! 🚀');
+    addAIMsg('bot', '👋 Hello! I\'m your Ops Hub AI Assistant.\n\nI can help you with:\n• **Reports** — sales, inventory, staff, wastage\n• **Data entry** — invoices, expenses, reminders\n• **Quick analysis** — trends, alerts, comparisons\n\nAsk me anything! 🚀');
   }
   if(aiOpen) setTimeout(function(){ document.getElementById('ai-inp').focus(); }, 100);
 }
@@ -2683,6 +2684,8 @@ function buildSystemPrompt(ctx){
 '- Today is '+TODAY+', current month is '+ctx.month;
 }
 
+var ANTHROPIC_KEY = localStorage.getItem('ops_anthropic_key') || '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';
+
 async function sendAI(preset){
   var inp  = document.getElementById('ai-inp');
   var msg  = preset || inp.value.trim();
@@ -2699,6 +2702,15 @@ async function sendAI(preset){
   aiHistory.push({ role:'user', content: msg });
 
   try{
+    // Check API key
+    if(!ANTHROPIC_KEY){
+      removeThinking();
+      aiThinking = false;
+      document.getElementById('ai-send').disabled = false;
+      showAIKeyPrompt();
+      return;
+    }
+
     var ctx = buildContext();
     var sysPr = buildSystemPrompt(ctx);
 
@@ -2713,7 +2725,7 @@ async function sendAI(preset){
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': '',
+        'x-api-key': ANTHROPIC_KEY,
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
@@ -2722,7 +2734,19 @@ async function sendAI(preset){
 
     if(!resp.ok){
       var errData = await resp.json().catch(function(){ return {}; });
-      throw new Error(errData.error && errData.error.message ? errData.error.message : 'HTTP '+resp.status);
+      var errMsg = errData.error && errData.error.message ? errData.error.message : 'HTTP '+resp.status;
+      // If invalid key, clear it and prompt again
+      if(resp.status === 401){
+        ANTHROPIC_KEY = '';
+        localStorage.removeItem('ops_anthropic_key');
+        removeThinking();
+        aiThinking = false;
+        document.getElementById('ai-send').disabled = false;
+        addAIMsg('bot', '🔑 Invalid API key. Please enter a valid key.');
+        showAIKeyPrompt();
+        return;
+      }
+      throw new Error(errMsg);
     }
 
     var data = await resp.json();
@@ -2780,7 +2804,52 @@ async function sendAI(preset){
   document.getElementById('ai-send').disabled = false;
 }
 
-function aiActionLabel(act){
+function showAIKeyPrompt(){
+  // Show inline key entry in the chat
+  var msgs = document.getElementById('ai-msgs');
+  var div = document.createElement('div');
+  div.className = 'ai-msg bot';
+  div.id = 'ai-key-prompt';
+  div.innerHTML = '<div class="ai-av">✦</div>' +
+    '<div class="ai-bubble" style="width:100%">' +
+    '<div style="font-size:13px;font-weight:700;margin-bottom:8px">🔑 Anthropic API Key Required</div>' +
+    '<div style="font-size:12px;color:#8b949e;margin-bottom:12px;line-height:1.6">' +
+    'To use the AI assistant, you need an Anthropic API key.<br>' +
+    '<a href="https://console.anthropic.com/keys" target="_blank" style="color:#f0a500">Get your key at console.anthropic.com →</a>' +
+    '</div>' +
+    '<input id="ai-key-inp" type="password" placeholder="sk-ant-api03-..." style="width:100%;background:#0d1117;border:1px solid #3d444d;border-radius:8px;padding:9px 12px;color:#e6edf3;font-size:12px;font-family:monospace;outline:none;margin-bottom:8px;box-sizing:border-box" onfocus="this.style.borderColor=\'#f0a500\'" onblur="this.style.borderColor=\'#3d444d\'">' +
+    '<div style="display:flex;gap:8px">' +
+    '<button onclick="saveAIKey()" style="flex:1;padding:9px;background:linear-gradient(135deg,#f0a500,#c8700a);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Save Key</button>' +
+    '<button onclick="document.getElementById(\'ai-key-prompt\').remove()" style="padding:9px 14px;background:#1c2128;color:#8b949e;border:1px solid #30363d;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--font)">Cancel</button>' +
+    '</div>' +
+    '<div style="font-size:10px;color:#7d8590;margin-top:8px;font-family:monospace">🔒 Key is saved locally in your browser only</div>' +
+    '</div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  setTimeout(function(){ var k=document.getElementById('ai-key-inp'); if(k) k.focus(); }, 100);
+}
+
+function saveAIKey(){
+  var inp = document.getElementById('ai-key-inp');
+  if(!inp) return;
+  var key = inp.value.trim();
+  if(!key || !key.startsWith('sk-')){
+    inp.style.borderColor = '#f85149';
+    inp.placeholder = 'Key must start with sk-ant-...';
+    return;
+  }
+  ANTHROPIC_KEY = key;
+  localStorage.setItem('ops_anthropic_key', key);
+  var prompt = document.getElementById('ai-key-prompt');
+  if(prompt) prompt.remove();
+  addAIMsg('bot', '✅ API key saved! You can now use the AI assistant.\n\nTry asking: **What are this month\'s sales?**');
+}
+
+function clearAIKey(){
+  ANTHROPIC_KEY = '';
+  localStorage.removeItem('ops_anthropic_key');
+  toast('API key removed', 'info');
+}
   var t = act.type;
   if(t==='add_sales') return 'إضافة مبيعات '+fsar(act.actual)+' — '+act.date;
   if(t==='add_pc') return 'إضافة مصروف '+fsar(act.amount)+' — '+act.description;
