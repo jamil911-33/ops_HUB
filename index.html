@@ -2686,6 +2686,8 @@ function buildSystemPrompt(ctx){
 
 var ANTHROPIC_KEY = localStorage.getItem('ops_anthropic_key') || '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';
 
+var AI_PROXY_URL = localStorage.getItem('ops_ai_proxy') || 'https://script.google.com/macros/s/AKfycbw_3-TkChP_Muh-ll9HgV65XfPOLaZ-oME3l-Oh4v3fdxiLnaWZjJPPFnAOtPf0uMYr/exec';
+
 async function sendAI(preset){
   var inp  = document.getElementById('ai-inp');
   var msg  = preset || inp.value.trim();
@@ -2702,55 +2704,34 @@ async function sendAI(preset){
   aiHistory.push({ role:'user', content: msg });
 
   try{
-    // Check API key
-    if(!ANTHROPIC_KEY){
-      removeThinking();
-      aiThinking = false;
-      document.getElementById('ai-send').disabled = false;
-      showAIKeyPrompt();
-      return;
-    }
+    var ctx    = buildContext();
+    var sysPr  = buildSystemPrompt(ctx);
 
-    var ctx = buildContext();
-    var sysPr = buildSystemPrompt(ctx);
+    var msgs = aiHistory.slice(-6).map(function(m){
+      return { role: m.role, content: String(m.content).slice(0, 800) };
+    });
 
-    var body = {
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      system: sysPr,
-      messages: aiHistory.slice(-10)
+    var bodyObj = {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 800,
+      system: sysPr.slice(0, 3000),
+      messages: msgs
     };
 
-    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+    var resp = await fetch(AI_PROXY_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify(body)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bodyObj),
+      redirect: 'follow'
     });
 
     if(!resp.ok){
-      var errData = await resp.json().catch(function(){ return {}; });
-      var errMsg = errData.error && errData.error.message ? errData.error.message : 'HTTP '+resp.status;
-      // If invalid key, clear it and prompt again
-      if(resp.status === 401){
-        ANTHROPIC_KEY = '';
-        localStorage.removeItem('ops_anthropic_key');
-        removeThinking();
-        aiThinking = false;
-        document.getElementById('ai-send').disabled = false;
-        addAIMsg('bot', '🔑 Invalid API key. Please enter a valid key.');
-        showAIKeyPrompt();
-        return;
-      }
-      throw new Error(errMsg);
+      var errTxt = await resp.text().catch(function(){ return ''; });
+      throw new Error('HTTP ' + resp.status + (errTxt ? ': ' + errTxt.slice(0,100) : ''));
     }
 
     var data = await resp.json();
-    var raw  = (data.content && data.content[0] && data.content[0].text) || 'Sorry, no response received.';
+    var raw  = (data.content && data.content[0] && data.content[0].text) || 'Sorry, no response.';
 
     // Parse ACTION blocks
     var actions = [];
@@ -2805,28 +2786,43 @@ async function sendAI(preset){
 }
 
 function showAIKeyPrompt(){
-  // Show inline key entry in the chat
   var msgs = document.getElementById('ai-msgs');
+  var old = document.getElementById('ai-key-prompt'); if(old) old.remove();
   var div = document.createElement('div');
   div.className = 'ai-msg bot';
   div.id = 'ai-key-prompt';
   div.innerHTML = '<div class="ai-av">✦</div>' +
     '<div class="ai-bubble" style="width:100%">' +
-    '<div style="font-size:13px;font-weight:700;margin-bottom:8px">🔑 Anthropic API Key Required</div>' +
-    '<div style="font-size:12px;color:#8b949e;margin-bottom:12px;line-height:1.6">' +
-    'To use the AI assistant, you need an Anthropic API key.<br>' +
-    '<a href="https://console.anthropic.com/keys" target="_blank" style="color:#f0a500">Get your key at console.anthropic.com →</a>' +
+    '<div style="font-size:13px;font-weight:700;margin-bottom:8px">⚙️ AI Settings</div>' +
+    '<div style="font-size:11px;color:#8b949e;margin-bottom:10px;line-height:1.6">' +
+    'The AI requires a <strong style="color:#f0a500">Cloudflare Worker proxy</strong> to work from GitHub Pages.<br>' +
+    'Deploy the worker (see instructions below), then paste its URL here.' +
     '</div>' +
-    '<input id="ai-key-inp" type="password" placeholder="sk-ant-api03-..." style="width:100%;background:#0d1117;border:1px solid #3d444d;border-radius:8px;padding:9px 12px;color:#e6edf3;font-size:12px;font-family:monospace;outline:none;margin-bottom:8px;box-sizing:border-box" onfocus="this.style.borderColor=\'#f0a500\'" onblur="this.style.borderColor=\'#3d444d\'">' +
+    '<label style="font-size:10px;color:#7d8590;font-family:monospace;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Worker Proxy URL</label>' +
+    '<input id="ai-proxy-inp" type="url" placeholder="https://ops-hub-proxy.YOUR.workers.dev" value="'+(AI_PROXY_URL||'')+'" style="width:100%;background:#0d1117;border:1px solid #3d444d;border-radius:8px;padding:9px 12px;color:#e6edf3;font-size:12px;font-family:monospace;outline:none;margin-bottom:10px;box-sizing:border-box" onfocus="this.style.borderColor=\'#f0a500\'" onblur="this.style.borderColor=\'#3d444d\'">' +
     '<div style="display:flex;gap:8px">' +
-    '<button onclick="saveAIKey()" style="flex:1;padding:9px;background:linear-gradient(135deg,#f0a500,#c8700a);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Save Key</button>' +
-    '<button onclick="document.getElementById(\'ai-key-prompt\').remove()" style="padding:9px 14px;background:#1c2128;color:#8b949e;border:1px solid #30363d;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--font)">Cancel</button>' +
+    '<button onclick="saveAIProxy()" style="flex:1;padding:9px;background:linear-gradient(135deg,#f0a500,#c8700a);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Save & Connect</button>' +
+    '<button onclick="document.getElementById(\'ai-key-prompt\').remove()" style="padding:9px 14px;background:#1c2128;color:#8b949e;border:1px solid #30363d;border-radius:8px;font-size:12px;cursor:pointer">Cancel</button>' +
     '</div>' +
-    '<div style="font-size:10px;color:#7d8590;margin-top:8px;font-family:monospace">🔒 Key is saved locally in your browser only</div>' +
     '</div>';
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
-  setTimeout(function(){ var k=document.getElementById('ai-key-inp'); if(k) k.focus(); }, 100);
+  setTimeout(function(){ var k=document.getElementById('ai-proxy-inp'); if(k) k.focus(); }, 100);
+}
+
+function saveAIProxy(){
+  var inp = document.getElementById('ai-proxy-inp');
+  if(!inp) return;
+  var url = inp.value.trim();
+  if(!url || !url.startsWith('http')){
+    inp.style.borderColor = '#f85149';
+    return;
+  }
+  AI_PROXY_URL = url;
+  localStorage.setItem('ops_ai_proxy', url);
+  var prompt = document.getElementById('ai-key-prompt');
+  if(prompt) prompt.remove();
+  addAIMsg('bot', '✅ Proxy configured! The AI assistant is ready.\n\nTry: **What are this month\'s sales?**');
 }
 
 function saveAIKey(){
@@ -2835,20 +2831,13 @@ function saveAIKey(){
   var key = inp.value.trim();
   if(!key || !key.startsWith('sk-')){
     inp.style.borderColor = '#f85149';
-    inp.placeholder = 'Key must start with sk-ant-...';
     return;
   }
   ANTHROPIC_KEY = key;
   localStorage.setItem('ops_anthropic_key', key);
   var prompt = document.getElementById('ai-key-prompt');
   if(prompt) prompt.remove();
-  addAIMsg('bot', '✅ API key saved! You can now use the AI assistant.\n\nTry asking: **What are this month\'s sales?**');
-}
-
-function clearAIKey(){
-  ANTHROPIC_KEY = '';
-  localStorage.removeItem('ops_anthropic_key');
-  toast('API key removed', 'info');
+  addAIMsg('bot', '✅ API key saved! You can now use the AI assistant.');
 }
   var t = act.type;
   if(t==='add_sales') return 'إضافة مبيعات '+fsar(act.actual)+' — '+act.date;
