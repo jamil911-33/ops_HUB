@@ -2686,7 +2686,7 @@ function buildSystemPrompt(ctx){
 
 var ANTHROPIC_KEY = localStorage.getItem('ops_anthropic_key') || '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';
 
-var AI_PROXY_URL = localStorage.getItem('ops_ai_proxy') || 'https://script.google.com/macros/s/AKfycbw_3-TkChP_Muh-ll9HgV65XfPOLaZ-oME3l-Oh4v3fdxiLnaWZjJPPFnAOtPf0uMYr/exec';
+var AI_PROXY_URL = localStorage.getItem('ops_ai_proxy') || 'https://script.google.com/macros/s/AKfycbydaRL7SYnz85Y0WiBGD2v_67PC2gdK4MigGqzMWxyXwz0EJ3L5Dc-6C8knptTYrYZ7/exec';
 
 async function sendAI(preset){
   var inp  = document.getElementById('ai-inp');
@@ -2718,20 +2718,22 @@ async function sendAI(preset){
       messages: msgs
     };
 
+    // Google Apps Script requires text/plain to avoid CORS preflight
     var resp = await fetch(AI_PROXY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(bodyObj),
       redirect: 'follow'
     });
 
     if(!resp.ok){
-      var errTxt = await resp.text().catch(function(){ return ''; });
-      throw new Error('HTTP ' + resp.status + (errTxt ? ': ' + errTxt.slice(0,100) : ''));
+      throw new Error('HTTP ' + resp.status);
     }
 
-    var data = await resp.json();
-    var raw  = (data.content && data.content[0] && data.content[0].text) || 'Sorry, no response.';
+    var txt = await resp.text();
+    var data;
+    try { data = JSON.parse(txt); } catch(e){ throw new Error('Invalid response: ' + txt.slice(0,100)); }
+    var raw = (data.content && data.content[0] && data.content[0].text) || 'Sorry, no response.';
 
     // Parse ACTION blocks
     var actions = [];
