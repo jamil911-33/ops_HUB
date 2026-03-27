@@ -322,7 +322,7 @@ select.fi-s{cursor:pointer}
      🔧 FIREBASE SETUP SCREEN
 ══════════════════════════════════════════ -->
 
-<div id="setup-screen">
+<div id="setup-screen" class="hidden">
   <div class="setup-card">
     <div style="font-size:36px;margin-bottom:12px">🔥</div>
     <div class="setup-title">إعداد Firebase — Ops Hub</div>
@@ -2982,14 +2982,13 @@ window.onload = function(){
     projectId:   "opshub-f802f"
   };
 
-  // Fill setup fields (in case user opens setup manually)
-  document.getElementById('cfg-apikey').value    = HARDCODED.apiKey;
-  document.getElementById('cfg-authdomain').value = HARDCODED.authDomain;
-  document.getElementById('cfg-dburl').value     = HARDCODED.databaseURL;
-  document.getElementById('cfg-projectid').value = HARDCODED.projectId;
+  // Hide setup screen immediately — never show it
+  document.getElementById('setup-screen').classList.add('hidden');
 
-  // Auto-connect directly — skip setup screen entirely
+  // Save to localStorage so it persists
   localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(HARDCODED));
+
+  // Connect and start
   initFirebase(HARDCODED);
   startApp();
 };
