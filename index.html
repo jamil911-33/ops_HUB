@@ -2707,14 +2707,14 @@ async function sendAI(preset){
     var ctx    = buildContext();
     var sysPr  = buildSystemPrompt(ctx);
 
-    var msgs = aiHistory.slice(-6).map(function(m){
-      return { role: m.role, content: String(m.content).slice(0, 800) };
+    var msgs = aiHistory.slice(-4).map(function(m){
+      return { role: m.role, content: String(m.content).slice(0, 400) };
     });
 
     var bodyObj = {
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 800,
-      system: sysPr.slice(0, 3000),
+      max_tokens: 600,
+      system: sysPr.slice(0, 1500),
       messages: msgs
     };
 
@@ -2725,14 +2725,15 @@ async function sendAI(preset){
       redirect: 'follow'
     });
 
-    if(!resp.ok){
-      throw new Error('HTTP ' + resp.status);
-    }
-
     var txt = await resp.text();
     var data;
-    try { data = JSON.parse(txt); } catch(e){ throw new Error('Bad response: ' + txt.slice(0,80)); }
-    var raw = (data.content && data.content[0] && data.content[0].text) || 'Sorry, no response.';
+    try { data = JSON.parse(txt); } catch(e){ throw new Error('Response: ' + txt.slice(0,200)); }
+
+    // Check for API error
+    if(data.error){ throw new Error(data.error.message || JSON.stringify(data.error)); }
+
+    var raw = (data.content && data.content[0] && data.content[0].text);
+    if(!raw){ throw new Error('Empty response. Raw: ' + JSON.stringify(data).slice(0,200)); }
 
     // Parse ACTION blocks
     var actions = [];
