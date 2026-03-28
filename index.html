@@ -2684,9 +2684,8 @@ function buildSystemPrompt(ctx){
 '- Today is '+TODAY+', current month is '+ctx.month;
 }
 
-var ANTHROPIC_KEY = localStorage.getItem('ops_anthropic_key') || '';
-
-var AI_PROXY_URL = localStorage.getItem('ops_ai_proxy') || 'https://script.google.com/macros/s/AKfycbz-SiYCD8TZECpBplVfTpHMaWtAG1Zy-AHA_imqQzVuXCwwyNmJwekrB3lz6IwjI9JV/exec';
+var GEMINI_KEY = 'AIzaSyBi39NLDs4zZjAZzoc4-4GwBi9S-t2qBws';
+var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY;
 
 async function sendAI(preset){
   var inp  = document.getElementById('ai-inp');
@@ -2699,98 +2698,92 @@ async function sendAI(preset){
   document.getElementById('ai-send').disabled = true;
 
   addAIMsg('user', msg);
-  var thinkEl = addAIMsg('bot', '...');
+  addAIMsg('bot', '...');
 
   aiHistory.push({ role:'user', content: msg });
 
   try{
-    var ctx    = buildContext();
+    var ctx = buildContext();
 
-    var msgs = aiHistory.slice(-2).map(function(m){
-      return { role: m.role, content: String(m.content).slice(0, 300) };
+    var systemPrompt = 'You are an AI assistant for Ops Hub, a restaurant management system. ' +
+      'Today is '+TODAY+'. Reply in English only. Be concise, use bullet points and emojis. ' +
+      'LIVE DATA: ' +
+      'Staff: '+S.staff.length+' total, '+S.staff.filter(function(m){return m.status==="Active";}).length+' active, '+S.staff.filter(function(m){return m.status==="On Leave";}).length+' on leave. ' +
+      'Sales this month: '+fsar(ctx.sales.thisMonth)+' vs last month: '+fsar(ctx.sales.lastMonth)+'. YTD: '+fsar(ctx.sales.ytd)+'. ' +
+      'Inventory: '+ctx.inventory.totalItems+' items, '+ctx.inventory.lowStock+' low stock. Stock value: '+fsar(ctx.inventory.stockValue)+'. ' +
+      'Health cards expired: '+ctx.health.expired+', expiring soon: '+ctx.health.expiringSoon+'. ' +
+      'Petty cash this month: '+fsar(ctx.pettyCash.thisMonth)+'. ' +
+      'Wastage this month: '+fsar(ctx.wastage.thisMonth)+' ('+ctx.wastage.count+' entries). ' +
+      'Pending invoices: '+fsar(ctx.invoices.pendingAmount)+', overdue: '+fsar(ctx.invoices.overdueAmount)+'. ' +
+      'Pending orders: '+ctx.pendingOrders+'. Reminders: '+ctx.reminders+'.';
+
+    // Build conversation for Gemini
+    var contents = [];
+    aiHistory.slice(-6).forEach(function(m){
+      contents.push({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: String(m.content).slice(0, 500) }]
+      });
     });
 
-    // Keep system prompt very short to avoid URL length limit in GAS
-    var sysPr = 'You are an assistant for a restaurant management system called Ops Hub. ' +
-      'Today is '+TODAY+'. ' +
-      'Reply in English only. Be concise. Use bullet points. ' +
-      'Current data: ' +
-      'Staff: '+S.staff.length+' total, '+S.staff.filter(function(m){return m.status==='Active';}).length+' active. ' +
-      'Sales this month: '+fsar(ctx.sales.thisMonth)+'. Last month: '+fsar(ctx.sales.lastMonth)+'. ' +
-      'Low stock items: '+ctx.inventory.lowStock+'. ' +
-      'Health cards expired: '+ctx.health.expired+'. ' +
-      'Pending invoices: '+fsar(ctx.invoices.pendingAmount)+'. ' +
-      'Wastage this month: '+fsar(ctx.wastage.thisMonth)+'.';
-
-    var bodyObj = {
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 400,
-      system: sysPr,
-      messages: msgs
+    var body = {
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: contents,
+      generationConfig: { maxOutputTokens: 500, temperature: 0.7 }
     };
 
-    var bodyStr = JSON.stringify(bodyObj);
-
-    var resp = await fetch(AI_PROXY_URL, {
+    var resp = await fetch(GEMINI_URL, {
       method: 'POST',
-      body: bodyStr,
-      redirect: 'follow'
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     });
 
-    var txt = await resp.text();
-    var data;
-    try { data = JSON.parse(txt); }
-    catch(e){ throw new Error('Parse error: ' + txt.slice(0,150)); }
-    if(data.error){ throw new Error(data.error.message || JSON.stringify(data.error)); }
-    var raw = data.content && data.content[0] && data.content[0].text;
-    if(!raw) throw new Error('No content: ' + JSON.stringify(data).slice(0,150));
+    var data = await resp.json();
+
+    if(!resp.ok){
+      var errMsg = (data.error && data.error.message) ? data.error.message : 'HTTP ' + resp.status;
+      throw new Error(errMsg);
+    }
+
+    var raw = data.candidates &&
+              data.candidates[0] &&
+              data.candidates[0].content &&
+              data.candidates[0].content.parts &&
+              data.candidates[0].content.parts[0] &&
+              data.candidates[0].content.parts[0].text;
+
+    if(!raw) throw new Error('No response from Gemini');
 
     // Parse ACTION blocks
     var actions = [];
     var displayText = raw.replace(/<ACTION>([\s\S]*?)<\/ACTION>/g, function(_, json){
-      try{
-        var act = JSON.parse(json.trim());
-        actions.push(act);
-      }catch(e){}
+      try{ actions.push(JSON.parse(json.trim())); }catch(e){}
       return '';
     });
 
     // Parse NAV blocks
     var navTarget = null;
     displayText = displayText.replace(/<NAV>([\s\S]*?)<\/NAV>/g, function(_, page){
-      navTarget = page.trim();
-      return '';
+      navTarget = page.trim(); return '';
     });
 
     displayText = displayText.trim();
-
     removeThinking();
     aiHistory.push({ role:'assistant', content: raw });
 
-    // Build action buttons for confirmable actions
     var actionBtns = [];
-    if(actions.length){
-      actions.forEach(function(act, i){
-        var label = aiActionLabel(act);
-        actionBtns.push({
-          label: '✅ ' + label,
-          cls: 'g',
-          fn: 'executeAIAction('+JSON.stringify(act)+')'
-        });
-      });
-    }
+    actions.forEach(function(act){
+      actionBtns.push({ label:'✅ '+aiActionLabel(act), cls:'g', fn:'executeAIAction('+JSON.stringify(act)+')' });
+    });
     if(navTarget){
-      actionBtns.push({
-        label: '→ Go to page',
-        fn: 'go("'+navTarget+'")'
-      });
+      actionBtns.push({ label:'→ Go to page', fn:'go("'+navTarget+'")' });
     }
 
     addAIMsg('bot', displayText, actionBtns.length ? actionBtns : null);
 
   }catch(e){
     removeThinking();
-    addAIMsg('bot', '❌ Connection error: '+e.message+'\n\nPlease check your internet connection and try again.');
+    addAIMsg('bot', '❌ Error: '+e.message);
   }
 
   aiThinking = false;
