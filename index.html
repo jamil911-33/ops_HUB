@@ -3048,19 +3048,20 @@ function startApp(demoMode){
 var WA_TS_KEY = 'ops_wa_ts_settings';
 
 function showTSAbsentWA(emp, date, status){
-  // Remove old modal if exists
   var old = document.getElementById('wa-ts-modal'); if(old) old.remove();
 
   var phone = (emp.phone||'').replace(/\D/g,'');
   var dateLabel = new Date(date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'short',year:'numeric'});
   var statusLabel = status==='absent' ? 'Absent' : 'Sick Leave';
   var statusEmoji = status==='absent' ? '❌' : '🤒';
-
-  // Build message
   var firstName = emp.name.split(' ')[0];
-  var ar = 'السلام عليكم '+firstName+' 👋\n\nتم تسجيل '+( status==='absent'?'غيابك':'إجازتك المرضية')+' ليوم\n📅 *'+dateLabel+'*\n\nإذا كان لديك سبب، يُرجى التواصل مع مديرك.\n\n_Ops Hub_';
+
+  var ar = 'السلام عليكم '+firstName+' 👋\n\nتم تسجيل '+(status==='absent'?'غيابك':'إجازتك المرضية')+' ليوم\n📅 *'+dateLabel+'*\n\nإذا كان لديك سبب، يُرجى التواصل مع مديرك.\n\n_Ops Hub_';
   var en = 'Hello '+firstName+' 👋\n\nYour '+statusLabel+' has been recorded for\n📅 *'+dateLabel+'*\n\nIf you have a reason, please contact your manager.\n\n_Ops Hub_';
   var msg = ar + '\n\n━━━━━━━━━━━━━\n\n' + en;
+
+  // Store message globally to avoid encoding issues
+  window._waTSMsg = msg;
 
   var modal = document.createElement('div');
   modal.id = 'wa-ts-modal';
@@ -3080,9 +3081,9 @@ function showTSAbsentWA(emp, date, status){
         '<label style="font-size:10px;color:#7d8590;font-family:monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">WhatsApp Number</label>' +
         '<input id="wa-ts-phone" type="tel" value="'+phone+'" placeholder="966501234567" style="width:100%;background:#0d1117;border:1px solid #3d444d;border-radius:8px;padding:9px 12px;color:#e6edf3;font-size:13px;font-family:monospace;outline:none;margin-bottom:12px;box-sizing:border-box" onfocus="this.style.borderColor=\'#25d366\'" onblur="this.style.borderColor=\'#3d444d\'">' +
         '<label style="font-size:10px;color:#7d8590;font-family:monospace;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Message Preview</label>' +
-        '<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:11px 13px;font-size:11.5px;color:#e6edf3;line-height:1.8;white-space:pre-wrap;max-height:180px;overflow-y:auto;font-family:monospace;margin-bottom:14px">'+msg+'</div>' +
+        '<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:11px 13px;font-size:11.5px;color:#e6edf3;line-height:1.8;white-space:pre-wrap;max-height:180px;overflow-y:auto;font-family:monospace;margin-bottom:14px">'+xe(msg)+'</div>' +
         '<div style="display:flex;gap:10px">' +
-          '<button onclick="sendTSWhatsApp(\''+encodeURIComponent(msg)+'\')" style="flex:1;padding:12px;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px"><span style="font-size:17px">💬</span> Open WhatsApp</button>' +
+          '<button onclick="sendTSWhatsApp()" style="flex:1;padding:12px;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px"><span style="font-size:17px">💬</span> Open WhatsApp</button>' +
           '<button onclick="document.getElementById(\'wa-ts-modal\').remove()" style="padding:12px 18px;background:#1c2128;color:#8b949e;border:1px solid #30363d;border-radius:10px;font-size:13px;cursor:pointer">Skip</button>' +
         '</div>' +
       '</div>' +
@@ -3091,13 +3092,14 @@ function showTSAbsentWA(emp, date, status){
   document.body.appendChild(modal);
 }
 
-function sendTSWhatsApp(encodedMsg){
+function sendTSWhatsApp(){
   var phone = document.getElementById('wa-ts-phone').value.replace(/\D/g,'');
   if(!phone||phone.length<9){ toast('Enter a valid phone number','warning'); return; }
-  var msg = decodeURIComponent(encodedMsg);
-  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
-  document.getElementById('wa-ts-modal').remove();
-  toast('WhatsApp opened ✅','success');
+  var msg = window._waTSMsg || '';
+  var url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg);
+  var m = document.getElementById('wa-ts-modal');
+  if(m) m.remove();
+  window.location.href = url;
 }
 </script>
 
