@@ -2444,17 +2444,27 @@ function bindPg(){
   if(tsa)tsa.onclick=function(){
     var eid=gv('ts-emp'),dt=document.getElementById('ts-date').value;
     var ci=document.getElementById('ts-in').value||null,co=document.getElementById('ts-out').value||null,note=gv('ts-note');
-    if(!eid){toast('Select employee','warning');return;}if(!dt){toast('Select date','warning');return;}
+    if(!eid){toast('Select employee','warning');return;}
+    if(!dt){toast('Select date','warning');return;}
+    // Capture status BEFORE ren() is called
+    var currentStatus = S.tsSt;
     var key=dt.slice(0,7);if(!S.tsAtt[eid])S.tsAtt[eid]={};if(!S.tsAtt[eid][key])S.tsAtt[eid][key]=[];
-    var lst=S.tsAtt[eid][key],rec={date:dt,ci:ci,co:co,st:S.tsSt,note:note},found=false;
+    var lst=S.tsAtt[eid][key],rec={date:dt,ci:ci,co:co,st:currentStatus,note:note},found=false;
     for(var i=0;i<lst.length;i++)if(lst[i].date===dt){lst[i]=rec;found=true;break;}
     if(!found)lst.push(rec);lst.sort(function(a,b){return a.date.localeCompare(b.date);});
-    saveTsAtt();ren();toast('Attendance saved','success');
-    // Show WhatsApp button if marked absent or sick
-    if(S.tsSt==='absent'||S.tsSt==='sick'){
-      var emp=null;for(var i=0;i<S.staff.length;i++)if(String(S.staff[i].id)===String(eid)){emp=S.staff[i];break;}
-      if(emp) showTSAbsentWA(emp, dt, S.tsSt);
+    saveTsAtt();
+    toast('Attendance saved','success');
+    // Show WhatsApp popup if absent or sick — BEFORE ren() destroys DOM
+    if(currentStatus==='absent'||currentStatus==='sick'){
+      var emp=null;
+      for(var i=0;i<S.staff.length;i++){
+        if(String(S.staff[i].id)===String(eid)){emp=S.staff[i];break;}
+      }
+      if(emp){
+        setTimeout(function(){ showTSAbsentWA(emp,dt,currentStatus); },300);
+      }
     }
+    ren();
   };
 
   var tsr=document.getElementById('ts-search');if(tsr)tsr.onclick=tsRunReport;
