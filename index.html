@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -9,9 +10,13 @@
 <!-- ══════════════════════════════════════════════════════════
      🔥 FIREBASE SDK
      ══════════════════════════════════════════════════════════ -->
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
@@ -55,6 +60,12 @@ nav button{display:flex;align-items:center;gap:9px;width:100%;padding:8px 14px;b
 nav button:hover{background:rgba(255,255,255,.03);color:var(--text2);border-left-color:var(--bd3)}
 nav button.on{background:linear-gradient(90deg,rgba(240,165,0,.1),transparent);color:var(--acc2);border-left-color:var(--acc);font-weight:600}
 nav button .ico{font-size:13px;width:18px;text-align:center;flex-shrink:0}
+/* ── COLLAPSIBLE NAV GROUPS ── */
+.ns{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;padding-right:14px;transition:color .15s}
+.ns:hover{color:var(--text2)}
+.ns .ns-arr{font-size:8px;transition:transform .2s;color:var(--text3);flex-shrink:0}
+.ns-items{overflow:hidden;transition:max-height .25s ease,opacity .2s ease;max-height:600px;opacity:1}
+.ns-items.collapsed{max-height:0;opacity:0}
 .nbadge{margin-left:auto;font-size:9px;padding:2px 6px;border-radius:20px;font-weight:700;min-width:16px;text-align:center;line-height:1.4}
 .nb-r{background:rgba(239,68,68,.2);color:var(--red);border:1px solid rgba(239,68,68,.3)}
 .nb-g{background:rgba(245,158,11,.18);color:var(--gold);border:1px solid rgba(245,158,11,.3)}
@@ -309,12 +320,14 @@ select.fi-s{cursor:pointer}
 }
 .menu-btn{display:none;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:4px 8px}
 </style>
+
 </head>
 <body>
 
 <!-- ══════════════════════════════════════════
      🔧 FIREBASE SETUP SCREEN
 ══════════════════════════════════════════ -->
+
 <div id="setup-screen" class="hidden">
   <div class="setup-card">
     <div style="font-size:36px;margin-bottom:12px">🔥</div>
@@ -324,51 +337,56 @@ select.fi-s{cursor:pointer}
       يجب ربطه بـ Firebase. اتبع الخطوات التالية مرة واحدة فقط:
     </div>
 
-    <div class="setup-step">
-      <strong>1.</strong> اذهب إلى <strong>console.firebase.google.com</strong> → أنشئ مشروعاً جديداً
-    </div>
-    <div class="setup-step">
-      <strong>2.</strong> من المشروع → <strong>Realtime Database</strong> → Create Database → Start in <strong>test mode</strong>
-    </div>
-    <div class="setup-step">
-      <strong>3.</strong> Project Settings ← ⚙️ → Add App → Web → انسخ <strong>apiKey</strong> و <strong>databaseURL</strong>
-    </div>
-    <div class="setup-step">
-      <strong>4.</strong> الصق البيانات أدناه واضغط <strong>Connect</strong>
-    </div>
+```
+<div class="setup-step">
+  <strong>1.</strong> اذهب إلى <strong>console.firebase.google.com</strong> → أنشئ مشروعاً جديداً
+</div>
+<div class="setup-step">
+  <strong>2.</strong> من المشروع → <strong>Realtime Database</strong> → Create Database → Start in <strong>test mode</strong>
+</div>
+<div class="setup-step">
+  <strong>3.</strong> Project Settings ← ⚙️ → Add App → Web → انسخ <strong>apiKey</strong> و <strong>databaseURL</strong>
+</div>
+<div class="setup-step">
+  <strong>4.</strong> الصق البيانات أدناه واضغط <strong>Connect</strong>
+</div>
 
-    <div style="margin-top:20px">
-      <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">API Key</label>
-      <input class="setup-input" id="cfg-apikey" placeholder="AIzaSy...">
-      
-      <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Auth Domain</label>
-      <input class="setup-input" id="cfg-authdomain" placeholder="your-app.firebaseapp.com">
-      
-      <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Database URL</label>
-      <input class="setup-input" id="cfg-dburl" placeholder="https://your-app-default-rtdb.firebaseio.com">
-      
-      <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Project ID</label>
-      <input class="setup-input" id="cfg-projectid" placeholder="your-app-id">
-    </div>
+<div style="margin-top:20px">
+  <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">API Key</label>
+  <input class="setup-input" id="cfg-apikey" placeholder="AIzaSy...">
+  
+  <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Auth Domain</label>
+  <input class="setup-input" id="cfg-authdomain" placeholder="your-app.firebaseapp.com">
+  
+  <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Database URL</label>
+  <input class="setup-input" id="cfg-dburl" placeholder="https://your-app-default-rtdb.firebaseio.com">
+  
+  <label style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Project ID</label>
+  <input class="setup-input" id="cfg-projectid" placeholder="your-app-id">
+</div>
 
-    <div class="setup-err" id="setup-err">❌ خطأ في الاتصال. تحقق من البيانات وحاول مجدداً.</div>
+<div class="setup-err" id="setup-err">❌ خطأ في الاتصال. تحقق من البيانات وحاول مجدداً.</div>
 
-    <div style="display:flex;gap:10px;margin-top:4px">
-      <button class="btn" id="btn-connect" style="flex:1;justify-content:center">🔗 Connect to Firebase</button>
-      <button class="btn s" id="btn-demo" style="flex:1;justify-content:center">⚡ تجربة بدون Firebase</button>
-    </div>
-    <div class="setup-note" style="margin-top:10px;text-align:center">
-      يتم حفظ الإعدادات في المتصفح للاستخدام التلقائي مستقبلاً
-    </div>
+<div style="display:flex;gap:10px;margin-top:4px">
+  <button class="btn" id="btn-connect" style="flex:1;justify-content:center">🔗 Connect to Firebase</button>
+  <button class="btn s" id="btn-demo" style="flex:1;justify-content:center">⚡ تجربة بدون Firebase</button>
+</div>
+<div class="setup-note" style="margin-top:10px;text-align:center">
+  يتم حفظ الإعدادات في المتصفح للاستخدام التلقائي مستقبلاً
+</div>
+```
+
   </div>
 </div>
 
 <!-- ══════════════════════════════════════════
      🏠 MAIN APP
 ══════════════════════════════════════════ -->
+
 <div id="app" style="display:none">
 
 <!-- SIDEBAR -->
+
 <div id="sb">
   <div class="logo">
     <div class="logo-mark">⚡</div>
@@ -379,40 +397,48 @@ select.fi-s{cursor:pointer}
     <div class="live-dot" id="live-dot" title="متصل بالإنترنت"></div>
   </div>
   <nav id="nav">
-    <div class="ns">Inventory</div>
-    <button data-p="inv-dash" class="on"><span class="ico">📊</span>Dashboard</button>
-    <button data-p="items"><span class="ico">📋</span>Items
-      <span class="nbadge nb-g" id="badge-alerts" style="display:none">0</span>
-    </button>
-    <button data-p="moves"><span class="ico">🔄</span>Receive / Issue</button>
-    <button data-p="orders"><span class="ico">🛒</span>Purchase Orders
-      <span class="nbadge nb-g" id="badge-orders" style="display:none">0</span>
-    </button>
-    <button data-p="alerts"><span class="ico">🚨</span>Low Stock
-      <span class="nbadge nb-r" id="badge-low" style="display:none">0</span>
-    </button>
-    <button data-p="report"><span class="ico">📅</span>Monthly Report</button>
-    <button data-p="import"><span class="ico">📂</span>Import Data</button>
+    <div class="ns" onclick="toggleNav('inv')">Inventory <span class="ns-arr" id="arr-inv">▼</span></div>
+    <div class="ns-items" id="ns-inv">
+      <button data-p="inv-dash" class="on"><span class="ico">📊</span>Dashboard</button>
+      <button data-p="items"><span class="ico">📋</span>Items
+        <span class="nbadge nb-g" id="badge-alerts" style="display:none">0</span>
+      </button>
+      <button data-p="moves"><span class="ico">🔄</span>Receive / Issue</button>
+      <button data-p="orders"><span class="ico">🛒</span>Purchase Orders
+        <span class="nbadge nb-g" id="badge-orders" style="display:none">0</span>
+      </button>
+      <button data-p="alerts"><span class="ico">🚨</span>Low Stock
+        <span class="nbadge nb-r" id="badge-low" style="display:none">0</span>
+      </button>
+      <button data-p="report"><span class="ico">📅</span>Monthly Report</button>
+      <button data-p="import"><span class="ico">📂</span>Import Data</button>
+    </div>
 
-    <div class="ns">Operations</div>
-    <button data-p="pullout"><span class="ico">📤</span>Pull-Out Log</button>
-    <button data-p="wastage"><span class="ico">🗑</span>Wastage</button>
-    <button data-p="wares"><span class="ico">🍽</span>Small Wares</button>
+```
+<div class="ns" onclick="toggleNav('ops')">Operations <span class="ns-arr" id="arr-ops">▼</span></div>
+<div class="ns-items" id="ns-ops">
+  <button data-p="pullout"><span class="ico">📤</span>Pull-Out Log</button>
+  <button data-p="wastage"><span class="ico">🗑</span>Wastage</button>
+  <button data-p="wares"><span class="ico">🍽</span>Small Wares</button>
+</div>
 
-    <div class="ns">Team</div>
-    <button data-p="staff"><span class="ico">👥</span>Staff</button>
-    <button data-p="sched"><span class="ico">🗓</span>Schedule</button>
-    <button data-p="ts"><span class="ico">⏱</span>Time Sheet</button>
-    <button data-p="health"><span class="ico">💳</span>Health Cards</button>
-    <button data-p="sales"><span class="ico">💰</span>Sales</button>
-    <button data-p="pc"><span class="ico">🧾</span>Petty Cash</button>
-    <button data-p="inv"><span class="ico">📄</span>Invoices</button>
+<div class="ns" onclick="toggleNav('team')">Team <span class="ns-arr" id="arr-team">▼</span></div>
+<div class="ns-items" id="ns-team">
+  <button data-p="staff"><span class="ico">👥</span>Staff</button>
+  <button data-p="sched"><span class="ico">🗓</span>Schedule</button>
+  <button data-p="ts"><span class="ico">⏱</span>Time Sheet</button>
+  <button data-p="health"><span class="ico">💳</span>Health Cards</button>
+  <button data-p="sales"><span class="ico">💰</span>Sales</button>
+  <button data-p="pc"><span class="ico">🧾</span>Petty Cash</button>
+  <button data-p="inv"><span class="ico">📄</span>Invoices</button>
+</div>
 
-    <div class="ns">Mobile</div>
-    <button data-p="qr-checkin"><span class="ico">📱</span>QR Check-In</button>
+<div class="ns" onclick="toggleNav('mobile')">Mobile <span class="ns-arr" id="arr-mobile">▼</span></div>
+<div class="ns-items" id="ns-mobile">
+  <button data-p="qr-checkin"><span class="ico">📱</span>QR Check-In</button>
+</div>
+```
 
-    <div class="ns">Tools</div>
-    <button onclick="window.open('checklists.html','_blank')"><span class="ico">✅</span>Checklists<span class="nbadge nb-g" style="background:rgba(240,165,0,.15);color:var(--acc);border-color:rgba(240,165,0,.3)">NEW</span></button>
   </nav>
   <div class="sb-foot">
     <div class="sb-clock" id="clock">--:--:--</div>
@@ -430,6 +456,7 @@ select.fi-s{cursor:pointer}
 </div>
 
 <!-- MAIN -->
+
 <div id="main">
   <div id="topbar">
     <button class="menu-btn" id="menu-toggle">☰</button>
@@ -461,12 +488,14 @@ select.fi-s{cursor:pointer}
 </div>
 
 <!-- TBL MODAL -->
+
 <div id="mo"><div id="mb">
   <div class="mh"><span class="mh-t" id="mtit"></span><button class="mx" id="mcl">×</button></div>
   <div id="mbod"></div>
 </div></div>
 
 <!-- DEL BAR -->
+
 <div id="del-bar">
   <span style="font-size:12px;font-family:var(--mono)">Delete this record?</span>
   <button id="del-yes" class="btn d sm">Delete</button>
@@ -474,6 +503,7 @@ select.fi-s{cursor:pointer}
 </div>
 
 <!-- INV ITEM MODAL -->
+
 <div class="overlay hide" id="item-modal">
   <div class="omodal">
     <div class="oh"><h3 id="item-modal-t">Add Product</h3><button class="mx" id="close-item-modal">×</button></div>
@@ -503,6 +533,7 @@ select.fi-s{cursor:pointer}
 </div>
 
 <!-- ORDER MODAL -->
+
 <div class="overlay hide" id="order-modal">
   <div class="omodal wide">
     <div class="oh"><h3>New Purchase Order</h3><button class="mx" id="close-order-modal">×</button></div>
@@ -544,6 +575,7 @@ select.fi-s{cursor:pointer}
 </div>
 
 <!-- RECV CONFIRM MODAL -->
+
 <div class="overlay hide" id="recv-modal">
   <div class="omodal" style="width:400px">
     <div class="oh"><h3 id="recv-modal-t">Confirm Receipt</h3><button class="mx" id="close-recv-modal">×</button></div>
@@ -568,11 +600,13 @@ select.fi-s{cursor:pointer}
 ══════════════════════════════════════════════════════════ -->
 
 <!-- Floating Button -->
+
 <button id="ai-fab" onclick="toggleAI()" title="AI Assistant">
   <span id="ai-fab-ico">✦</span>
 </button>
 
 <!-- Chat Panel -->
+
 <div id="ai-panel" class="ai-hidden">
   <div id="ai-header">
     <div style="display:flex;align-items:center;gap:10px">
@@ -592,6 +626,7 @@ select.fi-s{cursor:pointer}
   <div id="ai-msgs"></div>
 
   <!-- Quick actions -->
+
   <div id="ai-quick">
     <button class="ai-chip" data-q="What are this month's sales vs last month?">📊 Sales</button>
     <button class="ai-chip" data-q="Who is absent today?">👥 Absences</button>
@@ -1142,6 +1177,7 @@ var openOrdsState = {};
 function go(p){
   S.p=p; S.q='';
   document.querySelectorAll('#nav button').forEach(function(b){b.className=b.dataset.p===p?'on':'';});
+  expandActiveGroup(p);
   updTop(); ren();
 }
 
@@ -2906,6 +2942,54 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 });
+// ── COLLAPSIBLE SIDEBAR ──────────────────────────────────────────────────
+var _navOpen = {inv:true, ops:true, team:true, mobile:true};
+
+function toggleNav(key){
+  _navOpen[key] = !_navOpen[key];
+  var el  = document.getElementById('ns-'+key);
+  var arr = document.getElementById('arr-'+key);
+  if(el)  el.classList.toggle('collapsed', !_navOpen[key]);
+  if(arr) arr.style.transform = _navOpen[key] ? '' : 'rotate(-90deg)';
+  // Persist state
+  try{ localStorage.setItem('ops_nav_open', JSON.stringify(_navOpen)); }catch(e){}
+}
+
+function loadNavState(){
+  try{
+    var saved = JSON.parse(localStorage.getItem('ops_nav_open'));
+    if(saved) _navOpen = Object.assign(_navOpen, saved);
+  }catch(e){}
+  // Apply initial state
+  Object.keys(_navOpen).forEach(function(key){
+    var el  = document.getElementById('ns-'+key);
+    var arr = document.getElementById('arr-'+key);
+    if(!_navOpen[key]){
+      if(el)  el.classList.add('collapsed');
+      if(arr) arr.style.transform = 'rotate(-90deg)';
+    }
+  });
+}
+
+// Auto-expand the group containing the active page
+function expandActiveGroup(page){
+  var groups = {
+    inv: ['inv-dash','items','moves','orders','alerts','report','import'],
+    ops: ['pullout','wastage','wares'],
+    team: ['staff','sched','ts','health','sales','pc','inv'],
+    mobile: ['qr-checkin']
+  };
+  Object.keys(groups).forEach(function(key){
+    if(groups[key].indexOf(page) >= 0 && !_navOpen[key]){
+      _navOpen[key] = true;
+      var el  = document.getElementById('ns-'+key);
+      var arr = document.getElementById('arr-'+key);
+      if(el)  el.classList.remove('collapsed');
+      if(arr) arr.style.transform = '';
+    }
+  });
+}
+
 window.onload = function(){
   // Clock
   function updateClock(){
@@ -3002,6 +3086,7 @@ window.onload = function(){
 function startApp(demoMode){
   document.getElementById('setup-screen').classList.add('hidden');
   document.getElementById('app').style.display='flex';
+  loadNavState();
 
   if(!demoMode){
     // Pre-load schedule BEFORE first render so getTodayShift() works immediately
@@ -3081,5 +3166,6 @@ function sendTSWhatsApp(){
   window.location.href = url;
 }
 </script>
+
 </body>
 </html>
