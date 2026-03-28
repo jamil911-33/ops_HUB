@@ -2730,19 +2730,20 @@ async function sendAI(preset){
     };
 
     var bodyStr = JSON.stringify(bodyObj);
-    var url = AI_PROXY_URL + '?body=' + encodeURIComponent(bodyStr);
 
-    var resp = await fetch(url, { method: 'GET', redirect: 'follow' });
-    var txt  = await resp.text();
+    var resp = await fetch(AI_PROXY_URL, {
+      method: 'POST',
+      body: bodyStr,
+      redirect: 'follow'
+    });
 
+    var txt = await resp.text();
     var data;
     try { data = JSON.parse(txt); }
-    catch(e){ throw new Error('Parse error: ' + txt.slice(0, 150)); }
-
+    catch(e){ throw new Error('Parse error: ' + txt.slice(0,150)); }
     if(data.error){ throw new Error(data.error.message || JSON.stringify(data.error)); }
-
     var raw = data.content && data.content[0] && data.content[0].text;
-    if(!raw) throw new Error('No content in response: ' + JSON.stringify(data).slice(0,150));
+    if(!raw) throw new Error('No content: ' + JSON.stringify(data).slice(0,150));
 
     // Parse ACTION blocks
     var actions = [];
