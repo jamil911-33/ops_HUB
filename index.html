@@ -2705,16 +2705,27 @@ async function sendAI(preset){
 
   try{
     var ctx    = buildContext();
-    var sysPr  = buildSystemPrompt(ctx);
 
-    var msgs = aiHistory.slice(-4).map(function(m){
-      return { role: m.role, content: String(m.content).slice(0, 400) };
+    var msgs = aiHistory.slice(-2).map(function(m){
+      return { role: m.role, content: String(m.content).slice(0, 300) };
     });
+
+    // Keep system prompt very short to avoid URL length limit in GAS
+    var sysPr = 'You are an assistant for a restaurant management system called Ops Hub. ' +
+      'Today is '+TODAY+'. ' +
+      'Reply in English only. Be concise. Use bullet points. ' +
+      'Current data: ' +
+      'Staff: '+S.staff.length+' total, '+S.staff.filter(function(m){return m.status==='Active';}).length+' active. ' +
+      'Sales this month: '+fsar(ctx.sales.thisMonth)+'. Last month: '+fsar(ctx.sales.lastMonth)+'. ' +
+      'Low stock items: '+ctx.inventory.lowStock+'. ' +
+      'Health cards expired: '+ctx.health.expired+'. ' +
+      'Pending invoices: '+fsar(ctx.invoices.pendingAmount)+'. ' +
+      'Wastage this month: '+fsar(ctx.wastage.thisMonth)+'.';
 
     var bodyObj = {
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 600,
-      system: sysPr.slice(0, 1200),
+      max_tokens: 400,
+      system: sysPr,
       messages: msgs
     };
 
