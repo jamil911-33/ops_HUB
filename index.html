@@ -896,6 +896,10 @@ function loadSavedConfig(){
 
 function initFirebase(config){
   try{
+    if(typeof firebase === 'undefined'){
+      console.error('Firebase SDK not loaded — check CDN connection');
+      return false;
+    }
     if(!firebase.apps.length){
       firebase.initializeApp(config);
     }
@@ -907,7 +911,7 @@ function initFirebase(config){
     return true;
   }catch(e){
     console.error('Firebase init failed:', e);
-    return true;
+    return false;
   }
 }
 
@@ -1606,30 +1610,52 @@ var clSaveTmr=null;
 function clSave(){
   clearTimeout(clSaveTmr);
   clSaveTmr=setTimeout(function(){
-    var meta={branch:(document.getElementById('cl-branch')||{}).value||'MOA',modName:(document.getElementById('cl-mod-name')||{}).value||'',periodStart:(document.getElementById('cl-period-start')||{}).value||''};
-    var payload={state:clST,meta:meta,updatedAt:Date.now()};
-    if(db){
-      var branch=meta.branch.toUpperCase().replace(/[.#$/\[\]]/g,'_');
-      db.ref('ops_checklists/'+branch).set(payload).then(function(){
-        var el=document.getElementById('cl-fb-status');if(el){el.innerHTML='⚡ Saved';el.style.color='var(--grn)';setTimeout(function(){el.innerHTML='⚡ Live';},1500);}
-      }).catch(function(){});
-    }
-    try{localStorage.setItem('cl_st_v2',JSON.stringify(clST));}catch(e){}
+    try{
+      var meta={
+        branch:(document.getElementById('cl-branch')||{}).value||'MOA',
+        modName:(document.getElementById('cl-mod-name')||{}).value||'',
+        periodStart:(document.getElementById('cl-period-start')||{}).value||''
+      };
+      var payload={state:clST,meta:meta,updatedAt:Date.now()};
+      if(db){
+        var branch=meta.branch.toUpperCase().replace(/[.#$/\[\]]/g,'_');
+        db.ref('ops_checklists/'+branch).set(payload).then(function(){
+          var el=document.getElementById('cl-fb-status');
+          if(el){el.innerHTML='⚡ Saved';el.style.color='var(--grn)';setTimeout(function(){el.innerHTML='⚡ Live';},1500);}
+        }).catch(function(e){console.warn('CL save error:',e);});
+      }
+      localStorage.setItem('cl_st_v2',JSON.stringify(clST));
+    }catch(e){console.warn('clSave error:',e);}
   },700);
 }
 
 function clInitFBSync(){
-  if(!db)return;
-  if(clFbRef)clFbRef.off();
-  var branch=((document.getElementById('cl-branch')||{}).value||'MOA').toUpperCase().replace(/[.#$/\[\]]/g,'_');
-  clFbRef=db.ref('ops_checklists/'+branch);
-  clFbRef.on('value',function(snap){
-    var d=snap.val();
-    if(d&&d.state){clST=d.state;if(clRole&&document.getElementById('cl-wrap'))clRenderSec(clSec);}
-    var el=document.getElementById('cl-fb-status');if(el){el.innerHTML='⚡ Live';el.style.color='var(--grn)';}
-  },function(){
-    var el=document.getElementById('cl-fb-status');if(el){el.innerHTML='⚠ Offline';el.style.color='var(--red)';}
-  });
+  // Wait for db if not ready yet
+  if(!db){
+    var el=document.getElementById('cl-fb-status');
+    if(el){el.innerHTML='⏳ Connecting...';el.style.color='var(--gold)';}
+    setTimeout(clInitFBSync,800);
+    return;
+  }
+  try{
+    if(clFbRef)clFbRef.off();
+    var branch=((document.getElementById('cl-branch')||{}).value||'MOA').toUpperCase().replace(/[.#$/\[\]]/g,'_');
+    clFbRef=db.ref('ops_checklists/'+branch);
+    clFbRef.on('value',function(snap){
+      var d=snap.val();
+      if(d&&d.state){
+        clST=d.state;
+        if(clRole&&document.getElementById('cl-wrap'))clRenderSec(clSec);
+      }
+      var el=document.getElementById('cl-fb-status');if(el){el.innerHTML='⚡ Live';el.style.color='var(--grn)';}
+    },function(err){
+      console.warn('CL FB error:',err);
+      var el=document.getElementById('cl-fb-status');if(el){el.innerHTML='⚠ Offline';el.style.color='var(--red)';}
+    });
+  }catch(e){
+    console.warn('clInitFBSync error:',e);
+    var el=document.getElementById('cl-fb-status');if(el){el.innerHTML='⚠ Error';el.style.color='var(--red)';}
+  }
 }
 
 // ── AUTH ──
@@ -1864,17 +1890,27 @@ function clRenderBartender(cl){
   table.innerHTML='<thead><tr><th style="text-align:left;min-width:200px">Item</th><th>Shelf Life</th><th>UOM</th><th style="background:rgba(88,166,255,.12);color:#60a5fa">OH</th><th style="background:rgba(63,185,80,.1);color:var(--grn)">PAR</th><th style="background:rgba(240,165,0,.1);color:var(--gold)">TO PREP</th></tr></thead>';
   var tbody=document.createElement('tbody');
   var addSect=function(sName,items){
-    var cr=document.createElement('tr');cr.innerHTML='<td colspan="6" class="cat-row">'+sName+'</td>';tbody.appendChild(cr);
+    var cr=document.createElement('tr');cr.innerHTML='<td colspan="6" class="cat-row">'+clXe(sName)+'</td>';tbody.appendChild(cr);
     items.forEach(function(item,ri){
       var bd=bt[item]||{sl:'',uom:'',prep:{}},pd=(bd.prep&&bd.prep[di])||{oh:'',par:'',prep:''};
       var tr=document.createElement('tr');tr.style.background=ri%2===0?'var(--bg2)':'var(--bg3)';
-      var esc=item.replace(/'/g,"\\'");
-      tr.innerHTML='<td style="text-align:left;font-weight:600;font-size:11px;padding:5px 10px;color:var(--text)">'+clXe(item)+'</td>'
-        +'<td><input class="cl-bt-inp" type="text" value="'+clXe(bd.sl||'')+'" placeholder="–" style="width:52px" oninput="clSetBT(\''+esc+'\',\'sl\',this.value)"></td>'
-        +'<td><input class="cl-bt-inp" type="text" value="'+clXe(bd.uom||'')+'" placeholder="–" style="width:38px;font-weight:700" oninput="clSetBT(\''+esc+'\',\'uom\',this.value)"></td>'
-        +'<td style="background:rgba(88,166,255,.06)"><input class="cl-bt-inp" type="number" value="'+pd.oh+'" placeholder="0" style="width:52px;color:#60a5fa" oninput="clSetBTday(\''+esc+'\','+di+',\'oh\',this.value)"></td>'
-        +'<td style="background:rgba(63,185,80,.05)"><input class="cl-bt-inp" type="number" value="'+pd.par+'" placeholder="0" style="width:52px;color:var(--grn)" oninput="clSetBTday(\''+esc+'\','+di+',\'par\',this.value)"></td>'
-        +'<td style="background:rgba(240,165,0,.05)"><input class="cl-bt-inp" type="number" value="'+pd.prep+'" placeholder="0" style="width:52px;color:var(--gold)" oninput="clSetBTday(\''+esc+'\','+di+',\'prep\',this.value)"></td>';
+      // Build cells via DOM to avoid quote escaping issues
+      var nameTd=document.createElement('td');nameTd.style.cssText='text-align:left;font-weight:600;font-size:11px;padding:5px 10px;color:var(--text)';nameTd.textContent=item;tr.appendChild(nameTd);
+      [['sl',bd.sl||'','text','width:52px'],['uom',bd.uom||'','text','width:38px;font-weight:700']].forEach(function(f){
+        var td=document.createElement('td');
+        var inp=document.createElement('input');inp.className='cl-bt-inp';inp.type=f[2];inp.value=f[1];inp.placeholder='–';inp.style.cssText=f[3];
+        inp.dataset.btitem=item;inp.dataset.btfield=f[0];
+        inp.oninput=function(){clSetBT(this.dataset.btitem,this.dataset.btfield,this.value);};
+        td.appendChild(inp);tr.appendChild(td);
+      });
+      var dayFields=[['oh',pd.oh,'rgba(88,166,255,.06)','#60a5fa'],['par',pd.par,'rgba(63,185,80,.05)','var(--grn)'],['prep',pd.prep,'rgba(240,165,0,.05)','var(--gold)']];
+      dayFields.forEach(function(f){
+        var td=document.createElement('td');td.style.background=f[2];
+        var inp=document.createElement('input');inp.className='cl-bt-inp';inp.type='number';inp.value=f[1];inp.placeholder='0';inp.style.cssText='width:52px;color:'+f[3];
+        inp.dataset.btitem=item;inp.dataset.btday=di;inp.dataset.btfield=f[0];
+        inp.oninput=function(){clSetBTday(this.dataset.btitem,parseInt(this.dataset.btday),this.dataset.btfield,this.value);};
+        td.appendChild(inp);tr.appendChild(td);
+      });
       tbody.appendChild(tr);
     });
   };
@@ -1931,7 +1967,6 @@ function clRenderTempLog(wrap,fid,title,target,rows,accentColor){
 
   var scroll=document.createElement('div');scroll.className='cl-cf-scroll';
   var table=document.createElement('table');table.className='cl-cf-tbl';
-  // Min-width: 150 (label) + 7 × 100 (days) = 850
   table.style.minWidth='850px';
 
   // Header row
@@ -1942,34 +1977,40 @@ function clRenderTempLog(wrap,fid,title,target,rows,accentColor){
 
   var tbody=document.createElement('tbody');
 
+  // Helper: build an AM/PM input cell via DOM (avoids all quote-escaping issues)
+  function makeTempCell(rowKey,di,amVal,pmVal){
+    var td=document.createElement('td');td.style.padding='3px 4px';
+    var wrap2=document.createElement('div');wrap2.style.cssText='display:flex;gap:3px;align-items:center;justify-content:center';
+    ['am','pm'].forEach(function(field,fi){
+      var inp=document.createElement('input');
+      inp.className='cl-cf-inp '+(field==='am'?'am':'pm');
+      inp.type='text';inp.value=fi===0?amVal:pmVal;inp.placeholder=field.toUpperCase();
+      inp.maxLength=6;inp.style.width='42px';inp.title=(field==='am'?'AM':'PM')+' Temperature';
+      inp.dataset.tlfid=fid;inp.dataset.tlrow=rowKey;inp.dataset.tldi=di;inp.dataset.tlfield=field;
+      inp.oninput=function(){clSetTempCell(this.dataset.tlfid,this.dataset.tlrow,parseInt(this.dataset.tldi),this.dataset.tlfield,this.value);};
+      wrap2.appendChild(inp);
+      if(fi===0){var sep=document.createElement('span');sep.style.cssText='color:var(--bd2);font-size:10px';sep.textContent='/';wrap2.appendChild(sep);}
+    });
+    td.appendChild(wrap2);return td;
+  }
+
   // Equipment rows
   rows.forEach(function(row,ri){
     var tr=document.createElement('tr');tr.style.background=ri%2===0?'var(--bg2)':'var(--bg3)';
-    var cells='<td class="row-label">'+clXe(row)+'</td>';
+    var labelTd=document.createElement('td');labelTd.className='row-label';labelTd.textContent=row;tr.appendChild(labelTd);
     clWeekDates.forEach(function(_,di){
-      var v=fst[row][di];
-      cells+='<td style="padding:3px 4px"><div style="display:flex;gap:3px;align-items:center;justify-content:center">'
-        +'<input class="cl-cf-inp am" type="text" value="'+clXe(v.am)+'" placeholder="AM" maxlength="6" style="width:42px" title="AM Temperature" oninput="clSetTempCell(\''+fid+'\',\''+row.replace(/'/g,"\\'")+'\','+di+',\'am\',this.value)">'
-        +'<span style="color:var(--bd2);font-size:10px">/</span>'
-        +'<input class="cl-cf-inp pm" type="text" value="'+clXe(v.pm)+'" placeholder="PM" maxlength="6" style="width:42px" title="PM Temperature" oninput="clSetTempCell(\''+fid+'\',\''+row.replace(/'/g,"\\'")+'\','+di+',\'pm\',this.value)">'
-        +'</div></td>';
+      var v=fst[row][di];tr.appendChild(makeTempCell(row,di,v.am,v.pm));
     });
-    tr.innerHTML=cells;tbody.appendChild(tr);
+    tbody.appendChild(tr);
   });
 
   // Checked by row
-  var ckTr=document.createElement('tr');
-  ckTr.style.background='rgba(88,166,255,.05)';
-  var ckCells='<td class="row-label" style="color:var(--text3);font-style:italic">Checked by</td>';
+  var ckTr=document.createElement('tr');ckTr.style.background='rgba(88,166,255,.05)';
+  var ckLabel=document.createElement('td');ckLabel.className='row-label';ckLabel.style.cssText='color:var(--text3);font-style:italic';ckLabel.textContent='Checked by';ckTr.appendChild(ckLabel);
   clWeekDates.forEach(function(_,di){
-    var v=fst['_checked'][di];
-    ckCells+='<td style="padding:3px 4px"><div style="display:flex;gap:3px;align-items:center;justify-content:center">'
-      +'<input class="cl-cf-inp am" type="text" value="'+clXe(v.am||'')+'" placeholder="AM" style="width:42px;font-size:11px" oninput="clSetTempCell(\''+fid+'\',\'_checked\','+di+',\'am\',this.value)">'
-      +'<span style="color:var(--bd2);font-size:10px">/</span>'
-      +'<input class="cl-cf-inp pm" type="text" value="'+clXe(v.pm||'')+'" placeholder="PM" style="width:42px;font-size:11px" oninput="clSetTempCell(\''+fid+'\',\'_checked\','+di+',\'pm\',this.value)">'
-      +'</div></td>';
+    var v=fst['_checked'][di];ckTr.appendChild(makeTempCell('_checked',di,v.am||'',v.pm||''));
   });
-  ckTr.innerHTML=ckCells;tbody.appendChild(ckTr);
+  tbody.appendChild(ckTr);
 
   table.appendChild(tbody);scroll.appendChild(table);card.appendChild(scroll);
   // Legend
@@ -2009,22 +2050,33 @@ function clRenderCoolingLog(wrap){
   var tbody=document.createElement('tbody');
   items.forEach(function(item,ri){
     if(!fst[_clCoolDay][item])fst[_clCoolDay][item]={st:'',t0:'',t1:'',t2:'',t4:'',tf:''};
-    var v=fst[_clCoolDay][item],fin=parseFloat(v.tf),pass=v.tf&&!isNaN(fin)?(fin<=5?'✅':'❌'):'';
+    var v=fst[_clCoolDay][item];
+    var fin=parseFloat(v.tf),pass=v.tf&&!isNaN(fin)?(fin<=5?'✅':'❌'):'';
     var tr=document.createElement('tr');tr.style.background=ri%2===0?'var(--bg2)':'var(--bg3)';
-    var esc=item.replace(/'/g,"\\'");
-    tr.innerHTML='<td style="font-weight:600;font-size:11px;padding:5px 10px;text-align:left;color:var(--text)">'+clXe(item)+'</td>'
-      +'<td><input class="cl-cf-inp" type="text" value="'+clXe(v.st)+'" placeholder="11:00" style="width:56px" oninput="clSetCooling('+_clCoolDay+',\''+esc+'\',\'st\',this.value)"></td>'
-      +'<td><input class="cl-cf-inp" type="text" value="'+clXe(v.t0)+'" placeholder="°C" style="width:46px;color:var(--red)" oninput="clSetCooling('+_clCoolDay+',\''+esc+'\',\'t0\',this.value)"></td>'
-      +'<td><input class="cl-cf-inp" type="text" value="'+clXe(v.t1)+'" placeholder="°C" style="width:46px;color:var(--gold)" oninput="clSetCooling('+_clCoolDay+',\''+esc+'\',\'t1\',this.value)"></td>'
-      +'<td><input class="cl-cf-inp" type="text" value="'+clXe(v.t2)+'" placeholder="°C" style="width:46px;color:var(--gold)" oninput="clSetCooling('+_clCoolDay+',\''+esc+'\',\'t2\',this.value)"></td>'
-      +'<td><input class="cl-cf-inp" type="text" value="'+clXe(v.t4)+'" placeholder="°C" style="width:46px;color:var(--grn)" oninput="clSetCooling('+_clCoolDay+',\''+esc+'\',\'t4\',this.value)"></td>'
-      +'<td><input class="cl-cf-inp" type="text" value="'+clXe(v.tf)+'" placeholder="°C" style="width:46px;color:var(--grn);font-weight:700" oninput="clSetCooling('+_clCoolDay+',\''+esc+'\',\'tf\',this.value)"></td>'
-      +'<td style="text-align:center;font-size:14px">'+pass+'</td>';
+    // Name cell
+    var nameTd=document.createElement('td');nameTd.style.cssText='font-weight:600;font-size:11px;padding:5px 10px;text-align:left;color:var(--text)';nameTd.textContent=item;tr.appendChild(nameTd);
+    // Input cells
+    var fields=[['st',v.st,'11:00','width:56px',''],['t0',v.t0,'°C','width:46px','color:var(--red)'],['t1',v.t1,'°C','width:46px','color:var(--gold)'],['t2',v.t2,'°C','width:46px','color:var(--gold)'],['t4',v.t4,'°C','width:46px','color:var(--grn)'],['tf',v.tf,'°C','width:46px;font-weight:700','color:var(--grn)']];
+    fields.forEach(function(f){
+      var td=document.createElement('td');
+      var inp=document.createElement('input');inp.className='cl-cf-inp';inp.type='text';inp.value=f[1];inp.placeholder=f[2];inp.style.cssText=f[3]+(f[4]?';'+f[4]:'');
+      inp.dataset.clcitem=item;inp.dataset.clcfield=f[0];inp.dataset.clcdi=_clCoolDay;
+      inp.oninput=function(){
+        var updated=clSetCooling(parseInt(this.dataset.clcdi),this.dataset.clcitem,this.dataset.clcfield,this.value);
+        // Update pass cell without full re-render
+        var passCell=this.closest('tr').lastElementChild;
+        var newFin=parseFloat(this.dataset.clcfield==='tf'?this.value:(fst[_clCoolDay][this.dataset.clcitem]||{}).tf||'');
+        passCell.textContent=this.dataset.clcfield==='tf'&&this.value?(!isNaN(newFin)?(newFin<=5?'✅':'❌'):''):'';
+      };
+      td.appendChild(inp);tr.appendChild(td);
+    });
+    // Pass cell
+    var passTd=document.createElement('td');passTd.style.cssText='text-align:center;font-size:14px';passTd.textContent=pass;tr.appendChild(passTd);
     tbody.appendChild(tr);
   });
   table.appendChild(tbody);scroll.appendChild(table);card.appendChild(scroll);wrap.appendChild(card);
 }
-function clSetCooling(di,item,field,val){clEnsureST();var w=clWk(),fst=clST[w]['form_cooling'];if(!fst[di])fst[di]={};if(!fst[di][item])fst[di][item]={st:'',t0:'',t1:'',t2:'',t4:'',tf:''};fst[di][item][field]=val;clSave();clRenderForms();}
+function clSetCooling(di,item,field,val){clEnsureST();var w=clWk(),fst=clST[w]['form_cooling'];if(!fst[di])fst[di]={};if(!fst[di][item])fst[di][item]={st:'',t0:'',t1:'',t2:'',t4:'',tf:''};fst[di][item][field]=val;clSave();}
 
 // PIZZA DOUGH
 function clRenderPizzaDough(wrap){
@@ -2042,12 +2094,16 @@ function clRenderPizzaDough(wrap){
   trackRows.forEach(function(row,ri){
     if(!fst[row.key])fst[row.key]={};
     var tr=document.createElement('tr');tr.style.background=ri%2===0?'var(--bg2)':'var(--bg3)';
-    var cells='<td class="row-label" style="color:'+row.color+'">'+clXe(row.label)+'</td>';
+    var labelTd=document.createElement('td');labelTd.className='row-label';labelTd.style.color=row.color;labelTd.textContent=row.label;tr.appendChild(labelTd);
     clWeekDates.forEach(function(_,di){
       if(!fst[row.key][di])fst[row.key][di]='';
-      cells+='<td><input class="cl-cf-inp" type="'+(row.key==='notes'?'text':'number')+'" value="'+clXe(fst[row.key][di])+'" placeholder="'+(row.key==='notes'?'…':'0')+'" style="width:68px;color:'+row.color+'" oninput="clSetPizzaDough(\''+row.key+'\','+di+',this.value)"></td>';
+      var td=document.createElement('td');
+      var inp=document.createElement('input');inp.className='cl-cf-inp';inp.type=row.key==='notes'?'text':'number';inp.value=fst[row.key][di];inp.placeholder=row.key==='notes'?'…':'0';inp.style.cssText='width:68px;color:'+row.color;
+      inp.dataset.pdkey=row.key;inp.dataset.pddi=di;
+      inp.oninput=function(){clSetPizzaDough(this.dataset.pdkey,parseInt(this.dataset.pddi),this.value);};
+      td.appendChild(inp);tr.appendChild(td);
     });
-    tr.innerHTML=cells;tbody.appendChild(tr);
+    tbody.appendChild(tr);
   });
   table.appendChild(tbody);scroll.appendChild(table);card.appendChild(scroll);wrap.appendChild(card);
 }
@@ -2069,12 +2125,16 @@ function clRenderStockroom(wrap){
   items.forEach(function(item,ri){
     if(!fst[item])fst[item]={};
     var tr=document.createElement('tr');tr.style.background=ri%2===0?'var(--bg2)':'var(--bg3)';
-    var cells='<td class="row-label">'+clXe(item)+'</td>';
+    var labelTd=document.createElement('td');labelTd.className='row-label';labelTd.textContent=item;tr.appendChild(labelTd);
     clWeekDates.forEach(function(_,di){
       if(!fst[item][di])fst[item][di]='';
-      cells+='<td><input class="cl-cf-inp" type="text" value="'+clXe(fst[item][di])+'" placeholder="qty" style="width:62px" oninput="clSetStockroom(\''+item.replace(/'/g,"\\'")+'\','+di+',this.value)"></td>';
+      var td=document.createElement('td');
+      var inp=document.createElement('input');inp.className='cl-cf-inp';inp.type='text';inp.value=fst[item][di];inp.placeholder='qty';inp.style.width='62px';
+      inp.dataset.sritem=item;inp.dataset.srdi=di;
+      inp.oninput=function(){clSetStockroom(this.dataset.sritem,parseInt(this.dataset.srdi),this.value);};
+      td.appendChild(inp);tr.appendChild(td);
     });
-    tr.innerHTML=cells;tbody.appendChild(tr);
+    tbody.appendChild(tr);
   });
   table.appendChild(tbody);scroll.appendChild(table);card.appendChild(scroll);wrap.appendChild(card);
 }
@@ -4073,15 +4133,20 @@ window.onload = function(){
     measurementId:     "G-X2R22YGJPW"
   };
 
-  // Hide setup screen immediately
+  // Hide setup screen — always start the app immediately
   document.getElementById('setup-screen').classList.add('hidden');
   localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(HARDCODED));
 
-  try {
-    initFirebase(HARDCODED);
-  } catch(e) {
-    console.error('Firebase error:', e);
+  // Try Firebase — retry up to 4× if SDK hasn't loaded yet (CDN lag on slow connections)
+  var _fbTries = 0;
+  function tryInitFB(){
+    _fbTries++;
+    var ok = initFirebase(HARDCODED);
+    if(!ok && _fbTries < 5){
+      setTimeout(tryInitFB, 1000);
+    }
   }
+  tryInitFB();
   startApp();
 };
 
@@ -4090,6 +4155,11 @@ function startApp(demoMode){
   document.getElementById('app').style.display='flex';
 
   if(!demoMode){
+    // If db isn't ready yet (SDK still loading), wait and retry
+    if(!db){
+      setTimeout(function(){ startApp(demoMode); }, 500);
+      return;
+    }
     // Pre-load schedule BEFORE first render so getTodayShift() works immediately
     db.ref('sch').once('value', function(snap){
       S.sch = snap.val() || {};
@@ -4168,4 +4238,4 @@ function sendTSWhatsApp(){
 }
 </script>
 </body>
-</html>v
+</html>
