@@ -1547,7 +1547,15 @@ function clDoLogin(){
   if(Object.keys(clST).length===0){
     try{var saved=localStorage.getItem('cl_st_v2');if(saved){var parsed=JSON.parse(saved);if(parsed&&Object.keys(parsed).length)clST=parsed;}}catch(e){}
   }
-  clEnsureST();clInitFBSync();clRenderSec(clSec);
+  clEnsureST();
+  // Only fetch from Firebase on first login — subsequent renders use in-memory clST
+  if(Object.keys(clST).length===0||!clFbRef){
+    clInitFBSync();
+  } else {
+    // Already have data — just update live indicator and render
+    var el=document.getElementById('cl-fb-status');if(el){el.innerHTML='⚡ Live';el.style.color='var(--grn)';}
+    clRenderSec(clSec);
+  }
 }
 function clSwitchRole(){
   clRole=null;_clSelRole=null;
@@ -3024,9 +3032,19 @@ function clBindPage(){
   if(ps&&!ps.value){var now=new Date();ps.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');}
   clWeekDates=clGetWeekDates(document.getElementById('cl-period-start').value);
   // Load from localStorage ONLY if clST has no in-memory data
-  // (preserves data typed before navigating away)
   if(Object.keys(clST).length===0){
     try{var saved=localStorage.getItem('cl_st_v2');if(saved){var _p=JSON.parse(saved);if(_p&&Object.keys(_p).length)clST=_p;}}catch(e){}
+  }
+  // If user is already logged in, skip the auth screen entirely
+  if(clRole){
+    var overlay=document.getElementById('cl-auth-overlay');
+    if(overlay)overlay.classList.remove('show');
+    var pb=document.getElementById('cl-print-btn');if(pb)pb.style.display=clIsAdmin()?'':'none';
+    var eb=document.getElementById('cl-edit-btn');if(eb)eb.style.display=clIsAdmin()?'':'none';
+    var rb=document.getElementById('cl-role-badge');if(rb)rb.textContent=clRole==='admin'?'🔐 Admin':'👨‍🍳 Staff';
+    clEnsureST();
+    if(clSec==='forms')clRenderForms();else clRenderSec(clSec);
+    return;
   }
   // Event delegation for all cl-cards interactions
   var cards=document.getElementById('cl-cards');
