@@ -1436,24 +1436,19 @@ function clSF(clId,di,itemId){clEnsureST();return clST[clWk()][clId][di][itemId]
 // ── SAVE / FB SYNC ──
 var clSaveTmr=null;
 function clSaveNow(){
-  // Immediate sync — localStorage first, then Firebase
+  // Firebase-only save — no localStorage for checklist state
   try{
-    var data=JSON.stringify(clST);
-    localStorage.setItem('cl_st_v2',data);
     var meta={
       branch:(document.getElementById('cl-branch')||{}).value||'MOA',
       modName:(document.getElementById('cl-mod-name')||{}).value||'',
       periodStart:(document.getElementById('cl-period-start')||{}).value||''
     };
-    localStorage.setItem('cl_meta_v2',JSON.stringify(meta));
-    // Firebase immediate write — same path as clInitFBSync
     if(db){
       var branch2=(meta.branch||'MOA').toUpperCase().replace(/[.#$\/\[\]]/g,'_');
       db.ref('ops_checklists/'+branch2).set({state:clST,meta:meta,updatedAt:Date.now()});
     }
-    // Update save indicator
     var ind=document.getElementById('cl-save-ind');
-    if(ind){ind.textContent='✓ Saved';ind.style.color='var(--grn)';setTimeout(function(){if(ind)ind.textContent='Auto-save on';ind.style.color='var(--text3)';},1500);}
+    if(ind){ind.textContent='✓ Saved';ind.style.color='var(--grn)';setTimeout(function(){if(ind)ind.textContent='⚡ Firebase';ind.style.color='var(--text3)';},1500);}
   }catch(e){console.warn('clSaveNow error:',e);}
 }
 function clSave(){
@@ -1473,7 +1468,6 @@ function clSave(){
           if(el){el.innerHTML='⚡ Saved';el.style.color='var(--grn)';setTimeout(function(){el.innerHTML='⚡ Live';},1500);}
         }).catch(function(e){console.warn('CL save error:',e);});
       }
-      localStorage.setItem('cl_st_v2',JSON.stringify(clST));
     }catch(e){console.warn('clSave error:',e);}
   },700);
 }
@@ -1495,19 +1489,9 @@ function clInitFBSync(){
     clFbRef.once('value',function(snap){
       var d=snap.val();
       if(d&&d.state){
-        // Deep merge: Firebase fills in any keys missing from in-memory state
-        // In-memory wins (it's the most recent user input)
-        function deepMerge(target,source){
-          if(typeof source!=='object'||source===null)return;
-          Object.keys(source).forEach(function(k){
-            if(!(k in target)){
-              target[k]=source[k];
-            } else if(typeof source[k]==='object'&&source[k]!==null&&!Array.isArray(source[k])&&typeof target[k]==='object'&&target[k]!==null){
-              deepMerge(target[k],source[k]);
-            }
-          });
-        }
-        deepMerge(clST,d.state);
+        // Firebase is the single source of truth — replace in-memory state
+        clST=d.state;
+        clEnsureST(); // fill any missing structural keys
         if(clRole&&document.getElementById('cl-wrap'))clRenderSec(clSec);
       }
       var el=document.getElementById('cl-fb-status');if(el){el.innerHTML='⚡ Live';el.style.color='var(--grn)';}
@@ -1543,19 +1527,10 @@ function clDoLogin(){
   var ps=document.getElementById('cl-period-start');
   if(ps&&!ps.value){var now=new Date();ps.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');}
   clWeekDates=clGetWeekDates(document.getElementById('cl-period-start').value);
-  // Restore from localStorage if clST is empty (preserves in-memory state)
-  if(Object.keys(clST).length===0){
-    try{var saved=localStorage.getItem('cl_st_v2');if(saved){var parsed=JSON.parse(saved);if(parsed&&Object.keys(parsed).length)clST=parsed;}}catch(e){}
-  }
+  // clST is loaded exclusively from Firebase (no localStorage for checklist state)
   clEnsureST();
-  // Only fetch from Firebase on first login — subsequent renders use in-memory clST
-  if(Object.keys(clST).length===0||!clFbRef){
-    clInitFBSync();
-  } else {
-    // Already have data — just update live indicator and render
-    var el=document.getElementById('cl-fb-status');if(el){el.innerHTML='⚡ Live';el.style.color='var(--grn)';}
-    clRenderSec(clSec);
-  }
+  // Always fetch latest state from Firebase
+  clInitFBSync();
 }
 function clSwitchRole(){
   clRole=null;_clSelRole=null;
@@ -3017,9 +2992,7 @@ if(!window._clFlushWired){
   window._clFlushWired=true;
   document.addEventListener('visibilitychange',function(){
   if(document.hidden&&clRole){
-    // Synchronous localStorage write before anything else
-    try{localStorage.setItem('cl_st_v2',JSON.stringify(clST));}catch(e){}
-    clSaveNow(); // also async Firebase write
+    clSaveNow(); // Firebase write on tab hide
   }
 });
   window.addEventListener('beforeunload',function(){if(clRole)clSaveNow();});
@@ -3031,10 +3004,7 @@ function clBindPage(){
   var ps=document.getElementById('cl-period-start');
   if(ps&&!ps.value){var now=new Date();ps.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');}
   clWeekDates=clGetWeekDates(document.getElementById('cl-period-start').value);
-  // Load from localStorage ONLY if clST has no in-memory data
-  if(Object.keys(clST).length===0){
-    try{var saved=localStorage.getItem('cl_st_v2');if(saved){var _p=JSON.parse(saved);if(_p&&Object.keys(_p).length)clST=_p;}}catch(e){}
-  }
+  // State loaded exclusively from Firebase — no localStorage for checklist
   // If user is already logged in, skip the auth screen entirely
   if(clRole){
     var overlay=document.getElementById('cl-auth-overlay');
