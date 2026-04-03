@@ -1443,9 +1443,14 @@ function clSaveNow(){
       modName:(document.getElementById('cl-mod-name')||{}).value||'',
       periodStart:(document.getElementById('cl-period-start')||{}).value||''
     };
+    var wkKey=clWk();
+    console.log('[CL] Saving to Firebase. Week key:', wkKey, 'Branch:', meta.branch);
     if(db){
       var branch2=(meta.branch||'MOA').toUpperCase().replace(/[.#$\/\[\]]/g,'_');
-      db.ref('ops_checklists/'+branch2).set({state:clST,meta:meta,updatedAt:Date.now()});
+      db.ref('ops_checklists/'+branch2).set({state:clST,meta:meta,updatedAt:Date.now()},function(err){
+        if(err){console.error('[CL] Firebase save ERROR:',err);}
+        else{console.log('[CL] Firebase save SUCCESS. Week key saved:',wkKey);}
+      });
     }
     var ind=document.getElementById('cl-save-ind');
     if(ind){ind.textContent='✓ Saved';ind.style.color='var(--grn)';setTimeout(function(){if(ind)ind.textContent='⚡ Firebase';ind.style.color='var(--text3)';},1500);}
@@ -1489,10 +1494,19 @@ function clInitFBSync(){
     clFbRef.once('value',function(snap){
       var d=snap.val();
       if(d&&d.state){
+        console.log('[CL] Firebase data received. Keys:', Object.keys(d.state));
+        var wkKey=clWk();
+        if(d.state[wkKey]){
+          console.log('[CL] Week key "'+wkKey+'" found in Firebase. Checklist IDs:', Object.keys(d.state[wkKey]));
+        } else {
+          console.warn('[CL] Week key "'+wkKey+'" NOT found in Firebase data. Available keys:', Object.keys(d.state));
+        }
         // Firebase is the single source of truth — replace in-memory state
         clST=d.state;
-        clEnsureST(); // fill any missing structural keys
+        clEnsureST(); // fill any missing structural keys (does NOT overwrite existing values)
         if(clRole&&document.getElementById('cl-wrap'))clRenderSec(clSec);
+      } else {
+        console.warn('[CL] Firebase returned no state data. snap.val()=', JSON.stringify(d));
       }
       var el=document.getElementById('cl-fb-status');if(el){el.innerHTML='⚡ Live';el.style.color='var(--grn)';}
     },function(err){
@@ -1660,29 +1674,44 @@ function clRenderCards(sec,cl,di){
       // Wire comment textarea
       var ta=card.querySelector('textarea');
       if(ta)(function(t,cid,d,iid){t.oninput=function(){clSetComment(cid,d,iid,t.value);};})(ta,cl.id,di,item.id);
+
+      // EXPLICIT .value set on temp inputs — guarantees display even if innerHTML timing issues
+      var w2=clWk();
+      card.querySelectorAll('.cl-shift-temp').forEach(function(inp){
+        var d2=inp.dataset;
+        var saved=(clST[w2]&&clST[w2][d2.clid]&&clST[w2][d2.clid][parseInt(d2.di)]&&clST[w2][d2.clid][parseInt(d2.di)][d2.iid]&&clST[w2][d2.clid][parseInt(d2.di)][d2.iid][d2.sh])||{};
+        var val=saved.temp||'';
+        console.log('[CL] Explicit .value set for', d2.clid, 'di='+d2.di, d2.iid, d2.sh, '→', JSON.stringify(val));
+        inp.value=val;
+        if(val){inp.classList.add('has-val');}else{inp.classList.remove('has-val');}
+      });
     });
   });
 }
 
 function clBuildShift(cl,di,item,sh){
-  var s=clS(cl.id,di,item.id,sh),ct=cl.checkType,c='';
-  var cid=clXe(cl.id),iid=clXe(item.id),tv=clXe(s.temp||'');
+  // Read DIRECTLY from clST — bypass clS()/clEnsureST() to avoid overwriting saved values
+  var w=clWk();
+  var shiftData=(clST[w]&&clST[w][cl.id]&&clST[w][cl.id][di]&&clST[w][cl.id][di][item.id]&&clST[w][cl.id][di][item.id][sh])||{v:null,temp:'',comment:''};
+  var ct=cl.checkType,c2='';
+  var cid=clXe(cl.id),iid=clXe(item.id);
+  var tv=shiftData.temp||'';
+  console.log('[CL] BuildShift',cl.id,'di='+di,item.id,sh,'temp='+JSON.stringify(tv),'v='+shiftData.v);
   if(ct==='temp'){
-    c='<div class="cl-ctrl-row"><span class="cl-ctrl-lbl">Overall</span><div class="cl-yn-grp">'
-      +'<button class="cl-yn-btn'+(s.v==='yes'?' yes':'')+'" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="yes">✓ YES</button>'
-      +'<button class="cl-yn-btn'+(s.v==='no'?' no':'')+'" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="no">✗ NO</button>'
+    c2='<div class="cl-ctrl-row"><span class="cl-ctrl-lbl">Overall</span><div class="cl-yn-grp">'
+      +'<button class="cl-yn-btn'+(shiftData.v==='yes'?' yes':'')+'" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="yes">✓ YES</button>'
+      +'<button class="cl-yn-btn'+(shiftData.v==='no'?' no':'')+'" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="no">✗ NO</button>'
       +'</div></div>'
       +(item.hasTemp?'<div class="cl-ctrl-row"><span class="cl-ctrl-lbl">Temp °C</span>'
-      +'<input class="cl-temp-inp cl-shift-temp'+(s.temp?' has-val':'')+'" type="text" maxlength="7" placeholder="–" inputmode="decimal" value="'+tv+'" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'"></div>':'');
+      +'<input class="cl-temp-inp cl-shift-temp'+(tv?' has-val':'')+'" type="text" maxlength="7" placeholder="–" inputmode="decimal" value="'+clXe(tv)+'" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'"></div>':'');
   }else{
-    c='<div class="cl-ctrl-row"><span class="cl-ctrl-lbl">Check</span><div class="cl-cb-grp">'
-      +'<div class="cl-cb-item" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="ok"><div class="cl-cb-box'+(s.v==='ok'?' ok':'')+'">✓</div><span class="cl-cb-lbl">Done</span></div>'
-      +'<div class="cl-cb-item" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="no"><div class="cl-cb-box'+(s.v==='no'?' no':'')+'">✗</div><span class="cl-cb-lbl">Issue</span></div>'
+    c2='<div class="cl-ctrl-row"><span class="cl-ctrl-lbl">Check</span><div class="cl-cb-grp">'
+      +'<div class="cl-cb-item" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="ok"><div class="cl-cb-box'+(shiftData.v==='ok'?' ok':'')+'">✓</div><span class="cl-cb-lbl">Done</span></div>'
+      +'<div class="cl-cb-item" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="no"><div class="cl-cb-box'+(shiftData.v==='no'?' no':'')+'">✗</div><span class="cl-cb-lbl">Issue</span></div>'
       +'</div></div>';
   }
-  return '<div class="cl-shift-blk"><div class="cl-sh-title">'+sh+' SHIFT</div>'+c+'</div>';
+  return '<div class="cl-shift-blk"><div class="cl-sh-title">'+sh+' SHIFT</div>'+c2+'</div>';
 }
-
 function clSetV(clId,di,itemId,sh,val){clEnsureST();var s=clS(clId,di,itemId,sh);s.v=s.v===val?null:val;clSaveNow();var sec=clFindSec(clId);clRenderCards(sec,CL_DATA[sec][clCl[sec]],di);clRenderSec(sec);}
 function clSetTemp(clId,di,itemId,sh,el){clEnsureST();clS(clId,di,itemId,sh).temp=el.value;el.className='cl-temp-inp'+(el.value?' has-val':'');clSaveNow();}
 function clSetComment(clId,di,itemId,val){clEnsureST();CL_SHIFTS.forEach(function(sh){clS(clId,di,itemId,sh).comment=val;});clSaveNow();}
