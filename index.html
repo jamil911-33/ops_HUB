@@ -1495,16 +1495,19 @@ function clInitFBSync(){
     clFbRef.once('value',function(snap){
       var d=snap.val();
       if(d&&d.state){
-        // Only merge if local has no data yet, to avoid overwriting unsaved inputs
-        var localHasData=Object.keys(clST).length>0;
-        if(!localHasData){
-          clST=d.state;
-        } else {
-          // Deep merge: Firebase data fills in missing keys, local data wins
-          Object.keys(d.state).forEach(function(wk){
-            if(!clST[wk]){clST[wk]=d.state[wk];}
+        // Deep merge: Firebase fills in any keys missing from in-memory state
+        // In-memory wins (it's the most recent user input)
+        function deepMerge(target,source){
+          if(typeof source!=='object'||source===null)return;
+          Object.keys(source).forEach(function(k){
+            if(!(k in target)){
+              target[k]=source[k];
+            } else if(typeof source[k]==='object'&&source[k]!==null&&!Array.isArray(source[k])&&typeof target[k]==='object'&&target[k]!==null){
+              deepMerge(target[k],source[k]);
+            }
           });
         }
+        deepMerge(clST,d.state);
         if(clRole&&document.getElementById('cl-wrap'))clRenderSec(clSec);
       }
       var el=document.getElementById('cl-fb-status');if(el){el.innerHTML='⚡ Live';el.style.color='var(--grn)';}
@@ -1540,8 +1543,10 @@ function clDoLogin(){
   var ps=document.getElementById('cl-period-start');
   if(ps&&!ps.value){var now=new Date();ps.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');}
   clWeekDates=clGetWeekDates(document.getElementById('cl-period-start').value);
-  // Load localStorage first (fastest, no network needed)
-  try{var saved=localStorage.getItem('cl_st_v2');if(saved){var parsed=JSON.parse(saved);if(parsed&&Object.keys(parsed).length)clST=parsed;}}catch(e){}
+  // Restore from localStorage if clST is empty (preserves in-memory state)
+  if(Object.keys(clST).length===0){
+    try{var saved=localStorage.getItem('cl_st_v2');if(saved){var parsed=JSON.parse(saved);if(parsed&&Object.keys(parsed).length)clST=parsed;}}catch(e){}
+  }
   clEnsureST();clInitFBSync();clRenderSec(clSec);
 }
 function clSwitchRole(){
@@ -1640,7 +1645,7 @@ function clRenderCards(sec,cl,di){
               s.v=clRef.checkType==='temp'?'yes':'ok';
             });
           });
-          clSave();
+          clSaveNow();
           var sec2=clFindSec(clRef.id);
           clRenderCards(sec2,CL_DATA[sec2][clCl[sec2]],diRef);
           clRenderSec(sec2);
@@ -1698,7 +1703,7 @@ function clBuildShift(cl,di,item,sh){
 function clSetV(clId,di,itemId,sh,val){clEnsureST();var s=clS(clId,di,itemId,sh);s.v=s.v===val?null:val;clSaveNow();var sec=clFindSec(clId);clRenderCards(sec,CL_DATA[sec][clCl[sec]],di);clRenderSec(sec);}
 function clSetTemp(clId,di,itemId,sh,el){clEnsureST();clS(clId,di,itemId,sh).temp=el.value;el.className='cl-temp-inp'+(el.value?' has-val':'');clSaveNow();}
 function clSetComment(clId,di,itemId,val){clEnsureST();CL_SHIFTS.forEach(function(sh){clS(clId,di,itemId,sh).comment=val;});clSaveNow();}
-function clToggleFlag(clId,di,itemId,btn){clEnsureST();clSF(clId,di,itemId).flagged=!clSF(clId,di,itemId).flagged;btn.classList.toggle('on');clSave();}
+function clToggleFlag(clId,di,itemId,btn){clEnsureST();clSF(clId,di,itemId).flagged=!clSF(clId,di,itemId).flagged;btn.classList.toggle('on');clSaveNow();}
 function clToggleCmt(btn){var box=btn.nextElementSibling;box.classList.toggle('open');btn.textContent=box.classList.contains('open')?'- Hide Comment':'+ Add Comment';}
 function clFindSec(clId){for(var sec of['mod','foh','boh'])if((CL_DATA[sec]||[]).find(function(c){return c.id===clId;}))return sec;return'mod';}
 
@@ -1762,8 +1767,8 @@ function clDelEmployee(hid,di,ei){
   for(var d=0;d<7;d++){if(clST[w][hid].checks[d]){var nc={};Object.keys(clST[w][hid].checks[d]).forEach(function(k){var ki=parseInt(k);if(ki<ei)nc[ki]=clST[w][hid].checks[d][k];else if(ki>ei)nc[ki-1]=clST[w][hid].checks[d][k];});clST[w][hid].checks[d]=nc;}}
   clSave();clRenderSec('foh');
 }
-function clSetEmpName(hid,ei,val){clEnsureST();clST[clWk()][hid].employees[ei].name=val;clSave();}
-function clSetEmpSap(hid,ei,val){clEnsureST();clST[clWk()][hid].employees[ei].sap=val;clSave();}
+function clSetEmpName(hid,ei,val){clEnsureST();clST[clWk()][hid].employees[ei].name=val;clSaveNow();}
+function clSetEmpSap(hid,ei,val){clEnsureST();clST[clWk()][hid].employees[ei].sap=val;clSaveNow();}
 function clSetHyg(hid,di,ei,ci,box){
   clEnsureST();var w=clWk();
   if(!clST[w][hid].checks[di])clST[w][hid].checks[di]={};
@@ -1824,7 +1829,7 @@ function clRenderBartender(cl){
   card.appendChild(foot);wrap.appendChild(card);
 }
 function clSetBT(item,field,val){clEnsureST();var bt=clST[clWk()]['foh_bartender'];if(!bt[item])bt[item]={sl:'',uom:'',prep:{}};bt[item][field]=val;clSaveNow();}
-function clSetBTday(item,di,field,val){clEnsureST();var bt=clST[clWk()]['foh_bartender'];if(!bt[item])bt[item]={sl:'',uom:'',prep:{}};if(!bt[item].prep)bt[item].prep={};if(!bt[item].prep[di])bt[item].prep[di]={oh:'',par:'',prep:''};bt[item].prep[di][field]=val;clSave();}
+function clSetBTday(item,di,field,val){clEnsureST();var bt=clST[clWk()]['foh_bartender'];if(!bt[item])bt[item]={sl:'',uom:'',prep:{}};if(!bt[item].prep)bt[item].prep={};if(!bt[item].prep[di])bt[item].prep[di]={oh:'',par:'',prep:''};bt[item].prep[di][field]=val;clSaveNow();}
 
 // ── CONTROL FORMS ──
 function clRenderForms(){
@@ -2080,7 +2085,7 @@ function clRenderStockForm(wrap,fid,title,defaultCats,accent){
     catInp.type='text';catInp.value=cat.cat;
     catInp.readOnly=!clIsAdmin();
     catInp.style.cssText='background:transparent;border:none;color:#fff;font-weight:700;font-size:11px;outline:none;flex:1';
-    catInp.oninput=(function(c2){return function(){c2.cat=this.value;clSave();};})(cat);
+    catInp.oninput=(function(c2){return function(){c2.cat=this.value;clSaveNow();};})(cat);
     catTd.appendChild(catInp);
 
     if(clIsAdmin()){
@@ -2128,7 +2133,7 @@ function clRenderStockForm(wrap,fid,title,defaultCats,accent){
       var codeInp=document.createElement('input');codeInp.type='text';codeInp.value=item.code||'';
       codeInp.className='cl-cf-inp';codeInp.placeholder='Code';codeInp.style.cssText='width:58px;font-size:10px';
       if(!clIsAdmin())codeInp.readOnly=true;
-      codeInp.oninput=(function(itemRef){return function(){itemRef.code=this.value;clSave();};})(item);
+      codeInp.oninput=(function(itemRef){return function(){itemRef.code=this.value;clSaveNow();};})(item);
       codeTd.appendChild(codeInp);tr.appendChild(codeTd);
 
       // Name
@@ -2140,7 +2145,7 @@ function clRenderStockForm(wrap,fid,title,defaultCats,accent){
       nameInp.oninput=(function(itemRef,fstRef,oldKey){return function(){
         var nk=(itemRef.code?itemRef.code+'|':'')+this.value;
         if(!fstRef[nk])fstRef[nk]=fstRef[oldKey]||{op:''};
-        itemRef.name=this.value;clSave();
+        itemRef.name=this.value;clSaveNow();
       };})(item,fst,k);
       nameTd.appendChild(nameInp);tr.appendChild(nameTd);
 
@@ -2149,7 +2154,7 @@ function clRenderStockForm(wrap,fid,title,defaultCats,accent){
       var uomInp=document.createElement('input');uomInp.type='text';uomInp.value=item.uom||'';
       uomInp.className='cl-cf-inp';uomInp.placeholder='UOM';uomInp.style.cssText='width:36px;font-weight:700;font-size:10px';
       if(!clIsAdmin())uomInp.readOnly=true;
-      uomInp.oninput=(function(itemRef){return function(){itemRef.uom=this.value;clSave();};})(item);
+      uomInp.oninput=(function(itemRef){return function(){itemRef.uom=this.value;clSaveNow();};})(item);
       uomTd.appendChild(uomInp);tr.appendChild(uomTd);
 
       // Opening (global per week)
@@ -2164,7 +2169,7 @@ function clRenderStockForm(wrap,fid,title,defaultCats,accent){
         if(!clST[w2][f2][sk2])clST[w2][f2][sk2]={op:''};
         clST[w2][f2][sk2].op=this.value;
         if(this.value)this.classList.add('has-val');else this.classList.remove('has-val');
-        clStockRefreshBal(f2,sk2,parseInt(this.dataset.sdi));clSave();
+        clStockRefreshBal(f2,sk2,parseInt(this.dataset.sdi));clSaveNow();
       };
       opTd.appendChild(opInp);tr.appendChild(opTd);
 
@@ -2181,7 +2186,7 @@ function clRenderStockForm(wrap,fid,title,defaultCats,accent){
         if(!clST[w2][f2][sk2][d2])clST[w2][f2][sk2][d2]={inn:'',out:''};
         clST[w2][f2][sk2][d2].inn=this.value;
         if(this.value)this.classList.add('has-val');else this.classList.remove('has-val');
-        clStockRefreshBal(f2,sk2,d2);clSave();
+        clStockRefreshBal(f2,sk2,d2);clSaveNow();
       };
       inTd.appendChild(inInp);tr.appendChild(inTd);
 
@@ -2198,7 +2203,7 @@ function clRenderStockForm(wrap,fid,title,defaultCats,accent){
         if(!clST[w2][f2][sk2][d2])clST[w2][f2][sk2][d2]={inn:'',out:''};
         clST[w2][f2][sk2][d2].out=this.value;
         if(this.value)this.classList.add('has-val');else this.classList.remove('has-val');
-        clStockRefreshBal(f2,sk2,d2);clSave();
+        clStockRefreshBal(f2,sk2,d2);clSaveNow();
       };
       outTd.appendChild(outInp);tr.appendChild(outTd);
 
@@ -2349,7 +2354,7 @@ function clRenderCoolingLog(wrap){
         products[pi2]=nv;
         fst[nv]=fst[old]||{startTime:''};
         if(nv!==old)delete fst[old];
-        clSave();
+        clSaveNow();
       };})(pi);
       var delPB=document.createElement('button');
       delPB.innerHTML='&#128465;';
@@ -2374,7 +2379,7 @@ function clRenderCoolingLog(wrap){
       clEnsureST();var p=clST[clWk()]['form_cooling'][this.dataset.cp];
       if(p)p.startTime=this.value;
       if(this.value)this.classList.add('has-val');else this.classList.remove('has-val');
-      clSave();
+      clSaveNow();
     };
     stTd.appendChild(stInp);tr.appendChild(stTd);
 
@@ -2393,7 +2398,7 @@ function clRenderCoolingLog(wrap){
         if(!fst2[this.dataset.cp][this.dataset.ct])fst2[this.dataset.cp][this.dataset.ct]={temp:'',by:''};
         fst2[this.dataset.cp][this.dataset.ct][this.dataset.cf]=this.value;
         if(this.value)this.classList.add('has-val');else this.classList.remove('has-val');
-        clSave();
+        clSaveNow();
       };
       tempTd.appendChild(tempInp);tr.appendChild(tempTd);
       // By
@@ -2416,7 +2421,7 @@ function clRenderCoolingLog(wrap){
       clEnsureST();var p=clST[clWk()]['form_cooling'][this.dataset.cp];
       if(p&&p.yield)p.yield[this.dataset.cf]=this.value;
       if(this.value)this.classList.add('has-val');else this.classList.remove('has-val');
-      clSave();
+      clSaveNow();
     };
     batchTd.appendChild(batchInp);tr.appendChild(batchTd);
 
@@ -2445,7 +2450,7 @@ function clSetCooling(di,item,field,val){
   if(!fst)return;
   if(field==='batch'||field==='liters'){if(!fst[item])fst[item]={yield:{batch:'',liters:''}};if(!fst[item].yield)fst[item].yield={batch:'',liters:''};fst[item].yield[field]=val;}
   else{if(!fst[item])fst[item]={startTime:''};fst[item][field]=val;}
-  clSave();
+  clSaveNow();
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2505,7 +2510,7 @@ function clRenderPizzaDough(wrap){
           if(!fs[d2][t2])fs[d2][t2]={amb:'',dough:'',by:''};
           fs[d2][t2][f2]=this.value;
           if(this.value)this.classList.add('has-val');else this.classList.remove('has-val');
-          clSave();
+          clSaveNow();
         };
         td.appendChild(inp);tr.appendChild(td);
       });
@@ -2522,7 +2527,7 @@ function clSetPizzaDough(di,time,field,val){
   var fs=clST[clWk()]['form_pizzadough'];
   if(!fs[di])fs[di]={};
   if(!fs[di][time])fs[di][time]={amb:'',dough:'',by:''};
-  fs[di][time][field]=val;clSave();
+  fs[di][time][field]=val;clSaveNow();
 }
 
 // ── CSS fix: add cf-bal neg style if not present ──────────────────
@@ -3002,7 +3007,13 @@ function clAddItem(sec,ci,gi){
 // Auto-flush on tab hide / page unload
 if(!window._clFlushWired){
   window._clFlushWired=true;
-  document.addEventListener('visibilitychange',function(){if(document.hidden&&clRole)clSaveNow();});
+  document.addEventListener('visibilitychange',function(){
+  if(document.hidden&&clRole){
+    // Synchronous localStorage write before anything else
+    try{localStorage.setItem('cl_st_v2',JSON.stringify(clST));}catch(e){}
+    clSaveNow(); // also async Firebase write
+  }
+});
   window.addEventListener('beforeunload',function(){if(clRole)clSaveNow();});
 }
 var _clPageBound=false;
@@ -3012,8 +3023,11 @@ function clBindPage(){
   var ps=document.getElementById('cl-period-start');
   if(ps&&!ps.value){var now=new Date();ps.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');}
   clWeekDates=clGetWeekDates(document.getElementById('cl-period-start').value);
-  // Load local cache
-  try{var saved=localStorage.getItem('cl_st_v2');if(saved)clST=JSON.parse(saved);}catch(e){}
+  // Load from localStorage ONLY if clST has no in-memory data
+  // (preserves data typed before navigating away)
+  if(Object.keys(clST).length===0){
+    try{var saved=localStorage.getItem('cl_st_v2');if(saved){var _p=JSON.parse(saved);if(_p&&Object.keys(_p).length)clST=_p;}}catch(e){}
+  }
   // Event delegation for all cl-cards interactions
   var cards=document.getElementById('cl-cards');
   if(cards){
