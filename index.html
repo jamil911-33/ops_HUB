@@ -333,8 +333,10 @@ select.fi-s{cursor:pointer}
 .cl-day-tabs::-webkit-scrollbar{display:none}
 .cl-day-tab{flex-shrink:0;padding:4px 9px;border-radius:20px;border:1px solid var(--bd2);background:var(--bg3);font-size:10px;font-weight:600;cursor:pointer;color:var(--text3);transition:all .15s;white-space:nowrap;font-family:var(--mono)}
 .cl-day-tab.active{background:var(--blu);border-color:var(--blu);color:#fff}
-.cl-day-tab.done{border-color:var(--grn);color:var(--grn)}
-.cl-day-tab.partial{border-color:var(--gold);color:var(--gold)}
+.cl-day-tab.done{border-color:var(--grn);color:var(--grn);background:rgba(63,185,80,.12)}
+.cl-day-tab.partial{border-color:var(--gold);color:var(--gold);background:rgba(240,165,0,.1)}
+.cl-day-tab.active.done{background:var(--grn);border-color:var(--grn);color:#fff}
+.cl-day-tab.active.partial{background:var(--gold);border-color:var(--gold);color:#000}
 .cl-cards{padding:8px 12px 40px;display:flex;flex-direction:column;gap:7px;overflow-y:auto;overflow-x:hidden;flex:1;min-height:0}
 .cl-grp-div{background:linear-gradient(90deg,var(--bg4),var(--bg3));border-radius:7px;padding:6px 11px;color:var(--text3);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-left:2px solid var(--blu)}
 .cl-item-card{background:var(--bg2);border-radius:9px;border:1px solid var(--bd);transition:border-color .2s}
@@ -1781,7 +1783,6 @@ function clRenderCards(sec,cl,di){
         var d2=inp.dataset;
         var saved=(clST[w2]&&clST[w2][d2.clid]&&clST[w2][d2.clid][parseInt(d2.di)]&&clST[w2][d2.clid][parseInt(d2.di)][d2.iid]&&clST[w2][d2.clid][parseInt(d2.di)][d2.iid][d2.sh])||{};
         var val=saved.temp||'';
-        console.log('[CL] Explicit .value set for', d2.clid, 'di='+d2.di, d2.iid, d2.sh, '→', JSON.stringify(val));
         inp.value=val;
         if(val){inp.classList.add('has-val');}else{inp.classList.remove('has-val');}
       });
@@ -1796,7 +1797,6 @@ function clBuildShift(cl,di,item,sh){
   var ct=cl.checkType,c2='';
   var cid=clXe(cl.id),iid=clXe(item.id);
   var tv=shiftData.temp||'';
-  console.log('[CL] BuildShift',cl.id,'di='+di,item.id,sh,'temp='+JSON.stringify(tv),'v='+shiftData.v);
   if(ct==='temp'){
     c2='<div class="cl-ctrl-row"><span class="cl-ctrl-lbl">Overall</span><div class="cl-yn-grp">'
       +'<button class="cl-yn-btn'+(shiftData.v==='yes'?' yes':'')+'" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="yes">✓ YES</button>'
@@ -1812,8 +1812,47 @@ function clBuildShift(cl,di,item,sh){
   }
   return '<div class="cl-shift-blk"><div class="cl-sh-title">'+sh+' SHIFT</div>'+c2+'</div>';
 }
-function clSetV(clId,di,itemId,sh,val){clEnsureST();var s=clS(clId,di,itemId,sh);s.v=s.v===val?null:val;clSaveNow();var sec=clFindSec(clId);clRenderCards(sec,CL_DATA[sec][clCl[sec]],di);clRenderSec(sec);}
-function clSetTemp(clId,di,itemId,sh,el){clEnsureST();clS(clId,di,itemId,sh).temp=el.value;el.className='cl-temp-inp'+(el.value?' has-val':'');clSaveNow();}
+function clSetV(clId,di,itemId,sh,val){
+  clEnsureST();
+  var s=clS(clId,di,itemId,sh);
+  s.v=s.v===val?null:val;
+  // Save current temp values from DOM before re-render (prevent temp erasure)
+  var cards=document.getElementById('cl-cards');
+  if(cards){
+    cards.querySelectorAll('.cl-shift-temp').forEach(function(inp){
+      var d2=inp.dataset;
+      var wk=clWk();
+      if(clST[wk]&&clST[wk][d2.clid]&&clST[wk][d2.clid][parseInt(d2.di)]&&
+         clST[wk][d2.clid][parseInt(d2.di)][d2.iid]&&clST[wk][d2.clid][parseInt(d2.di)][d2.iid][d2.sh]){
+        clST[wk][d2.clid][parseInt(d2.di)][d2.iid][d2.sh].temp=inp.value;
+      }
+    });
+  }
+  clSaveNow();
+  var sec=clFindSec(clId);
+  clRenderSec(sec); // single render — clRenderSec calls clRenderCards internally
+}
+function clSetTemp(clId,di,itemId,sh,el){
+  clEnsureST();
+  // Update this specific temp value
+  var s=clS(clId,di,itemId,sh);
+  s.temp=el.value;
+  el.className='cl-temp-inp'+(el.value?' has-val':'');
+  // Also flush ALL visible temp inputs to clST to prevent any racing
+  var wk=clWk();
+  var cards=document.getElementById('cl-cards');
+  if(cards){
+    cards.querySelectorAll('.cl-shift-temp').forEach(function(inp){
+      var d2=inp.dataset;
+      if(d2.clid===clId&&parseInt(d2.di)===di&&d2.iid===itemId&&d2.sh===sh)return; // already set above
+      if(clST[wk]&&clST[wk][d2.clid]&&clST[wk][d2.clid][parseInt(d2.di)]&&
+         clST[wk][d2.clid][parseInt(d2.di)][d2.iid]&&clST[wk][d2.clid][parseInt(d2.di)][d2.iid][d2.sh]){
+        clST[wk][d2.clid][parseInt(d2.di)][d2.iid][d2.sh].temp=inp.value;
+      }
+    });
+  }
+  clSaveNow();
+}
 function clSetComment(clId,di,itemId,val){clEnsureST();CL_SHIFTS.forEach(function(sh){clS(clId,di,itemId,sh).comment=val;});clSaveNow();}
 function clToggleFlag(clId,di,itemId,btn){clEnsureST();clSF(clId,di,itemId).flagged=!clSF(clId,di,itemId).flagged;btn.classList.toggle('on');clSaveNow();}
 function clToggleCmt(btn){var box=btn.nextElementSibling;box.classList.toggle('open');btn.textContent=box.classList.contains('open')?'- Hide Comment':'+ Add Comment';}
