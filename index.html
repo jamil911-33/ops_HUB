@@ -1157,9 +1157,14 @@ function ren(){
     'qr-checkin':pQRCheckin,'checklists':pChecklists
   };
   var pg=document.getElementById('pg');
-  pg.innerHTML=fn[S.p]?fn[S.p]():'';
+  try{
+    pg.innerHTML=fn[S.p]?fn[S.p]():'';
+  }catch(e){
+    console.error('[REN] Page render error on "'+S.p+'":', e);
+    pg.innerHTML='<div style="padding:40px;text-align:center;color:var(--red)"><div style="font-size:32px;margin-bottom:12px">⚠️</div><div style="font-weight:700;margin-bottom:8px">Render Error</div><div style="font-size:12px;color:var(--text3);font-family:monospace">'+String(e.message)+'</div><div style="font-size:10px;color:var(--text3);margin-top:4px">Page: '+S.p+'</div></div>';
+  }
   pg.scrollTop=0;
-  bindPg();
+  try{bindPg();}catch(e){console.error('[BINDPG] Error:',e);}
 }
 
 // ════════════════════════════════════════════════════════════
