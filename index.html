@@ -1198,16 +1198,51 @@ function attachListeners(){
   });
 
   // Inventory
-  // Items: always load from shared/inv_items — single catalog for all branches
-  _itemsPath = 'shared/inv_items';
+  // ── SPLIT ARCHITECTURE ─────────────────────────────────────────────
+  // shared/inv_items  → catalog (name, unit, location, min, price) — NO qty
+  // branches/{id}/stock → per-branch quantities { code: {qty} }
+  // In memory: items[] = catalog merged with branch stock
+  // ─────────────────────────────────────────────────────────────────────
+  var _catalogData = {};  // raw from shared/inv_items
+  var _stockData   = {};  // raw from branches/{id}/stock
+
+  function _mergeAndSetItems(){
+    var merged = [];
+    Object.keys(_catalogData).forEach(function(k){
+      var cat = _catalogData[k];
+      if(!cat||!cat.name) return;
+      var stk = _stockData[k] || {};
+      merged.push({
+        code:     cat.code||k,
+        name:     cat.name,
+        unit:     cat.unit||'EA',
+        location: cat.location||'Dry Storage',
+        min:      parseFloat(cat.min)||0,
+        price:    parseFloat(cat.price)||0,
+        supplier: cat.supplier||'',
+        qty:      parseFloat(stk.qty)||0   // ← from branch stock
+      });
+    });
+    items = merged;
+    updateBadges();
+    if(S.p==='items'||S.p==='inv-dash'||S.p==='alerts') ren();
+  }
+
+  // Listen to shared catalog (names/codes/units)
   db.ref('shared/inv_items').on('value', function(snap){
     var raw = snap.val();
-    if(!raw){ items = []; }
-    else if(Array.isArray(raw)){ items = raw.filter(Boolean); }
-    else{ items = Object.values(raw).filter(Boolean); }
-    updateBadges();
-    if(S.p === 'items' || S.p === 'inv-dash' || S.p === 'alerts') ren();
+    _catalogData = (raw && typeof raw==='object') ? raw : {};
+    _mergeAndSetItems();
   });
+
+  // Listen to THIS branch's stock quantities
+  if(BRANCH_PATH){
+    db.ref(BRANCH_PATH+'/stock').on('value', function(snap){
+      var raw = snap.val();
+      _stockData = (raw && typeof raw==='object') ? raw : {};
+      _mergeAndSetItems();
+    });
+  }
 
   db.ref(bPath('inv_logs')).on('value', function(snap){
     var raw = snap.val();
@@ -1241,16 +1276,36 @@ function saveCollection(key, arr){
   fbSet(bPath(key), obj);
 }
 
-var _itemsPath = 'shared/inv_items'; // updated when items listener resolves
-
+// saveItems: catalog fields → shared/inv_items, qty → branches/{id}/stock
 function saveItems(){
   if(!db){ return; }
-  var obj = {};
+  var catalogObj = {};
+  var stockObj   = {};
   items.forEach(function(item){
-    var k = String(item.code).replace(/[.#$\[\]\/]/g,'_');
-    obj[k] = item;
+    var k = String(item.code||'').replace(/[.#$\[\]\/]/g,'_');
+    if(!k) return;
+    // Catalog (shared — no qty)
+    catalogObj[k] = {
+      code:     item.code,
+      name:     item.name,
+      unit:     item.unit||'EA',
+      location: item.location||'Dry Storage',
+      min:      parseFloat(item.min)||0,
+      price:    parseFloat(item.price)||0,
+      supplier: item.supplier||''
+    };
+    // Stock (per-branch qty)
+    stockObj[k] = { qty: parseFloat(item.qty)||0 };
   });
-  fbSet(_itemsPath, obj);
+  fbSet('shared/inv_items', catalogObj);
+  if(BRANCH_PATH) fbSet(BRANCH_PATH+'/stock', stockObj);
+}
+
+// saveStock: write ONLY branch qty for one item (fast, no catalog write)
+function saveStock(code, qty){
+  if(!db||!BRANCH_PATH) return;
+  var k = String(code||'').replace(/[.#$\[\]\/]/g,'_');
+  db.ref(BRANCH_PATH+'/stock/'+k).set({qty: parseFloat(qty)||0});
 }
 function saveLogs(){
   if(!db){ return; }
@@ -1305,6 +1360,7 @@ function defStaff(){
 
 function seedIfEmpty(){
   if(!db) return;
+  // Only seed staff — items come from shared/inv_items catalog
   db.ref(bPath('staff')).once('value', function(snap){
     if(!snap.val()){
       var staffObj = {};
@@ -4762,12 +4818,23 @@ function saveItem(){
   if(orig){
     var it=findItem(orig);if(!it)return;
     it.code=code;it.name=name;it.unit=unit;it.location=loc;it.min=min;it.price=price;it.supplier=sup;
+    // Update catalog only (qty unchanged — stays in branch stock)
+    var ck=String(code).replace(/[.#$\[\]\/]/g,'_');
+    if(db) db.ref('shared/inv_items/'+ck).set({code:code,name:name,unit:unit,location:loc,min:min,price:price,supplier:sup});
   } else {
     if(findItem(code)){toast('Duplicate code','error');return;}
     items.push({code:code,name:name,unit:unit,location:loc,min:min,price:price,qty:qty,supplier:sup});
-    if(qty>0){logs.push({code:code,name:name,type:'receive',qty:qty,note:'Opening balance',date:TODAY});saveLogs();}
+    // Write catalog entry
+    var ck2=String(code).replace(/[.#$\[\]\/]/g,'_');
+    if(db) db.ref('shared/inv_items/'+ck2).set({code:code,name:name,unit:unit,location:loc,min:min,price:price,supplier:sup});
+    // Write opening stock for this branch only
+    if(qty>0){
+      saveStock(code,qty);
+      logs.push({code:code,name:name,type:'receive',qty:qty,note:'Opening balance',date:TODAY});
+      saveLogs();
+    }
   }
-  saveItems();ren();closeItemModal();toast('Saved','success');
+  ren();closeItemModal();toast('Saved','success');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -5066,7 +5133,7 @@ function doConfirmRecv(){
   if(amt<=0||amt>rem){toast('Invalid qty (1–'+rem+')','error');return;}
   it.received=(it.received||0)+amt;
   var inv=findItem(it.code);
-  if(inv){inv.qty+=amt;logs.push({code:it.code,name:it.name,type:'receive',qty:amt,note:'Order '+recvOrdId,date:TODAY});saveItems();saveLogs();}
+  if(inv){inv.qty+=amt;logs.push({code:it.code,name:it.name,type:'receive',qty:amt,note:'Order '+recvOrdId,date:TODAY});saveStock(it.code,inv.qty);saveLogs();}
   var allDone=order.items.every(function(x){return (x.received||0)>=x.qty;});
   var anyDone=order.items.some(function(x){return (x.received||0)>0;});
   order.status=allDone?'done':anyDone?'partial':'pending';
@@ -5081,8 +5148,8 @@ function receiveAllOrder(ordId){
   var pending=order.items.filter(function(x){return (x.received||0)<x.qty;});
   if(!pending.length){toast('All received','info');return;}
   if(!confirm('Receive '+pending.length+' remaining item(s)?'))return;
-  pending.forEach(function(it){var rem=it.qty-(it.received||0);it.received=it.qty;var inv=findItem(it.code);if(inv){inv.qty+=rem;logs.push({code:it.code,name:it.name,type:'receive',qty:rem,note:'Order '+ordId+' (All)',date:TODAY});}});
-  order.status='done';saveItems();saveLogs();saveOrders();ren();toast('All received ✅','success');
+  pending.forEach(function(it){var rem=it.qty-(it.received||0);it.received=it.qty;var inv=findItem(it.code);if(inv){inv.qty+=rem;logs.push({code:it.code,name:it.name,type:'receive',qty:rem,note:'Order '+ordId+' (All)',date:TODAY});saveStock(it.code,inv.qty);}});
+  order.status='done';saveOrders();saveLogs();saveOrders();ren();toast('All received ✅','success');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -5105,7 +5172,8 @@ function doMove(type){
   if(type==='pull'&&item.qty-qty<0){toast('Not enough stock','error');return;}
   if(type==='recv')item.qty+=qty;else item.qty-=qty;
   logs.push({code:code,name:item.name,type:type==='recv'?'receive':'pull',qty:qty,note:note,date:TODAY});
-  saveItems();saveLogs();
+  saveStock(code,item.qty); // write ONLY this branch's qty
+  saveLogs();
   document.getElementById(type+'-qty').value='';document.getElementById(type+'-note').value='';
   prevMove(type);renderLogs();updateBadges();
   if(type==='pull'&&item.min>0&&item.qty<=item.min)toast('⚠️ '+item.name+' reached minimum','warning');
@@ -5125,7 +5193,8 @@ function mBackup(){
   setTimeout(function(){
     var ex=document.getElementById('do-export');
     if(ex)ex.onclick=function(){
-      var data={staff:S.staff,sch:S.sch,sales:S.sales,pull:S.pull,waste:S.waste,wares:S.wares,rem:S.rem,pc:S.pc,health:S.health,invoices:S.invoices,tsEmps:S.tsEmps,tsAtt:S.tsAtt,tsLeaves:S.tsLeaves,items:items,logs:logs,orders:orders};
+      var stockSnap={};items.forEach(function(it){var k=String(it.code).replace(/[.#$\[\]\/]/g,'_');stockSnap[k]={qty:it.qty};});
+      var data={staff:S.staff,sch:S.sch,sales:S.sales,pull:S.pull,waste:S.waste,wares:S.wares,rem:S.rem,pc:S.pc,health:S.health,invoices:S.invoices,tsEmps:S.tsEmps,tsAtt:S.tsAtt,tsLeaves:S.tsLeaves,items:items,logs:logs,orders:orders,stock:stockSnap};
       var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
       var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='OpsHub_Backup_'+TODAY+'.json';a.click();toast('Backup downloaded ✓','success');
     };
@@ -5294,13 +5363,22 @@ function processImport(data){
   data.forEach(function(row){
     var code=String(row['Material']||row['material']||'').trim();
     var name=String(row['Material Description']||row['Name']||'').trim();
-    var unit=String(row['Base Unit of Measure']||row['UoM']||'EA').trim();
+    var unit=String(row['Base Unit of Measure']||row['UoM']||'EA').trim()||'EA';
     if(!code||!name)return;
     var inv=findItem(code);
     if(inv){inv.name=name;inv.unit=unit;updated++;}
     else{items.push({code:code,name:name,unit:unit,location:'Dry Storage',min:0,price:0,qty:0});added++;}
   });
-  saveItems();ren();toast('Done: Added '+added+' · Updated '+updated,'success');
+  // Write catalog only (no qty — each branch has their own stock)
+  if(db){
+    var catObj={};
+    items.forEach(function(it){
+      var k=String(it.code).replace(/[.#$\[\]\/]/g,'_');
+      catObj[k]={code:it.code,name:it.name,unit:it.unit,location:it.location||'Dry Storage',min:it.min||0,price:it.price||0,supplier:it.supplier||''};
+    });
+    fbSet('shared/inv_items',catObj);
+  }
+  ren();toast('Done: Added '+added+' · Updated '+updated,'success');
 }
 
 // ════════════════════════════════════════════════════════════
