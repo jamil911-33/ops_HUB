@@ -6239,23 +6239,31 @@ function showLoginScreen(){
 // ════════════════════════════════════════════════════════════
 function pAdminBranches(){
   if(!IS_SUPER_ADMIN) return '<div class="er">Access denied</div>';
-  var BRAND_COLORS=['#f0a500','#34d399','#60a5fa','#c084fc','#f87171','#22d3ee','#fb923c','#a3e635'];
-  var ICONS=['🍕','🥩','☕','🍔','🌮','🍜','🏪','🍽','🥗','🫕'];
 
-  return '<div style="padding:20px;max-width:900px;margin:0 auto">'
+  return '<div style="padding:20px;max-width:960px;margin:0 auto">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">'
       +'<div>'
         +'<div style="font-size:18px;font-weight:800;color:var(--text)">🏢 Branch Management</div>'
         +'<div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--mono)">Super Admin · Add, edit, and manage all branches</div>'
       +'</div>'
-      +'<button class="btn" id="btn-add-branch">+ Add Branch</button>'
+      +'<div style="display:flex;gap:8px">'
+        +'<button class="btn s" id="btn-show-qr">📱 QR Codes</button>'
+        +'<button class="btn" id="btn-add-branch">+ Add Branch</button>'
+      +'</div>'
     +'</div>'
 
     +'<div id="branches-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">'
       +'<div style="text-align:center;color:var(--text3);padding:40px;grid-column:1/-1">Loading branches…</div>'
     +'</div>'
 
-    +'<div style="margin-top:32px;background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:18px">'
+    // QR codes panel (hidden by default)
+    +'<div id="qr-panel" style="display:none;margin-top:24px;background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:20px">'
+      +'<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">📱 Staff Check-In QR Codes</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-bottom:16px">Print and post each QR code at the branch entrance. Staff scan to open check-in instantly — no PIN needed.</div>'
+      +'<div id="qr-codes-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px"></div>'
+    +'</div>'
+
+    +'<div style="margin-top:24px;background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:18px">'
       +'<div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">📊 All Branches Overview</div>'
       +'<div id="branches-overview-table">Loading…</div>'
     +'</div>'
@@ -6266,7 +6274,134 @@ function bindAdminBranches(){
   if(!IS_SUPER_ADMIN)return;
   var btn=document.getElementById('btn-add-branch');
   if(btn)btn.onclick=function(){openBranchModal(null);};
+  var qrBtn=document.getElementById('btn-show-qr');
+  if(qrBtn)qrBtn.onclick=function(){
+    var panel=document.getElementById('qr-panel');
+    if(panel.style.display==='none'){panel.style.display='block';generateAllQRCodes();qrBtn.textContent='✕ Close QR';}
+    else{panel.style.display='none';qrBtn.textContent='📱 QR Codes';}
+  };
   loadAdminBranches();
+}
+
+// ── QR Code generation using qrcode.js CDN ─────────────────
+var _qrScriptLoaded = false;
+function generateAllQRCodes(){
+  var grid=document.getElementById('qr-codes-grid');
+  if(!grid)return;
+  grid.innerHTML='<div style="color:var(--text3);font-size:12px">Generating QR codes…</div>';
+
+  // Load QR library dynamically
+  function doGenerate(){
+    var baseUrl=window.location.origin+window.location.pathname.replace('index.html','')+'staff.html';
+    db.ref('admin/branches').once('value',function(snap){
+      var raw=snap.val()||{};
+      var branches=Object.values(raw).filter(Boolean);
+      grid.innerHTML='';
+      branches.forEach(function(b){
+        var url=baseUrl+'?branch='+encodeURIComponent(b.id);
+        var col=b.color||'#f0a500';
+
+        var card=document.createElement('div');
+        card.style.cssText='background:var(--bg3);border:1px solid var(--bd2);border-radius:12px;padding:16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px';
+
+        // Branch header
+        var hdr=document.createElement('div');
+        hdr.style.cssText='display:flex;align-items:center;gap:8px;width:100%';
+        hdr.innerHTML='<div style="width:32px;height:32px;border-radius:8px;background:'+col+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">'+(b.icon||'🏪')+'</div>'
+          +'<div style="text-align:left"><div style="font-size:12px;font-weight:700;color:var(--text)">'+xe(b.name)+'</div>'
+          +'<div style="font-size:9px;color:var(--text3);font-family:var(--mono)">'+(b.brand||'')+'</div></div>';
+        card.appendChild(hdr);
+
+        // QR container
+        var qrDiv=document.createElement('div');
+        qrDiv.id='qr-'+b.id;
+        qrDiv.style.cssText='background:#fff;padding:10px;border-radius:8px;width:140px;height:140px;display:flex;align-items:center;justify-content:center';
+        card.appendChild(qrDiv);
+
+        // URL label
+        var urlLabel=document.createElement('div');
+        urlLabel.style.cssText='font-size:8px;color:var(--text3);font-family:var(--mono);word-break:break-all;text-align:center;max-width:180px';
+        urlLabel.textContent='staff.html?branch='+b.id;
+        card.appendChild(urlLabel);
+
+        // Buttons row
+        var btnRow=document.createElement('div');
+        btnRow.style.cssText='display:flex;gap:6px;width:100%';
+
+        var printBtn=document.createElement('button');
+        printBtn.className='btn sm s';
+        printBtn.style.cssText='flex:1;justify-content:center;font-size:11px';
+        printBtn.textContent='🖨 Print';
+        printBtn.onclick=function(){ printQRCard(b, url, col); };
+
+        var copyBtn=document.createElement('button');
+        copyBtn.className='btn sm s';
+        copyBtn.style.cssText='flex:1;justify-content:center;font-size:11px';
+        copyBtn.textContent='📋 Copy URL';
+        copyBtn.onclick=function(){
+          navigator.clipboard?navigator.clipboard.writeText(url).then(function(){toast('URL copied!','success');}):toast(url,'info');
+        };
+
+        btnRow.appendChild(printBtn);
+        btnRow.appendChild(copyBtn);
+        card.appendChild(btnRow);
+        grid.appendChild(card);
+
+        // Generate QR code
+        try{
+          new QRCode(document.getElementById('qr-'+b.id),{
+            text: url,
+            width: 120,
+            height: 120,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        }catch(e){
+          document.getElementById('qr-'+b.id).innerHTML='<div style="font-size:9px;color:#666;padding:8px">QR error</div>';
+        }
+      });
+      if(!branches.length) grid.innerHTML='<div style="color:var(--text3);font-size:12px">No branches registered yet.</div>';
+    });
+  }
+
+  if(typeof QRCode !== 'undefined'){
+    doGenerate();
+  } else {
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.onload=function(){doGenerate();};
+    s.onerror=function(){grid.innerHTML='<div style="color:var(--red);font-size:12px">Could not load QR library. Check internet connection.</div>';};
+    document.head.appendChild(s);
+  }
+}
+
+function printQRCard(b, url, col){
+  var w=window.open('','_blank','width=400,height=500');
+  if(!w){toast('Allow pop-ups to print','warning');return;}
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QR — '+b.name+'</title>'
+    +'<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5}'
+    +'.card{background:#fff;border-radius:16px;padding:28px 24px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1);max-width:280px;width:100%}'
+    +'.ico{width:52px;height:52px;border-radius:14px;background:'+col+';display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 10px}'
+    +'h2{font-size:18px;font-weight:800;margin-bottom:2px}'
+    +'.sub{font-size:11px;color:#888;margin-bottom:16px}'
+    +'#qrcode{display:flex;justify-content:center;margin-bottom:16px}'
+    +'.inst{font-size:12px;color:#555;line-height:1.6;background:#f8f8f8;border-radius:8px;padding:10px;margin-bottom:14px}'
+    +'.url{font-size:8px;color:#aaa;word-break:break-all;font-family:monospace}'
+    +'@media print{.no-print{display:none}}</style></head><body>'
+    +'<div class="card">'
+    +'<div class="ico">'+( b.icon||'🏪')+'</div>'
+    +'<h2>'+b.name+'</h2>'
+    +'<div class="sub">'+( b.brand||'')+(b.location?' · '+b.location:'')+'</div>'
+    +'<div id="qrcode"></div>'
+    +'<div class="inst">📱 Scan with your phone camera to open Staff Check-In</div>'
+    +'<div class="url">'+url+'</div>'
+    +'<div class="no-print" style="margin-top:16px"><button onclick="window.print()" style="padding:10px 24px;background:#000;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🖨 Print</button></div>'
+    +'</div>'
+    +'<script>window.onload=function(){new QRCode(document.getElementById("qrcode"),{text:"'+url+'",width:160,height:160,colorDark:"#000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.M});setTimeout(function(){},500);};<\/script>'
+    +'</body></html>');
+  w.document.close();
 }
 
 function loadAdminBranches(){
