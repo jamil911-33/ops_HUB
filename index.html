@@ -4142,9 +4142,267 @@ function pMoves(){
   h+='<div class="fg"><label>Note (Optional)</label><input class="fi-s" id="pull-note" placeholder="Who requested, reason…"></div>';
   h+='<button class="btn d" style="width:100%;margin-top:4px;background:rgba(248,81,73,.15)" id="btn-pull">📤 Confirm Issue</button></div>';
   h+='</div>';
+
+  // Transfer between branches
+  h+='<div class="card" style="margin-bottom:14px;border-color:rgba(192,132,252,.2)">';
+  h+='<div class="ct" style="color:var(--pur)">🔀 Transfer Stock to Another Branch</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
+  h+='<div class="fg"><label>Material Code</label><input class="fi-s" id="tr-code" placeholder="Enter material code…" autocomplete="off"></div>';
+  h+='<div class="fg"><label>Quantity</label><input class="fi-s" id="tr-qty" type="number" min="1" placeholder="0"></div>';
+  h+='</div>';
+  h+='<div class="prev-box" id="tr-prev"></div>';
+  h+='<div class="fg" style="margin-bottom:10px"><label>Destination Branch</label><select class="fi-s" id="tr-dest-branch"><option value="">— Select destination branch —</option></select></div>';
+  h+='<div class="fg" style="margin-bottom:10px"><label>Note</label><input class="fi-s" id="tr-note" placeholder="Reason for transfer…"></div>';
+  h+='<button class="btn" id="btn-transfer" style="width:100%;background:linear-gradient(135deg,var(--pur),#7c3aed)">🔀 Send Transfer Request</button>';
+  h+='</div>';
+
   h+='<div class="tw"><div class="ttb"><span style="font-size:12px;font-weight:700">Movement Log</span><button class="btn s sm" style="margin-left:auto" onclick="exportLogsCSV()">⬇ CSV</button></div>';
   h+='<div class="tw-s"><table><thead><tr><th>Code</th><th>Item</th><th>Type</th><th>Qty</th><th>Note</th><th>Date</th></tr></thead><tbody id="logs-body"></tbody></table></div></div>';
   return h;
+}
+
+// ── TRANSFER STOCK BETWEEN BRANCHES ────────────────────────
+function initTransferUI(){
+  // Populate destination branches
+  var sel=document.getElementById('tr-dest-branch');
+  if(!sel||!db)return;
+  db.ref('admin/branches').once('value',function(snap){
+    var raw=snap.val()||{};
+    Object.values(raw).filter(Boolean).forEach(function(b){
+      if(CURRENT_BRANCH&&b.id===CURRENT_BRANCH.id)return; // skip current
+      var o=document.createElement('option');
+      o.value=b.id; o.textContent=b.name+(b.location?' — '+b.location:'');
+      sel.appendChild(o);
+    });
+  });
+  // Code preview
+  var tc=document.getElementById('tr-code');
+  if(tc)tc.oninput=function(){
+    var item=findItem(this.value.trim());
+    var prev=document.getElementById('tr-prev');
+    if(item&&prev){prev.style.display='block';prev.innerHTML='<strong>'+item.name+'</strong> · Current: <strong style="color:var(--pur)">'+item.qty+' '+item.unit+'</strong>';}
+    else if(prev){prev.style.display='none';}
+  };
+  // Transfer button
+  var btn=document.getElementById('btn-transfer');
+  if(btn)btn.onclick=function(){
+    var code=(document.getElementById('tr-code').value||'').trim();
+    var qty=parseInt(document.getElementById('tr-qty').value)||0;
+    var dest=(document.getElementById('tr-dest-branch').value||'').trim();
+    var note=(document.getElementById('tr-note').value||'').trim();
+    if(!code){toast('Enter item code','warning');return;}
+    if(qty<=0){toast('Enter quantity > 0','warning');return;}
+    if(!dest){toast('Select destination branch','warning');return;}
+    var item=findItem(code);
+    if(!item){toast('Item not found: '+code,'error');return;}
+    if(item.qty<qty){toast('Not enough stock (available: '+item.qty+')','error');return;}
+    if(!confirm('Transfer '+qty+' '+item.unit+' of "'+item.name+'" to branch "'+dest+'"?\n\nThis will deduct from your stock and create a pending request at the destination.'))return;
+    doTransferStock(code, item, qty, dest, note);
+  };
+}
+
+function doTransferStock(code, item, qty, destBranchId, note){
+  if(!db){toast('Not connected','error');return;}
+  var transferId='TRF-'+TODAY+'-'+String(Date.now()).slice(-4);
+  var transfer={
+    id:transferId,
+    code:code,name:item.name,unit:item.unit,qty:qty,
+    fromBranch:CURRENT_BRANCH?CURRENT_BRANCH.id:'unknown',
+    fromBranchName:CURRENT_BRANCH?CURRENT_BRANCH.name:'Unknown',
+    toBranch:destBranchId,
+    note:note||'',
+    status:'pending', // pending/accepted/rejected
+    date:TODAY,
+    createdAt:Date.now()
+  };
+
+  // Deduct from this branch immediately
+  item.qty-=qty;
+  saveStock(code,item.qty);
+  logs.push({code:code,name:item.name,type:'transfer-out',qty:qty,note:'Transfer to '+destBranchId+(note?' — '+note:''),date:TODAY});
+  saveLogs();
+
+  // Write transfer request to destination branch
+  var destPath='branches/'+destBranchId+'/transfer_requests/'+transferId;
+  db.ref(destPath).set(transfer,function(err){
+    if(err){
+      toast('Transfer write failed — stock deducted but request not sent','error');
+      console.error(err);
+    } else {
+      toast('✅ Transfer sent! '+qty+' '+item.unit+' of "'+item.name+'" → waiting for '+destBranchId+' to accept','success');
+      // Clear form
+      document.getElementById('tr-code').value='';
+      document.getElementById('tr-qty').value='';
+      document.getElementById('tr-note').value='';
+      document.getElementById('tr-prev').style.display='none';
+      ren();
+    }
+  });
+}
+
+// ── INCOMING TRANSFERS LISTENER ─────────────────────────────
+var _transferListenerAttached=false;
+function attachTransferListener(){
+  if(!db||!BRANCH_PATH||_transferListenerAttached)return;
+  _transferListenerAttached=true;
+  db.ref(BRANCH_PATH+'/transfer_requests').on('value',function(snap){
+    var raw=snap.val();
+    if(!raw)return;
+    var pending=Object.values(raw).filter(function(t){return t&&t.status==='pending';});
+    if(pending.length>0){
+      // Show notification badge
+      var badge=document.getElementById('badge-transfers');
+      if(!badge){
+        // Add to moves nav button
+        var movesBtn=document.querySelector('[data-p="moves"]');
+        if(movesBtn){
+          badge=document.createElement('span');
+          badge.id='badge-transfers';
+          badge.className='nbadge nb-g';
+          movesBtn.appendChild(badge);
+        }
+      }
+      if(badge){badge.textContent=pending.length;badge.style.display='';}
+      // Show toast if on moves page
+      if(S.p==='moves') showIncomingTransfers(pending, raw);
+    }
+  });
+}
+
+function showIncomingTransfers(pending, allRaw){
+  var existing=document.getElementById('incoming-transfers');
+  if(existing)existing.remove();
+  if(!pending.length)return;
+  var div=document.createElement('div');
+  div.id='incoming-transfers';
+  div.style.cssText='background:rgba(192,132,252,.06);border:1px solid rgba(192,132,252,.2);border-radius:12px;padding:16px;margin-bottom:14px';
+  var h='<div style="font-size:13px;font-weight:700;color:var(--pur);margin-bottom:12px">📨 Incoming Transfer Requests ('+pending.length+')</div>';
+  pending.forEach(function(t){
+    h+='<div style="background:var(--bg3);border:1px solid var(--bd);border-radius:9px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
+    h+='<div style="flex:1;min-width:0">';
+    h+='<div style="font-size:13px;font-weight:700">'+xe(t.name)+'</div>';
+    h+='<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">'+xe(t.code)+' · <strong style="color:var(--pur)">'+t.qty+' '+t.unit+'</strong> from <strong>'+xe(t.fromBranchName||t.fromBranch)+'</strong></div>';
+    if(t.note) h+='<div style="font-size:11px;color:var(--text2);margin-top:3px">Note: '+xe(t.note)+'</div>';
+    h+='<div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--mono)">'+xe(t.id)+' · '+xe(t.date)+'</div>';
+    h+='</div>';
+    h+='<div style="display:flex;gap:6px;flex-shrink:0">';
+    h+='<button class="btn g sm" data-tr-accept="'+xe(t.id)+'" data-tr-data="'+encodeURIComponent(JSON.stringify(t))+'">✅ Accept</button>';
+    h+='<button class="btn d sm" data-tr-reject="'+xe(t.id)+'">✕ Reject</button>';
+    h+='</div></div>';
+  });
+  div.innerHTML=h;
+  // Wire accept/reject
+  div.querySelectorAll('[data-tr-accept]').forEach(function(btn){
+    btn.onclick=function(){
+      var id=this.dataset.trAccept;
+      var t=JSON.parse(decodeURIComponent(this.dataset.trData));
+      acceptTransfer(id,t);
+    };
+  });
+  div.querySelectorAll('[data-tr-reject]').forEach(function(btn){
+    btn.onclick=function(){
+      var id=this.dataset.trReject;
+      if(confirm('Reject this transfer? The items will NOT be added to your stock.')) rejectTransfer(id);
+    };
+  });
+  // Insert at top of moves page
+  var pg=document.getElementById('pg');
+  if(pg)pg.insertBefore(div,pg.firstChild);
+}
+
+function acceptTransfer(id,t){
+  if(!db)return;
+  // Add qty to this branch's stock
+  var item=findItem(t.code);
+  if(item){
+    item.qty+=(t.qty||0);
+    saveStock(t.code,item.qty);
+  }
+  // Log it
+  logs.push({code:t.code,name:t.name,type:'transfer-in',qty:t.qty,note:'Transfer from '+xe(t.fromBranchName||t.fromBranch)+(t.note?' — '+t.note:''),date:TODAY});
+  saveLogs();
+  // Mark as accepted in Firebase
+  db.ref(BRANCH_PATH+'/transfer_requests/'+id+'/status').set('accepted',function(){
+    toast('✅ Transfer accepted — '+t.qty+' '+t.unit+' of "'+t.name+'" added to your stock','success');
+    ren();
+  });
+}
+
+function rejectTransfer(id){
+  if(!db)return;
+  db.ref(BRANCH_PATH+'/transfer_requests/'+id+'/status').set('rejected',function(){
+    toast('Transfer rejected','warning');
+    ren();
+  });
+}
+
+// ── TRANSFER STAFF BETWEEN BRANCHES ────────────────────────
+function openTransferStaffModal(staff){
+  if(!db){toast('Not connected','error');return;}
+  var destOpts='<option value="">— Select branch —</option>';
+  // Build branch list dynamically
+  db.ref('admin/branches').once('value',function(snap){
+    var raw=snap.val()||{};
+    Object.values(raw).filter(Boolean).forEach(function(b){
+      if(CURRENT_BRANCH&&b.id===CURRENT_BRANCH.id)return;
+      destOpts+='<option value="'+b.id+'">'+xe(b.name)+(b.location?' — '+b.location:'')+'</option>';
+    });
+    om('🔀 Transfer Staff — '+xe(staff.name),
+      '<div style="display:flex;flex-direction:column;gap:14px">'
+      +'<div style="background:var(--bg2);border-radius:9px;padding:12px 14px;display:flex;align-items:center;gap:12px">'
+        +'<div style="width:40px;height:40px;border-radius:50%;background:rgba(192,132,252,.15);border:1px solid rgba(192,132,252,.3);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--pur);font-family:var(--mono)">'+ini(staff.name)+'</div>'
+        +'<div><div style="font-size:13px;font-weight:700">'+xe(staff.name)+'</div>'
+        +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">'+xe(staff.dept||'—')+' · '+xe(staff.role||'—')+'</div></div>'
+      +'</div>'
+      +'<div class="fg"><label>Transfer To Branch *</label>'
+        +'<select id="ts-dest-branch" class="fi-s">'+destOpts+'</select>'
+      +'</div>'
+      +'<div class="fg"><label>Reason / Note</label>'
+        +'<input id="ts-transfer-note" class="fi-s" placeholder="e.g. Temporary assignment, permanent transfer…">'
+      +'</div>'
+      +'<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;font-size:11px;color:rgba(245,158,11,.9);line-height:1.6">'
+        +'⚠️ This will <strong>move</strong> the staff record to the destination branch. Their attendance and history in this branch will remain. You can transfer them back at any time.'
+      +'</div>'
+      +'<div class="mfoot" style="border-top:1px solid var(--bd);padding-top:14px">'
+        +'<button class="btn s" id="mc2">Cancel</button>'
+        +'<button class="btn" id="ms" style="background:linear-gradient(135deg,var(--pur),#7c3aed);min-width:140px">🔀 Transfer Staff</button>'
+      +'</div>'
+      +'</div>',
+      function(){
+        var dest=document.getElementById('ts-dest-branch').value;
+        var note=(document.getElementById('ts-transfer-note').value||'').trim();
+        if(!dest){toast('Select destination branch','warning');return;}
+        doTransferStaff(staff, dest, note);
+      }
+    );
+  });
+}
+
+function doTransferStaff(staff, destBranchId, note){
+  if(!db)return;
+  var destPath='branches/'+destBranchId+'/staff';
+  var srcPath=bPath('staff');
+  var staffKey=String(staff.id).replace(/[.#$\[\]\/]/g,'_');
+
+  // Add staff to destination branch
+  var staffRecord=Object.assign({},staff,{
+    transferredFrom:CURRENT_BRANCH?CURRENT_BRANCH.name:'Unknown',
+    transferNote:note,
+    transferDate:TODAY
+  });
+
+  db.ref(destPath+'/'+staffKey).set(staffRecord,function(err){
+    if(err){toast('Transfer failed: '+err.message,'error');return;}
+    // Remove from current branch
+    db.ref(srcPath+'/'+staffKey).remove(function(err2){
+      if(err2){toast('Added to destination but could not remove from source','warning');return;}
+      // Update local state
+      S.staff=S.staff.filter(function(m){return m.id!==staff.id;});
+      cm();
+      ren();
+      toast('✅ '+staff.name+' transferred to branch "'+destBranchId+'"','success');
+    });
+  });
 }
 
 function pOrders(){
@@ -4318,7 +4576,7 @@ function pStaff(){
       '<td>'+pl(m.status,sc)+'</td>'+
       '<td style="color:var(--text3);font-size:11.5px;font-family:var(--mono)">'+xe(m.sap||'—')+'</td>'+
       '<td style="font-size:11.5px;font-family:var(--mono)">'+(m.phone?'<a href="tel:'+xe(m.phone)+'" style="color:var(--gold);text-decoration:none">'+xe(m.phone)+'</a>':'<span style="color:var(--text3)">—</span>')+'</td>'+
-      '<td><div style="display:flex;gap:5px"><button class="btn sm s" data-edit-staff="'+xe(m.id)+'">Edit</button><button class="btn sm d" data-del="staff" data-id="'+xe(m.id)+'">Del</button></div></td>'+
+      '<td><div style="display:flex;gap:5px"><button class="btn sm s" data-edit-staff="'+xe(m.id)+'">Edit</button><button class="btn sm" data-transfer-staff="'+xe(m.id)+'" style="background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3);color:var(--pur)">🔀 Transfer</button><button class="btn sm d" data-del="staff" data-id="'+xe(m.id)+'">Del</button></div></td>'+
     '</tr>';
   });
 
@@ -5238,8 +5496,8 @@ function saveOrder(){
 // ── EMAIL / PRINT ORDER AS PDF ──────────────────────────────────────────
 function emailOrderPDF(ordId){
   var order=findOrder(ordId);if(!order)return;
-  var branchEl=document.getElementById('branch-name')||document.querySelector('[id*="branch"]');
-  var branch=(branchEl&&branchEl.textContent)||'ALFA.CO';
+  // Get clean branch name from session — never use DOM text which may include navigation text
+  var branch=CURRENT_BRANCH?CURRENT_BRANCH.name:(IS_SUPER_ADMIN?'Head Office':'ALFA.CO');
 
   // Build printable HTML in a new window
   var rows=order.items.map(function(it,i){
@@ -5590,6 +5848,13 @@ function bindPg(){
 
   // Staff
   document.querySelectorAll('[data-edit-staff]').forEach(function(b){b.onclick=function(){var id=b.dataset.editStaff,f=null;for(var i=0;i<S.staff.length;i++)if(S.staff[i].id===id){f=S.staff[i];break;}if(f)mStaff(f);};});
+  document.querySelectorAll('[data-transfer-staff]').forEach(function(b){
+    b.onclick=function(){
+      var id=b.dataset.transferStaff,f=null;
+      for(var i=0;i<S.staff.length;i++)if(S.staff[i].id===id){f=S.staff[i];break;}
+      if(f)openTransferStaffModal(f);
+    };
+  });
   var srf=document.getElementById('staff-role-filter');
   if(srf&&!srf._wired){srf._wired=true;srf.onchange=function(){S._roleFilter=this.value;ren();};}
   var sfc=document.getElementById('staff-filter-clear');
@@ -5834,6 +6099,20 @@ function bindPg(){
 
   // Admin branch management binding
   if(S.p==='admin-branches'){bindAdminBranches();}
+
+  // ── Moves page — init transfer UI ─────────────────────────
+  if(S.p==='moves'){
+    initTransferUI();
+    // Show any pending incoming transfers
+    if(db&&BRANCH_PATH){
+      db.ref(BRANCH_PATH+'/transfer_requests').once('value',function(snap){
+        var raw=snap.val();
+        if(!raw)return;
+        var pending=Object.values(raw).filter(function(t){return t&&t.status==='pending';});
+        if(pending.length) showIncomingTransfers(pending,raw);
+      });
+    }
+  }
 
   // ── Items pagination ───────────────────────────────────────
   if(S.p==='items'){
@@ -6261,6 +6540,7 @@ function _doLaunch(){
       attachListeners();
       loadSuppliers();
       loadBranchConfig();
+      attachTransferListener();
       if(!IS_SUPER_ADMIN) seedIfEmpty();
       go(IS_SUPER_ADMIN ? 'admin-branches' : 'inv-dash');
       updateBadges();
@@ -6793,10 +7073,16 @@ function saveBranchModal(){
     toast((_editBranchId?'Branch updated':'Branch created')+': '+name,'success');
     cm();
     loadAdminBranches();
-    // Also refresh login list
     if(db) loadBranchesForLogin();
+    // Also update CURRENT_BRANCH if editing the branch we're in
+    if(CURRENT_BRANCH&&CURRENT_BRANCH.id===id){
+      CURRENT_BRANCH=b;
+      var bl=document.getElementById('branch-label');
+      if(bl) bl.textContent=b.name;
+      var bd2=document.getElementById('branch-dot');
+      if(bd2) bd2.style.background=b.color||'var(--grn)';
+    }
   });
-  return true; // don't auto-close; we close in callback
 }
 
 window.onload = function(){
@@ -6810,7 +7096,7 @@ window.onload = function(){
 
   document.getElementById('mcl').onclick=cm;
   document.getElementById('mo').onclick=function(e){if(e.target===e.currentTarget)cm();};
-  document.getElementById('mbod').addEventListener('click',function(e){if(e.target.id==='ms'&&_cb)_cb();if(e.target.id==='mc2')cm();});
+  document.getElementById('mbod').addEventListener('click',function(e){var msBtn=e.target.closest('#ms');var mc2Btn=e.target.closest('#mc2');if(msBtn&&_cb){_cb();}if(mc2Btn)cm();});
   document.getElementById('del-yes').onclick=function(){document.getElementById('del-bar').classList.remove('show');_execDel();};
   document.getElementById('del-no').onclick=function(){document.getElementById('del-bar').classList.remove('show');_del={type:null,id:null};};
   document.getElementById('close-item-modal').onclick=closeItemModal;
