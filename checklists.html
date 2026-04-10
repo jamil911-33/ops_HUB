@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Operations Checklists — ALFA.CO</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root{
+  --acc:#f0a500;--acc2:#f5be45;--acc-glow:rgba(240,165,0,.15);
+  --grn:#34d399;--red:#f87171;--gold:#f0a500;--blu:#60a5fa;
+  --pur:#c084fc;--cyn:#22d3ee;
+  --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+  --bg:transparent;--bg2:rgba(255,255,255,0.038);--bg3:rgba(255,255,255,0.028);--bg4:rgba(255,255,255,0.018);
+  --bd:rgba(255,255,255,0.10);--bd2:rgba(255,255,255,0.15);--bd3:rgba(255,255,255,0.22);
+  --text:rgba(255,255,255,0.92);--text2:rgba(255,255,255,0.55);--text3:rgba(255,255,255,0.36);
+  --input-bg:rgba(255,255,255,0.07);--input-border:rgba(255,255,255,0.13);
+  --modal-bg:rgba(10,14,26,0.95);--overlay-bg:rgba(0,0,0,0.72);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:var(--font);color:var(--text);font-size:13.5px;-webkit-font-smoothing:antialiased;overflow:hidden;
+  background:radial-gradient(ellipse at 20% 30%,rgba(99,102,241,0.28) 0%,transparent 55%),
+             radial-gradient(ellipse at 80% 70%,rgba(236,72,153,0.16) 0%,transparent 50%),
+             linear-gradient(160deg,#050810 0%,#090d1a 100%);}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px}
+
+/* APP SHELL */
+#app{display:none;flex-direction:column;height:100vh}
+#app-header{background:rgba(8,12,24,0.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--bd);padding:10px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.hdr-logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#f0a500,#c8700a);
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+#hdr-branch-name{font-size:14px;font-weight:700;color:var(--text)}
+#hdr-branch-sub{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:var(--grn);margin-left:auto;flex-shrink:0;
+  box-shadow:0 0 6px var(--grn);animation:pulse 2s infinite}
+.conn-dot.off{background:var(--red);box-shadow:0 0 6px var(--red);animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#cl-outer{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+#cl-wrap{flex:1;min-height:0;display:flex;flex-direction:column;position:relative}
+#cl-auth-overlay{border-radius:0}
+
+/* BRANCH SELECTOR */
+#branch-screen{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:radial-gradient(ellipse at 20% 30%,rgba(99,102,241,0.30) 0%,transparent 55%),
+             linear-gradient(160deg,#050810 0%,#090d1a 100%)}
+#branch-screen.gone{display:none}
+.bs-card{background:rgba(255,255,255,.055);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:28px;width:100%;max-width:420px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.bs-list{display:flex;flex-direction:column;gap:7px;max-height:340px;overflow-y:auto;margin-bottom:14px}
+.bs-btn{display:flex;align-items:center;gap:11px;width:100%;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:11px 13px;cursor:pointer;
+  text-align:left;transition:all .15s;font-family:var(--font);color:var(--text)}
+.bs-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18)}
+.pin-back{background:none;border:none;color:rgba(255,255,255,.5);font-size:13px;cursor:pointer;
+  padding:0 0 12px;font-family:var(--font);display:flex;align-items:center;gap:6px}
+.pin-inp{width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;
+  padding:13px 16px;color:rgba(255,255,255,.9);font-size:22px;font-family:monospace;letter-spacing:8px;
+  text-align:center;outline:none;margin:8px 0 4px;transition:border-color .2s}
+.pin-inp:focus{border-color:var(--acc)}
+.pin-err{font-size:11px;color:var(--red);min-height:16px;margin-bottom:8px;text-align:center}
+.pin-submit{width:100%;padding:13px;background:linear-gradient(135deg,#f0a500,#d97706);color:#000;
+  border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font)}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:#050810;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:12px;z-index:300}
+#loading.gone{display:none}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.1);border-top-color:var(--acc);
+  border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;
+  background:linear-gradient(135deg,#f0a500,#d97706);color:#000;border:none;border-radius:20px;
+  font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn.s{background:rgba(255,255,255,.08);color:var(--text2);border:1px solid var(--bd2);color:var(--text2)}
+.btn.sm{font-size:11px;padding:5px 10px}
+.btn.sm.s{background:rgba(255,255,255,.06);color:var(--text3);border:1px solid var(--bd)}
+.btn.g{background:linear-gradient(135deg,#34d399,#059669);color:#fff}
+.btn.d{background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+
+/* TOASTS */
+.toast{background:rgba(22,27,34,.95);border:1px solid var(--bd2);border-radius:10px;
+  padding:10px 14px;font-size:13px;display:flex;align-items:center;gap:9px;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);animation:toastIn .25s ease;pointer-events:all}
+.toast.success{border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.06)}
+.toast.error{border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.06)}
+.toast.warning,.toast.w{border-color:rgba(240,165,0,.3);background:rgba(240,165,0,.06)}
+.toast.info{border-color:rgba(96,165,250,.3);background:rgba(96,165,250,.06)}
+@keyframes toastIn{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+
+/* ══ CHECKLIST MODULE ══ */
+.cl-sec-tabs{display:flex;background:var(--bg2);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);padding:0 4px;gap:0;flex-shrink:0}
+.cl-sec-tab{padding:8px 14px;font-size:11.5px;font-weight:700;color:var(--text3);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--font);transition:all .2s;white-space:nowrap}
+.cl-sec-tab:hover{color:var(--text2)}
+.cl-sec-tab.active{color:var(--acc2);border-bottom-color:var(--acc)}
+.cl-meta{background:var(--bg2);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:6px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:11px;flex-shrink:0}
+.cl-meta label{color:var(--text3);font-weight:600;white-space:nowrap;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+.cl-meta input,.cl-meta select{background:var(--input-bg);border:1px solid var(--input-border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:11px;font-family:var(--mono);outline:none}
+.cl-meta input:focus,.cl-meta select:focus{border-color:var(--acc)}
+.cl-sub-tabs{background:var(--bg2);border-bottom:1px solid var(--bd);padding:0 8px;display:flex;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.cl-sub-tabs::-webkit-scrollbar{display:none}
+.cl-sub-tab{flex-shrink:0;padding:7px 12px;font-size:11px;font-weight:700;color:var(--text3);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:var(--font);margin-bottom:-1px}
+.cl-sub-tab.active{color:var(--blu);border-bottom-color:var(--blu)}
+.cl-hdr-bar{padding:8px 14px 2px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.cl-hdr-bar h3{font-size:13px;font-weight:700;color:var(--blu);margin:0}
+.cl-hdr-bar .sub{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.cl-prog-wrap{margin:0 14px 2px;background:var(--bd);border-radius:99px;height:3px;overflow:hidden;flex-shrink:0}
+.cl-prog-bar{height:100%;background:linear-gradient(90deg,var(--blu),var(--cyn));border-radius:99px;transition:width .4s}
+.cl-prog-lbl{font-size:9px;color:var(--text3);margin:1px 14px 0;text-align:right;font-family:var(--mono);flex-shrink:0}
+.cl-day-tabs{display:flex;overflow-x:auto;gap:5px;padding:6px 12px 0;scrollbar-width:none;flex-shrink:0;align-items:center}
+.cl-day-tabs::-webkit-scrollbar{display:none}
+.cl-day-tab{flex-shrink:0;padding:4px 9px;border-radius:20px;border:1px solid var(--bd2);background:var(--bg3);font-size:10px;font-weight:600;cursor:pointer;color:var(--text3);transition:all .15s;white-space:nowrap;font-family:var(--mono)}
+.cl-day-tab.active{background:var(--blu);border-color:var(--blu);color:#fff}
+.cl-day-tab.done{border-color:var(--grn);color:var(--grn);background:rgba(63,185,80,.12)}
+.cl-day-tab.partial{border-color:var(--gold);color:var(--gold);background:rgba(240,165,0,.10)}
+.cl-day-tab.active.done{background:var(--grn);border-color:var(--grn);color:#fff}
+.cl-day-tab.active.partial{background:var(--gold);border-color:var(--gold);color:#000}
+.cl-cards{padding:8px 12px 40px;display:flex;flex-direction:column;gap:7px;overflow-y:auto;overflow-x:hidden;flex:1;min-height:0}
+.cl-grp-div{background:linear-gradient(90deg,var(--bg4),var(--bg3));border-radius:7px;padding:6px 11px;color:var(--text3);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-left:2px solid var(--blu)}
+.cl-item-card{background:var(--bg2);border-radius:9px;border:1px solid var(--bd);transition:border-color .2s}
+.cl-item-card.all-ok{border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.04)}
+.cl-item-card.has-no{border-color:rgba(248,81,73,.4);background:rgba(248,81,73,.04)}
+.cl-card-inner{padding:9px 11px 7px}
+.cl-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.cl-badge{display:inline-block;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);background:var(--bg3);padding:1px 5px;border-radius:3px;margin-bottom:2px}
+.cl-badge.key{background:rgba(240,165,0,.15);color:var(--gold)}
+.cl-item-q{font-size:12px;font-weight:600;line-height:1.4;color:var(--text)}
+.cl-flag-btn{background:none;border:1px solid var(--bd2);border-radius:5px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;flex-shrink:0;transition:all .15s}
+.cl-flag-btn.on{background:rgba(248,81,73,.15);border-color:var(--red)}
+.cl-shifts-row{display:flex;gap:6px;flex-wrap:wrap}
+.cl-shift-blk{flex:1;min-width:120px;background:var(--bg3);border-radius:7px;padding:5px 7px 4px}
+.cl-sh-title{font-size:8px;font-weight:800;color:var(--text3);letter-spacing:.5px;margin-bottom:4px;font-family:var(--mono)}
+.cl-ctrl-row{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.cl-ctrl-lbl{font-size:9px;font-weight:700;color:var(--text3);min-width:55px;flex-shrink:0;font-family:var(--mono)}
+.cl-yn-grp{display:flex;gap:3px}
+.cl-yn-btn{padding:4px 9px;border-radius:6px;border:1px solid var(--bd2);background:var(--bg4);font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;color:var(--text3);font-family:var(--font)}
+.cl-yn-btn.yes{background:rgba(63,185,80,.15);border-color:var(--grn);color:var(--grn)}
+.cl-yn-btn.no{background:rgba(248,81,73,.15);border-color:var(--red);color:var(--red)}
+.cl-cb-grp{display:flex;gap:5px}
+.cl-cb-item{display:flex;align-items:center;gap:3px;cursor:pointer;user-select:none}
+.cl-cb-box{width:20px;height:20px;border-radius:4px;border:1px solid var(--bd2);background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;transition:all .15s}
+.cl-cb-box.ok{background:rgba(63,185,80,.18);border-color:var(--grn);color:var(--grn)}
+.cl-cb-box.no{background:rgba(248,81,73,.18);border-color:var(--red);color:var(--red)}
+.cl-cb-lbl{font-size:9px;color:var(--text3);font-weight:600;font-family:var(--mono)}
+.cl-temp-inp{border:1px solid var(--bd2);border-radius:5px;padding:3px 6px;font-size:13px;font-weight:700;color:var(--blu);text-align:center;outline:none;background:var(--bg4);width:75px}
+.cl-temp-inp.has-val{border-color:rgba(88,166,255,.4)}
+.cl-temp-inp:focus{border-color:var(--blu)}
+.cl-cmt-btn{background:none;border:none;font-size:10px;font-weight:600;color:var(--blu);cursor:pointer;padding:2px 0 0;font-family:var(--font)}
+.cl-cmt-box{display:none;margin-top:3px}
+.cl-cmt-box.open{display:block}
+.cl-cmt-box textarea{width:100%;border:1px solid var(--bd2);border-radius:6px;padding:5px 7px;font-size:12px;color:var(--blu);resize:none;outline:none;min-height:36px;background:rgba(88,166,255,.05);font-family:var(--font)}
+.cl-cmt-box textarea:focus{border-color:var(--blu)}
+.cl-hyg-wrap{background:var(--bg2);border-radius:9px;border:1px solid var(--bd);overflow:hidden;flex-shrink:0}
+.cl-hyg-tb{background:var(--bg3);padding:7px 10px;display:flex;align-items:center;justify-content:space-between}
+.cl-hyg-tb h4{color:var(--text);font-size:11.5px;font-weight:700}
+.cl-hyg-scroll{overflow-x:auto;max-height:none}
+.cl-hyg-table{width:100%;border-collapse:collapse;font-size:10px;min-width:580px}
+.cl-hyg-table th{background:var(--bg3);font-weight:700;padding:4px 5px;text-align:center;border:1px solid var(--bd);font-size:9px;white-space:nowrap;color:var(--text3)}
+.cl-hyg-table td{padding:2px 4px;border:1px solid var(--bd);vertical-align:middle;text-align:center;color:var(--text2)}
+.cl-hyg-table td.nm{text-align:left;font-weight:600;min-width:130px;color:var(--text)}
+.cl-hyg-cb{width:18px;height:18px;border-radius:3px;border:1px solid var(--bd2);background:var(--bg4);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;transition:all .15s;margin:0 auto}
+.cl-hyg-cb.ok{background:rgba(63,185,80,.18);border-color:var(--grn);color:var(--grn)}
+.cl-hyg-cb.no{background:rgba(248,81,73,.18);border-color:var(--red);color:var(--red)}
+.cl-emp-inp{border:none;background:transparent;font-size:10px;font-weight:600;color:var(--text);outline:none;width:100%;min-width:100px;font-family:var(--font)}
+.cl-emp-inp:focus{background:rgba(88,166,255,.08);border-radius:3px;padding:0 3px}
+.cl-bt-inp{border:none;background:transparent;text-align:center;font-size:12px;font-weight:600;color:var(--blu);outline:none;width:100%;font-family:var(--mono)}
+.cl-bt-inp:focus{background:rgba(88,166,255,.08);border-radius:3px}
+.cl-cf-card{background:var(--bg2);border-radius:9px;border:1px solid var(--bd);overflow:hidden;margin-bottom:8px;flex-shrink:0}
+.cl-cf-hdr{background:var(--bg3);padding:7px 11px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd)}
+.cl-cf-hdr h4{color:var(--text);font-size:11.5px;font-weight:700}
+.cl-cf-scroll{overflow-x:auto}
+.cl-cf-tbl{width:100%;border-collapse:collapse;font-size:10.5px}
+.cl-cf-tbl th{background:var(--bg3);font-weight:700;padding:5px 7px;text-align:center;border:1px solid var(--bd);font-size:9px;white-space:nowrap;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px}
+.cl-cf-tbl th.day-col{background:#1a2340;color:#93c5fd;min-width:90px}
+.cl-cf-tbl td{padding:3px 5px;border:1px solid var(--bd);vertical-align:middle}
+.cl-cf-tbl td.row-label{font-weight:600;font-size:10.5px;padding:5px 10px;text-align:left;min-width:150px;color:var(--text2);background:var(--bg3)}
+.cl-cf-tbl tr.cat-row td{background:linear-gradient(90deg,rgba(88,166,255,.12),transparent);color:var(--blu);font-weight:700;font-size:10px;padding:4px 10px;text-align:left;letter-spacing:.5px;text-transform:uppercase}
+.cl-cf-bal{text-align:center;font-size:13px;font-weight:700;font-family:var(--mono);color:var(--grn);padding:2px 4px}
+.cl-cf-bal.neg{color:var(--red)}
+.cl-cf-inp{border:none;background:transparent;text-align:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--acc2);outline:none;width:100%;min-width:34px}
+.cl-cf-inp:focus{background:rgba(240,165,0,.08);border-radius:3px}
+.cl-cf-inp.am{color:#60a5fa}
+.cl-cf-inp.pm{color:#a78bfa}
+.cl-sign-inp{border:none;background:transparent;font-size:11px;color:var(--text2);outline:none;width:100%;font-family:var(--font)}
+.cl-sign-inp:focus{background:rgba(255,255,255,.05);border-radius:3px}
+#cl-auth-overlay{display:none;position:absolute;inset:0;background:var(--overlay-bg);backdrop-filter:blur(16px);z-index:50;align-items:center;justify-content:center;flex-direction:column;border-radius:8px}
+#cl-auth-overlay.show{display:flex}
+.cl-auth-card{background:var(--modal-bg);border:1px solid var(--bd2);border-radius:16px;padding:32px 36px;width:320px;max-width:92%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.cl-role-btns{display:flex;gap:10px;margin:16px 0}
+.cl-role-btn{flex:1;padding:12px 8px;border:1.5px solid var(--bd2);border-radius:10px;background:var(--bg3);color:var(--text3);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.cl-role-btn.sel{border-color:var(--acc);color:var(--acc2);background:rgba(240,165,0,.08)}
+.cl-pin-inp{width:100%;border:1.5px solid var(--bd2);border-radius:8px;padding:9px 12px;background:var(--bg4);color:var(--text);font-size:16px;font-family:var(--mono);letter-spacing:8px;text-align:center;outline:none;margin:8px 0 4px;transition:border-color .2s}
+.cl-pin-inp:focus{border-color:var(--acc)}
+.cl-pin-err{font-size:10px;color:var(--red);min-height:14px;display:block}
+#cl-wrap{display:flex;flex-direction:column;height:100%;position:relative;overflow:hidden}
+#cl-print-modal{display:none;position:fixed;inset:0;background:var(--overlay-bg);backdrop-filter:blur(8px);z-index:1000;align-items:center;justify-content:center}
+#cl-print-modal.show{display:flex}
+.cl-print-card{background:var(--modal-bg);backdrop-filter:blur(20px);border:1px solid var(--bd2);border-radius:14px;padding:24px;width:480px;max-width:95vw;max-height:85vh;overflow-y:auto}
+#cl-edit-modal{display:none;position:fixed;inset:0;background:var(--overlay-bg);backdrop-filter:blur(8px);z-index:1000;align-items:center;justify-content:center}
+#cl-edit-modal.show{display:flex}
+.cl-edit-card{background:var(--modal-bg);backdrop-filter:blur(20px);border:1px solid var(--bd2);border-radius:14px;padding:22px;width:520px;max-width:95vw;max-height:85vh;overflow-y:auto}
+
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div style="font-size:36px;margin-bottom:4px">✅</div>
+  <div class="spinner"></div>
+  <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px">Connecting…</div>
+</div>
+
+<!-- Branch Selector -->
+<div id="branch-screen" class="gone">
+  <div class="bs-card">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:38px;margin-bottom:6px">✅</div>
+      <div style="font-size:18px;font-weight:800;color:rgba(255,255,255,.92)">Operations Checklists</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;font-family:monospace">ALFA.CO · Select your branch</div>
+    </div>
+    <div id="branch-list-step">
+      <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;font-family:monospace;margin-bottom:8px">Select Branch</div>
+      <div class="bs-list" id="bs-branch-list">
+        <div style="text-align:center;color:rgba(255,255,255,.3);padding:20px;font-size:12px">Loading branches…</div>
+      </div>
+    </div>
+    <div id="pin-screen" style="display:none">
+      <button class="pin-back" id="pin-back-btn">← Back</button>
+      <div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:2px" id="pin-branch-name"></div>
+      <div style="font-size:10px;color:rgba(255,255,255,.4);font-family:monospace;margin-bottom:12px" id="pin-branch-sub"></div>
+      <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;font-family:monospace;margin-bottom:4px">Branch PIN</div>
+      <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="8" placeholder="••••" autocomplete="off">
+      <div class="pin-err" id="pin-err"></div>
+      <button class="pin-submit" id="pin-submit-btn">Enter →</button>
+    </div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div id="app-header">
+    <div class="hdr-logo" id="hdr-logo">✅</div>
+    <div style="flex:1;min-width:0">
+      <div id="hdr-branch-name" style="font-size:14px;font-weight:700">Operations Checklists</div>
+      <div id="hdr-branch-sub" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></div>
+    </div>
+    <div class="conn-dot" id="conn-dot"></div>
+  </div>
+  <div id="cl-outer">
+<div id="cl-wrap">
+  <div id="cl-auth-overlay" class="show">
+    <div class="cl-auth-card">
+      <div style="font-size:32px;margin-bottom:8px">✅</div>
+      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">Operations Checklists</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Select your role to continue</div>
+      <div class="cl-role-btns">
+        <button class="cl-role-btn" id="cl-role-staff" onclick="clSelectRole('staff')"><span style="font-size:22px">👨‍🍳</span>Staff<span style="font-size:9px;font-weight:400;color:var(--text3)">Fill checklists</span></button>
+        <button class="cl-role-btn" id="cl-role-admin" onclick="clSelectRole('admin')"><span style="font-size:22px">🔐</span>Admin<span style="font-size:9px;font-weight:400;color:var(--text3)">Full access</span></button>
+      </div>
+      <div id="cl-pin-wrap" style="display:none">
+        <div style="font-size:10px;color:var(--text3);text-align:left;margin-bottom:4px;font-family:var(--mono)">🔐 ADMIN PIN</div>
+        <input type="password" class="cl-pin-inp" id="cl-pin-inp" maxlength="6" placeholder="••••" oninput="clOnPinInput()" onkeydown="if(event.key==='Enter')clDoLogin()">
+        <span class="cl-pin-err" id="cl-pin-err"></span>
+      </div>
+      <button class="btn" id="cl-login-btn" onclick="clDoLogin()" disabled style="width:100%;justify-content:center;margin-top:12px">Enter</button>
+    </div>
+  </div>
+  <div class="cl-sec-tabs" id="cl-sec-tabs">
+    <button class="cl-sec-tab active" data-sec="mod">🔱 MOD</button>
+    <button class="cl-sec-tab" data-sec="foh">🍽 FOH</button>
+    <button class="cl-sec-tab" data-sec="boh">👨‍🍳 BOH</button>
+    <button class="cl-sec-tab" data-sec="forms">📋 Control Forms</button>
+  </div>
+  <div class="cl-meta" id="cl-meta-bar">
+    <label>BRANCH</label><input type="text" id="cl-branch" value="MOA" style="width:80px" oninput="clSyncMeta()">
+    <label>WEEK</label><input type="date" id="cl-period-start" oninput="clOnPeriodChange()">
+    <label>MOD</label><input type="text" id="cl-mod-name" placeholder="Name" style="width:90px" oninput="clSyncMeta()">
+    <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
+      <span id="cl-fb-status" style="font-size:9px;color:var(--text3);font-family:var(--mono)">⚡ Connecting...</span>
+      <span id="cl-save-ind" style="font-size:9px;color:var(--text3);font-family:var(--mono)">Auto-save on</span>
+      <button class="btn sm s" onclick="clSaveNow();toast('Saved ✓','success')" style="flex-shrink:0">💾 Save</button>
+      <button id="cl-print-btn" class="btn sm" style="display:none" onclick="clOpenPrint()">🖨 Print</button>
+      <button class="btn sm s" style="flex-shrink:0" onclick="clPrintMonthly()">📅 Monthly</button>
+      <button id="cl-edit-btn" class="btn sm s" style="display:none" onclick="clOpenEdit()">✏️ Edit Items</button>
+      <button class="btn sm s" onclick="clSwitchRole()" id="cl-role-badge">👨‍🍳 Staff</button>
+    </span>
+  </div>
+  <div class="cl-sub-tabs" id="cl-sub-tabs"></div>
+  <div class="cl-hdr-bar"><h3 id="cl-title"></h3><div class="sub" id="cl-sub"></div></div>
+  <div class="cl-prog-wrap"><div class="cl-prog-bar" id="cl-prog"></div></div>
+  <div class="cl-prog-lbl" id="cl-prog-lbl"></div>
+  <div class="cl-day-tabs" id="cl-day-tabs"></div>
+  <div class="cl-cards" id="cl-cards"></div>
+</div>
+<div id="cl-print-modal">
+  <div class="cl-print-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font-size:14px;font-weight:700">🖨 Print Checklist</h3>
+      <button onclick="document.getElementById('cl-print-modal').classList.remove('show')" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="cl-print-body"></div>
+  </div>
+</div>
+<div id="cl-edit-modal">
+  <div class="cl-edit-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 style="font-size:14px;font-weight:700">✏️ Edit Items</h3>
+      <button onclick="document.getElementById('cl-edit-modal').classList.remove('show')" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="cl-edit-body" style="overflow-y:auto;max-height:60vh"></div>
+  </div>
+</div>
+<div id="toasts" style="position:fixed;bottom:20px;right:16px;left:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// 🔥 FIREBASE
+// ═══════════════════════════════════════
+var FIREBASE_CONFIG = {
+  apiKey:           "AIzaSyB9DhSn5gDqAhpmLG9aVFAld1dSRYJWFDI",
+  authDomain:       "opshub-f802f.firebaseapp.com",
+  databaseURL:      "https://opshub-f802f-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:        "opshub-f802f",
+  storageBucket:    "opshub-f802f.firebasestorage.app",
+  messagingSenderId:"84176854270",
+  appId:            "1:84176854270:web:f7a66b3b38e98b630859af"
+};
+var CL_SESSION_KEY = 'opshub_cl_branch_session';
+var SUPER_ADMIN_PIN = '1422';
+var db = null;
+var BRANCH_PATH = '';
+var CURRENT_BRANCH = null;
+var IS_SUPER_ADMIN = false;
+var _pendingBranch = null;
+function bPath(r){ return BRANCH_PATH ? (BRANCH_PATH+'/'+r) : r; }
+
+// Toast
+function toast(msg,type){
+  var w=document.getElementById('toasts'); if(!w)return;
+  var el=document.createElement('div'); el.className='toast '+(type||'info');
+  var ic={success:'✅',error:'❌',warning:'⚠️',w:'⚠️',info:'ℹ️'};
+  el.innerHTML='<span style="font-size:16px;flex-shrink:0">'+(ic[type]||'ℹ️')+'</span><span>'+msg+'</span>';
+  w.appendChild(el);
+  setTimeout(function(){el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(function(){el.remove();},350);},3200);
+}
+
+// ═══════════════════════════════════════
+// 🏢 BRANCH SELECTOR
+// ═══════════════════════════════════════
+function showBranchScreen(){
+  document.getElementById('loading').classList.add('gone');
+  document.getElementById('branch-screen').classList.remove('gone');
+  document.getElementById('app').style.display='none';
+  db.ref('admin/branches').once('value',function(snap){
+    var raw=snap.val()||{};
+    var branches=Object.values(raw).filter(function(b){return b&&b.active!==false;});
+    branches.sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
+    var el=document.getElementById('bs-branch-list'); if(!el)return;
+    el.innerHTML='';
+    if(!branches.length){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.3);padding:20px;font-size:12px">No branches found.</div>';return;}
+    branches.forEach(function(b){
+      var btn=document.createElement('button'); btn.className='bs-btn';
+      btn.innerHTML='<div style="width:36px;height:36px;border-radius:9px;background:'+(b.color||'#f0a500')+';display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">'+(b.icon||'✅')+'</div>'
+        +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.9)">'+(b.name||b.id)+'</div>'
+        +'<div style="font-size:10px;color:rgba(255,255,255,.4);font-family:monospace">'+(b.brand||'')+(b.location?' · '+b.location:'')+'</div></div>'
+        +'<div style="font-size:16px;color:rgba(255,255,255,.2)">›</div>';
+      btn.onclick=function(){
+        _pendingBranch=b;
+        document.getElementById('pin-branch-name').textContent=b.name||b.id;
+        document.getElementById('pin-branch-sub').textContent=(b.brand||'')+(b.location?' · '+b.location:'');
+        document.getElementById('branch-list-step').style.display='none';
+        document.getElementById('pin-screen').style.display='block';
+        var pi=document.getElementById('pin-inp'); pi.value='';
+        document.getElementById('pin-err').textContent='';
+        setTimeout(function(){pi.focus();},60);
+      };
+      el.appendChild(btn);
+    });
+  });
+}
+
+function submitPin(){
+  if(!_pendingBranch)return;
+  var pin=(document.getElementById('pin-inp').value||'').trim();
+  if(!pin){document.getElementById('pin-err').textContent='Enter PIN';return;}
+  if(pin!==String(_pendingBranch.pin)){
+    document.getElementById('pin-err').textContent='Incorrect PIN';
+    document.getElementById('pin-inp').value=''; document.getElementById('pin-inp').focus(); return;
+  }
+  CURRENT_BRANCH=_pendingBranch; BRANCH_PATH='branches/'+_pendingBranch.id;
+  try{localStorage.setItem(CL_SESSION_KEY,JSON.stringify({branchId:_pendingBranch.id,branch:_pendingBranch,expires:Date.now()+10*3600000}));}catch(e){}
+  launchChecklist();
+}
+
+function launchChecklist(){
+  var hlo=document.getElementById('hdr-logo');
+  var hn=document.getElementById('hdr-branch-name');
+  var hs=document.getElementById('hdr-branch-sub');
+  if(CURRENT_BRANCH){
+    if(hlo){hlo.textContent=CURRENT_BRANCH.icon||'✅';hlo.style.background='linear-gradient(135deg,'+(CURRENT_BRANCH.color||'#f0a500')+','+(CURRENT_BRANCH.color||'#f0a500')+'aa)';}
+    if(hn) hn.textContent=CURRENT_BRANCH.name||'Checklists';
+    if(hs) hs.textContent=(CURRENT_BRANCH.brand||'')+(CURRENT_BRANCH.location?' · '+CURRENT_BRANCH.location:'');
+  }
+  var brInp=document.getElementById('cl-branch');
+  if(brInp&&CURRENT_BRANCH) brInp.value=CURRENT_BRANCH.name||CURRENT_BRANCH.id||'MOA';
+
+  document.getElementById('branch-screen').classList.add('gone');
+  document.getElementById('loading').classList.add('gone');
+  document.getElementById('app').style.display='flex';
+
+  var ps=document.getElementById('cl-period-start');
+  if(ps&&!ps.value){
+    var n=new Date(),dow=n.getDay(),sun=new Date(n); sun.setDate(n.getDate()-dow);
+    ps.value=sun.getFullYear()+'-'+String(sun.getMonth()+1).padStart(2,'0')+'-'+String(sun.getDate()).padStart(2,'0');
+  }
+  clWeekDates=clGetWeekDates(ps?ps.value:'');
+  window.monthlyRecords={};
+  clEnsureST();
+  clLoadBTItems();
+  clBindSecTabs();
+  // Card event delegation
+  var cards=document.getElementById('cl-cards');
+  if(cards){
+    cards.addEventListener('click',function(e){
+      var btn=e.target.closest('[data-clid][data-val]');
+      if(btn){var d=btn.dataset;clSetV(d.clid,parseInt(d.di),d.iid,d.sh,d.val);}
+    });
+    cards.addEventListener('input',function(e){
+      if(e.target.classList.contains('cl-shift-temp')){var d=e.target.dataset;clSetTemp(d.clid,parseInt(d.di),d.iid,d.sh,e.target);}
+    });
+    cards.addEventListener('change',function(e){
+      if(e.target.classList.contains('cl-shift-temp')){var d=e.target.dataset;clSetTemp(d.clid,parseInt(d.di),d.iid,d.sh,e.target);}
+    });
+  }
+  clInitFBSync();
+}
+
+// ═══════════════════════════════════════
+// 🔥 INIT
+// ═══════════════════════════════════════
+window.onload=function(){
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db=firebase.database();
+    db.ref('.info/connected').on('value',function(snap){
+      var on=!!snap.val(); var dot=document.getElementById('conn-dot');
+      if(dot) dot.className='conn-dot'+(on?'':' off');
+    });
+  }catch(e){document.getElementById('loading').classList.add('gone');toast('Firebase error: '+e.message,'error');return;}
+
+  document.getElementById('pin-back-btn').onclick=function(){
+    document.getElementById('pin-screen').style.display='none';
+    document.getElementById('branch-list-step').style.display='block';
+    _pendingBranch=null;
+  };
+  document.getElementById('pin-submit-btn').onclick=submitPin;
+  document.getElementById('pin-inp').addEventListener('keydown',function(e){
+    if(e.key==='Enter') submitPin();
+    document.getElementById('pin-err').textContent='';
+  });
+
+  // 1. URL param ?branch=xxx (QR scan — no PIN needed)
+  var urlParams=new URLSearchParams(window.location.search);
+  var urlBranch=urlParams.get('branch')||urlParams.get('b');
+  if(urlBranch){
+    db.ref('admin/branches/'+urlBranch).once('value',function(snap){
+      var b=snap.val();
+      if(b&&b.active!==false){
+        CURRENT_BRANCH=b; BRANCH_PATH='branches/'+urlBranch;
+        try{localStorage.setItem(CL_SESSION_KEY,JSON.stringify({branchId:urlBranch,branch:b,expires:Date.now()+10*3600000}));}catch(ex){}
+        launchChecklist();
+      } else {showBranchScreen();}
+    },function(){showBranchScreen();});
+    return;
+  }
+
+  // 2. Saved session
+  var sess=null;
+  try{sess=JSON.parse(localStorage.getItem(CL_SESSION_KEY)||'null');}catch(e){}
+  if(sess&&sess.branchId&&sess.expires>Date.now()){
+    CURRENT_BRANCH=sess.branch||null; BRANCH_PATH='branches/'+sess.branchId;
+    launchChecklist(); return;
+  }
+
+  // 3. Branch selector
+  showBranchScreen();
+};
+
+// ═══════════════════════════════════════
+// ✅ CHECKLIST ENGINE
+// ═══════════════════════════════════════
+
+var CL_DATA = {
+ mod:[
+  {id:'mod_gelato',name:'Salad & Gelato',sub:"MOD Frontline — Salad & Gelato — 11:30 AM & 5:30 PM",checkType:'temp',groups:[
+   {name:'GELATO DISPLAY',items:[{id:'gelato',label:'Gelato Freezer Display -15/-16°C',yellow:true,hasTemp:true},{id:'vanilla',label:'Vanilla, Chocolate, Strawberry, Oreo, Cotton Candy',yellow:false,hasTemp:false},{id:'pistachio',label:'Pistachio, Hazelnuts, Mango, Ferrero, Macha, Tiramisu',yellow:false,hasTemp:false},{id:'fruitti',label:'Fruitti Bosco, Lemon',yellow:false,hasTemp:false}]},
+   {name:'CHILLER',items:[{id:'chiller2d',label:'2 Door Chiller 0-5°C',yellow:true,hasTemp:true},{id:'onion',label:'Onion, Tomato, Italian Dressing',yellow:false,hasTemp:false}]}]},
+  {id:'mod_pastry',name:'Pastry & Receiving',sub:"MOD Frontline — Pastry & Receiving — 11:30 AM & 5:30 PM",checkType:'temp',groups:[
+   {name:'EQUIPMENT',items:[{id:'oven',label:'Convection Oven 180°C',yellow:true,hasTemp:true},{id:'wic',label:'Walk-in Chiller 0-5°C',yellow:true,hasTemp:true},{id:'wif',label:'Walk-in Freezer -18 to -22°C',yellow:true,hasTemp:true}]},
+   {name:'ITEMS',items:[{id:'gelato2',label:'Gelato Ice Cream',yellow:false,hasTemp:false},{id:'desserts',label:'Tiramisu, Fondente, Creme Brulee, Sampler',yellow:false,hasTemp:false},{id:'cheese_r',label:'Fresh Mozza, Ricotta, Mascarpone, Goat Cheese',yellow:false,hasTemp:false},{id:'protein',label:'Chicken, Salmon, Hammour, Topside, Chuck Roll (Thawing)',yellow:false,hasTemp:false},{id:'beef',label:'Beef Bacon, Strip Loin, Tenderloin',yellow:false,hasTemp:false},{id:'prep_r',label:'Bruschette, Lasagna, Meatballs',yellow:false,hasTemp:false}]}]},
+  {id:'mod_fryer',name:'Fryer & Pizza',sub:"MOD Frontline — Fryer & Pizza — 11:30 AM & 5:30 PM",checkType:'temp',groups:[
+   {name:'EQUIPMENT',items:[{id:'fryer160',label:'Fryer Machine 160°C',yellow:true,hasTemp:true},{id:'fryer180',label:'Fryer Machine 180°C',yellow:true,hasTemp:true},{id:'pizzaoven',label:'Pizza Oven 600-650°F',yellow:true,hasTemp:true}]},
+   {name:'BACKUP & MISE EN PLACE',items:[{id:'backup1',label:'Tartar Sauce, Italian Dressing, Boiled Potato (Back up)',yellow:false,hasTemp:false},{id:'backup2',label:'Pesto Sauce, Parmesan Ground, Portion Butter Block',yellow:false,hasTemp:false},{id:'pizzaitem',label:'Pizza Dough, Pizza Sauce, Shredded Mozzarella',yellow:false,hasTemp:false},{id:'topping1',label:'Meatballs, Cooked Bell Pepper, Grilled Eggplant',yellow:false,hasTemp:false},{id:'topping2',label:'Grilled Zucchini, Artichoke, Caramelized Onion, Rocca',yellow:false,hasTemp:false},{id:'cheese2',label:'G. Parmesan, Shredded Fontina, Goat Cheese, Balsamic',yellow:false,hasTemp:false},{id:'meats',label:'Beef Ham, Pepperoni, Fresh Mozzarella',yellow:false,hasTemp:false}]}]},
+  {id:'mod_salad',name:'Salad & Prep',sub:"MOD Frontline — Salad & Prep — 11:30 AM & 5:30 PM",checkType:'temp',groups:[
+   {name:'CHILLER',items:[{id:'saladch',label:'Salad 2 Door Chiller 0-5°C',yellow:true,hasTemp:true}]},
+   {name:'ITEMS',items:[{id:'bs1',label:'Artichoke Dip, Sliced Bruschette, Garlic Mayo, Chives Goat Cheese',yellow:false,hasTemp:false},{id:'bs2',label:'Crouton, S/W Bread, Eggplant, Mushroom Cooked, Citrus',yellow:false,hasTemp:false},{id:'bs3',label:'Bell Pepper Cooked, Shredded Mozza, Tartar Sauce',yellow:false,hasTemp:false},{id:'salad_f',label:'Rocca, Lettuce, Pomodoro Mixture, Pesto, Garlic Mayo',yellow:false,hasTemp:false},{id:'herbs',label:'Oregano, Olive Oil',yellow:false,hasTemp:false},{id:'vegs',label:'Sliced Cucumber, Sliced Onion, Tomato (Prepared)',yellow:false,hasTemp:false},{id:'greens',label:'Fresh Rocca, Lettuce Iceberg (Prepared)',yellow:false,hasTemp:false},{id:'seafood_b',label:'Calamari, Mozzarella, Zucchini & Artichoke, Fish Fillet (Back up)',yellow:false,hasTemp:false}]}]},
+  {id:'mod_grill',name:'Grill Section',sub:"MOD Frontline — Grill Section — 11:30 AM & 5:30 PM",checkType:'temp',groups:[
+   {name:'EQUIPMENT',items:[{id:'bainmarie',label:'Bain Marie 63°C',yellow:true,hasTemp:true},{id:'maingrill',label:'Main Grill 200-220°C',yellow:true,hasTemp:true},{id:'convoven',label:'Convection Oven 250°C',yellow:true,hasTemp:true},{id:'meatch',label:'Meat 2 Door Chiller 0-5°C',yellow:true,hasTemp:true},{id:'soupch',label:'Soup 2 Door Chiller 0-5°C',yellow:true,hasTemp:true}]},
+   {name:'MISE EN PLACE',items:[{id:'seasoning',label:'Melted Butter, Steak Seasoning',yellow:false,hasTemp:false},{id:'soup1',label:'Hybrid Daily Soup',yellow:false,hasTemp:false},{id:'soup2',label:'Onion Soup',yellow:false,hasTemp:false},{id:'sauces',label:'Mash Potato, Lemon Sauce, Alfredo Sauce',yellow:false,hasTemp:false},{id:'sauces2',label:'Romano, Peppercorn, Marinara, Mushroom Sauce',yellow:false,hasTemp:false}]}]},
+  {id:'mod_pasta',name:'Pasta Section',sub:"MOD Frontline — Pasta Section — 11:30 AM & 5:30 PM",checkType:'temp',groups:[
+   {name:'EQUIPMENT',items:[{id:'blancher',label:'Pasta Blancher 80-100°C',yellow:true,hasTemp:true},{id:'cooked_ch',label:'Cooked Pasta Dispatcher Cooler 0-5°C',yellow:true,hasTemp:true},{id:'backup_ch',label:'Back-up Dispatcher Cooler 0-5°C',yellow:true,hasTemp:true}]},
+   {name:'MISE EN PLACE',items:[{id:'sauces_p',label:'Creme Sauce, Pomodoro, 4 Cheese Sauce, Bolognese',yellow:false,hasTemp:false},{id:'spices',label:'Mixed Spices, Chili, Panko Breading, Parmesan Cheese',yellow:false,hasTemp:false},{id:'vegs_p',label:'Broccoli, Grill Chicken, Onion, Garlic Paste, Goat Cheese',yellow:false,hasTemp:false},{id:'herbs_p',label:'Fresh Mozz, Parsley, Basil, Cherry Tom, Asparagus, Pesto',yellow:false,hasTemp:false},{id:'misc_p',label:'Capers, Garlic Sliced, Artichoke, Shrimp Cooked, Spinach',yellow:false,hasTemp:false},{id:'mush',label:'Fresh Mush, Wild Mush, Green Peas, Pomodoro, Bacon',yellow:false,hasTemp:false},{id:'seafood_p',label:'F. Mussel, Cooked Shrimp 20/30, Calamari',yellow:false,hasTemp:false}]}]},
+  {id:'mod_bar_open',name:'Bar Opening',sub:'MOD Bar Checklist — Opening',checkType:'cb',isWeekly:true,groups:[
+   {name:'WALKTHROUGH',items:[{id:'equip',label:'All equipment are properly working'},{id:'items_a',label:'All items available'},{id:'bar_pp',label:'Barista aware of P&P levels'},{id:'chiller_w',label:'Working Chiller'},{id:'beverages',label:'Holsten / Aquafina / Aquapanna / St.Pelligrino'},{id:'bases',label:'At least 1 base of each is ready for morning shift'},{id:'pour_c',label:'Pouring containers are clean and organized'},{id:'whipped',label:'Whipped cream and chocolate syrup in stock'}]},
+   {name:'BAR COUNTER',items:[{id:'garnish',label:'Garnish tray is stocked (enough for 2 hours)'},{id:'bar_tools',label:'Bar tools readily available'},{id:'glassware',label:'Glassware all stocked'},{id:'paper_i',label:'All paper items available'},{id:'sugar',label:'Sugarbowls / Rimming sponge ready'}]},
+   {name:'BACKUP CHILLER',items:[{id:'kids_j',label:'Al Safi Kids Juice (Apple & Orange) Available'},{id:'bk_g',label:'Backup garnish covered and labelled'},{id:'prep_i',label:'All prep items organized'},{id:'fresh_f',label:'Fresh fruit stocked according to P&P'},{id:'milk',label:'Milk & Steaming pitcher readily available'}]},
+   {name:'BACKUP CABINETS',items:[{id:'bar_t2',label:'Bar tools available'},{id:'electronic',label:'Electronic bar equipment charged & available'},{id:'espresso',label:'Espresso beans available'},{id:'paper_bk',label:'Paper items available'}]}]},
+  {id:'mod_bar_close',name:'Bar Closing',sub:'MOD Bar Checklist — Closing',checkType:'cb',isWeekly:true,groups:[
+   {name:'WORKING CHILLER',items:[{id:'c_holsten',label:'Holsten / Aquafina / Aquapanna / St.Pelligrino'},{id:'c_bases',label:'At least 1 base ready for morning shift'},{id:'c_pour',label:'Pouring containers clean and organized'},{id:'c_whipped',label:'Whipped cream and chocolate syrup in stock'},{id:'c_pnp',label:'OH & P&P correctly followed'}]},
+   {name:'BAR COUNTER',items:[{id:'c_garnish',label:'Garnish fruit trays clean and empty'},{id:'c_tools',label:'Bar tools clean and organized'},{id:'c_glass',label:'Glassware clean & stocked — no fingerprints'},{id:'c_straws',label:'Straws & Paper items stocked'}]},
+   {name:'BACKUP CHILLER',items:[{id:'c_kids',label:'Kids Al Safi [Apple & Orange]'},{id:'c_bk',label:'Remaining backups in 6th containers [covered & labelled]'},{id:'c_syrup',label:'Simple Syrup & bases ready for next day'},{id:'c_fruit',label:'Fresh fruit stocked — in accordance with P&P'},{id:'c_milk',label:'Milk & Steaming pitchers available'}]},
+   {name:'BACKUP CABINETS',items:[{id:'c_bkt',label:'Bar tools available and working'},{id:'c_bki',label:'Backup items available; espresso beans/straws/etc..'}]}]}
+ ],
+ foh:[
+  {id:'foh_waiter',name:"Waiter's Checklist",sub:"WAITER'S CHECKLIST — 11:00AM & 5:45PM",checkType:'cb',groups:[
+   {name:'SERVER STATION',items:[{id:'w_menu',label:'English/Arabic/Dessert menu — untorn, no scratches'},{id:'w_togo',label:'To-go menu — available & ready for service'},{id:'w_bill',label:'Bill jackets — cleaned, wiped & organized'},{id:'w_cond',label:'Condiments set holders — cleaned'},{id:'w_condref',label:'Condiments — refilled as per standard & organized'},{id:'w_tooth',label:'Toothpick holders — cleaned & refilled (6 pcs.)'},{id:'w_chili',label:'Chili oil bottles — cleaned, wiped & refilled (6 bottles)'},{id:'w_ketch',label:'Ketchup bottles — cleaned, refilled (20 bottles)'},{id:'w_tabasco',label:'Tabasco (red/green) — cleaned & refilled (24 bottles)'},{id:'w_pepper',label:'Fresh pepper mill — cleaned & refilled'},{id:'w_napkins',label:'Folded napkins/beverage napkins — organized & ready'},{id:'w_spray',label:'Spray bottles (glass cleaner/sanitizer) — full & ready'},{id:'w_silver',label:'Silverware & tableware back-up — cleaned, wiped, complete'}]},
+   {name:'TABLES, CHAIRS, PLANTS',items:[{id:'w_tableset',label:'Table set-up — complete & as per standard'},{id:'w_tables',label:'Tables & bases — cleaned & stable; base — polished'},{id:'w_booth',label:'Booth tables — couches cleaned & wiped'},{id:'w_plants',label:'Plants & décor — cleaned & presentable'}]},
+   {name:'WASH / COMFORT ROOM',items:[{id:'w_soap',label:'Soap dispenser, air freshener — cleaned & refilled'},{id:'w_toilet',label:'Toilet paper, paper roll dispenser — cleaned, full'},{id:'w_trash',label:'Trash can, toilet brush & holder — cleaned'},{id:'w_faucet',label:'Faucets — cleaned, wiped & high water pressure'},{id:'w_mirror',label:'Mirror — cleaned, wiped & spotless'},{id:'w_sink',label:'Sinks, lavatory, urinal — cleaned & sanitized'},{id:'w_rcl',label:'Restroom checklist — available & hanged'}]},
+   {name:'POINT-OF-SALE',items:[{id:'w_pos',label:'POS terminal — cleaned & working'},{id:'w_printer',label:'Receipt printer & span machine — cleaned & working'},{id:'w_money',label:'Money detector — cleaned & working'},{id:'w_rolls',label:'Thermal & span rolls back-up — readily available'},{id:'w_phone',label:'Telephone handset — cleaned & working'}]},
+   {name:'OTHERS',items:[{id:'w_floor',label:'Floor — swept & mopped; umbrellas — cleaned'},{id:'w_trcans',label:'Trash cans — washed, cleaned & polished'},{id:'w_window',label:'Kitchen window glass & door — cleaned & wiped'},{id:'w_trays',label:'Trays & tray jacks — cleaned, wiped & ready'},{id:'w_ltg',label:'Lightings — working & in good condition'}]},
+   {name:'CLEANING MATERIALS',items:[{id:'w_mopsink',label:'Mop sink — washed, cleaned & organized'},{id:'w_brooms',label:'Brooms & dust pans — washed, cleaned & kept ready (2 sets)'},{id:'w_mop',label:'Mop, mop bucket & wringer — washed, cleaned & kept ready'}]},
+   {name:'PARKING AREA',items:[{id:'w_sidewalk',label:'Sidewalk — swept, cleaned & well-maintained'},{id:'w_entrance',label:'Main entrance — floor swept & mopped; plants — cleaned'},{id:'w_outdoor',label:'Tables & chairs — cleaned, arranged & in good condition'}]}]},
+  {id:'foh_hygiene',name:'Daily Hygiene FOH',sub:'Daily Hygiene Checklist — Front of House',checkType:'hygiene',section:'FOH'},
+  {id:'hoh_hygiene',name:'Daily Hygiene HOH',sub:'Daily Hygiene Checklist — Heart of House',checkType:'hygiene',section:'HOH'},
+  {id:'foh_bartender',name:"Bartender's Prep Sheet",sub:"Bartender's Checklist — Checked By / Verified by MOD",checkType:'bartender'},
+  {id:'foh_barista',name:'Barista Opening/Closing',sub:'Barista Opening-Closing Checklist — AM & PM Shifts',checkType:'cb',groups:[
+   {name:'TO GO SUPPLIES',items:[{id:'ba_pepscup',label:"Pepsi Co. Polar Cups / Lids"},{id:'ba_togocarr',label:"To Go Beverage Carriers"},{id:'ba_plcups',label:"Transparent Plastic Cups / Lids"},{id:'ba_espcups',label:"Espresso/Cappuccino Cups & Lids"},{id:'ba_straw',label:"Flexible Straw / Sip Straw / Boba Straws"},{id:'ba_napkins',label:"Beverage Napkins"},{id:'ba_gloves',label:"Gloves (2 Box per Shift) & Hairnets"},{id:'ba_sugar',label:"Sugar White / Sweet n' Low (10)"}]},
+   {name:'BACK-UP STATION',items:[{id:'ba_pepsibib',label:"Pepsi Bib Available & Tube hose"},{id:'ba_dietbib',label:"Diet Pepsi Bib Available"},{id:'ba_7upbib',label:"7 UP Bib Available"},{id:'ba_mirdbib',label:"Miranda Bib Available"},{id:'ba_mtnbib',label:"Mountain Dew Bib Available"}]},
+   {name:'MACHINES & EQUIPMENT',items:[{id:'ba_chillerm',label:"Chiller working 0°C - 5°C"},{id:'ba_icemach',label:"Counter Ice machine clean & working"},{id:'ba_espressom',label:"Espresso Machine Working"},{id:'ba_soda',label:"Soda Dispenser Working"},{id:'ba_sodawtr',label:"Soda Water at 65 PSI"},{id:'ba_co2',label:"CO2 Pressure at 400 PSI"},{id:'ba_squeezer',label:"Lemon & Orange Squeezer Working"},{id:'ba_blender',label:"Blender Clean & Working"},{id:'ba_kettle',label:"Electric Kettle Clean & Working"},{id:'ba_glassdw',label:"Glass Dishwasher Clean & Working Properly"},{id:'ba_trash',label:"Trashbin Clean w/ Black Garbage Bag Insert"}]}]}
+ ],
+ boh:[
+  {id:'boh_pizza',name:'Pizza Station',sub:'PIZZA CHECKLIST — 11:00 AM & 5:00 PM',checkType:'cb',groups:[
+   {name:'PIZZA OVEN & EQUIPMENT',items:[{id:'pz_oven',label:'Pizza oven 600-650°F ready & working'},{id:'pz_doughmach',label:'Dough mixing Machine clean & working'},{id:'pz_chill',label:'Pizza chiller 0-5°C'},{id:'pz_disp',label:'Pizza chiller Dispatcher 0-5°C'},{id:'pz_tools',label:'Digital Scale, Infrared gun, Chiller Thermometer'},{id:'pz_wood',label:'Pizza wood — enough stock with back-up'}]},
+   {name:'PIZZA ITEMS',items:[{id:'pz_feta',label:'Feta Cheese'},{id:'pz_bufmozz',label:'Fresh Buffalo Mozzarella'},{id:'pz_goat',label:'Goat Cheese'},{id:'pz_mixmozz',label:'Mix Mozzarella (Stella & Grana)'},{id:'pz_olives',label:'Black Olives'},{id:'pz_cherry',label:'Fresh Cherry Tomatoes'},{id:'pz_rcherry',label:'Roasted Cherry Tomatoes'},{id:'pz_bellpep',label:'Roasted Red Bell Pepper (Julienne)'},{id:'pz_chicken',label:'Cooked Chicken / Peri-peri Chicken'},{id:'pz_mush',label:'Wild Mushroom'},{id:'pz_artich',label:'Artichoke (wedges)'},{id:'pz_sujook',label:'Sujook (Sliced)'},{id:'pz_pepp',label:'Pepperoni'}]},
+   {name:'SAUCES',items:[{id:'pz_balsamic',label:'Balsamic Glazing / Vinaigrette'},{id:'pz_herbsoil',label:'Green Herb Oil'},{id:'pz_chili',label:'Chili Mabouj / Dynamite Sauce'},{id:'pz_yogurt',label:'Yogurt Mint Sauce'},{id:'pz_bbq',label:'BBQ / Pizza Sauce / Alfredo / Pesto'}]},
+   {name:'UTENSILS & OTHERS',items:[{id:'pz_utensils',label:'Pizza shovel, spatula, slicer, cutting board & knife'},{id:'pz_labels',label:'Production labels posted on every item'},{id:'pz_printer',label:'Printer working & enough ribbon and paper back-up'}]}]},
+  {id:'boh_grill',name:'Grill Station',sub:'GRILL CHECKLIST — 11:00 AM & 5:00 PM',checkType:'cb',groups:[
+   {name:'EQUIPMENT & TEMP',items:[{id:'gr_convov',label:'Convection oven clean & ON at 450°F'},{id:'gr_grillch',label:'Grill flat chiller 0-5°C clean & working'},{id:'gr_deepfry',label:'Deep Fryer ON and working'},{id:'gr_standch',label:'Standing Chiller ON at 0-5°C'},{id:'gr_bainm',label:'Hot Bain Marie with water 71°C'}]},
+   {name:'SAUCES AND SOUP',items:[{id:'gr_sauces1',label:'Tomato sauce, Alfredo, Lemon cream, Demi Glaze Gravy'},{id:'gr_sauces2',label:'Mushroom Sauce, Peppercorn, Lemon Turmeric'},{id:'gr_sauces3',label:'Seafood Basting, Peri-peri, Picatta sauce'},{id:'gr_soups',label:'Onion soup, Tomato soup, Lentil soup'}]},
+   {name:'COOLER SETUP',items:[{id:'gr_meats',label:'Ribeye, Tenderloin, Burger patties, Lamb shoulder/chops/shanks'},{id:'gr_seafood',label:'Hammour, Salmon, Chicken Breast, Tiger shrimps'},{id:'gr_mise',label:'Steak Seasoning, Caramelized onion, Caffe de Paris, Butter, Capers'}]},
+   {name:'OTHERS',items:[{id:'gr_platewm',label:'Plate warmer ON'},{id:'gr_printer',label:'Printer working & enough paper roll backup'},{id:'gr_labels',label:'Labels on every item — No expired Items'},{id:'gr_fire',label:'Fire extinguisher expiry date checked'},{id:'gr_water',label:'Water coming in the sink'},{id:'gr_takeout',label:'Take out containers ready for the day'}]}]},
+  {id:'boh_pasta',name:'Pasta Station',sub:'PASTA CHECKLIST — 11:00 AM & 5:00 PM',checkType:'cb',groups:[
+   {name:'EQUIPMENT & TEMP',items:[{id:'pa_flatch',label:'Flat chiller 0-5°C clean & working'},{id:'pa_bainm',label:'Pasta Bain Marie 0-5°C clean & working'},{id:'pa_platewm',label:'Plate warmer ON'},{id:'pa_range',label:'Pasta cooking range clean & working'},{id:'pa_boiler',label:'Pasta Boiler clean, ON & water till level (100°C)'},{id:'pa_micro',label:'Microwave oven clean & working'}]},
+   {name:'BOILING PASTAS',items:[{id:'pa_risotto',label:'Risotto Rice'},{id:'pa_penne',label:'Penne'},{id:'pa_fett',label:'Fettuccini'},{id:'pa_spag',label:'Spaghetti'},{id:'pa_rig',label:'Rigatoni'},{id:'pa_cap',label:'Capellini'},{id:'pa_fus',label:'Fusilli'},{id:'pa_tor',label:'Torcetti'}]},
+   {name:'BACK UP',items:[{id:'pa_lasagna',label:'Lasagna'},{id:'pa_bolognese',label:'Bolognese'},{id:'pa_gnocchi',label:'Gnocchi'},{id:'pa_ravioli',label:'Ravioli Goat Cheese'},{id:'pa_meatballs',label:'Meat Balls'},{id:'pa_chicken',label:'Cooked Chicken strips'},{id:'pa_shrimp',label:'Frozen Shrimp'},{id:'pa_broccoli',label:'Broccoli / Baked chicken strips'},{id:'pa_pesto',label:'Cut sundried / Green peas / Pesto sauce'}]},
+   {name:'OTHERS',items:[{id:'pa_printer',label:'Printer working & enough ribbon and paper back-up'},{id:'pa_soup_k',label:'Soup Kettle ON and working'},{id:'pa_labels',label:'Labels on every item — No expired Items'},{id:'pa_fire',label:'Fire extinguisher expiry date checked'},{id:'pa_water',label:'Water coming in the sink'}]}]},
+  {id:'boh_bakery',name:'Bakery & Pastry',sub:'BAKERY AND PASTRY CHECKLIST — 11:00 AM & 5:00 PM',checkType:'cb',groups:[
+   {name:'EQUIPMENT & TEMP',items:[{id:'bk_convov',label:'Convection oven clean & ON at 180°C'},{id:'bk_frz',label:'Standing Freezer -18°C to -22°C'},{id:'bk_mixer',label:'Heavy Duty Mixer — Clean and Working'},{id:'bk_grinder',label:'Heavy Duty Grinder — Clean and Working'},{id:'bk_micro',label:'Microwave Oven — Clean and Working'}]},
+   {name:'PIATTO CAFÉ DISPLAY',items:[{id:'bk_plain',label:'Plain Croissant'},{id:'bk_choco',label:'Chocolate Croissant'},{id:'bk_almchoc',label:'Chocolate Almond Croissant'},{id:'bk_alm',label:'Almond Croissant'},{id:'bk_zaatar',label:'Zaatar Croissant'}]},
+   {name:'PIATTO DESSERTS',items:[{id:'bk_tira',label:'Lotus Tiramisu'},{id:'bk_fond',label:'Pistachio Choco Fondant'},{id:'bk_sampler',label:'Piatto Dessert Sampler'},{id:'bk_creme',label:'Crème Brûlée'}]},
+   {name:'OTHERS',items:[{id:'bk_printer',label:'Printer working & enough ribbon and paper back-up'},{id:'bk_water',label:'Water coming in the sink'},{id:'bk_fire',label:'Fire extinguisher expiry date checked'},{id:'bk_labels',label:'Production labels posted on every item prepared'}]}]},
+  {id:'boh_fryer',name:'Fryer-Salad Station',sub:'FRYER-SALAD CHECKLIST — 11:00 AM & 5:00 PM',checkType:'cb',groups:[
+   {name:'EQUIPMENT & TEMP',items:[{id:'fr_convov',label:'Convection oven clean & ON at 450°F'},{id:'fr_frz',label:'Standing Freezer -18°C to -22°C'},{id:'fr_standch',label:'Standing Chiller 0°C to 5°C'},{id:'fr_fryer',label:'Fryer Oil Check using TPM 0%-23%'},{id:'fr_salam',label:'Salamander ON, knob at Medium'}]},
+   {name:'BREADS',items:[{id:'fr_croutons',label:'Croutons'},{id:'fr_sandbread',label:'Sandwich Bread'},{id:'fr_crostini',label:'Crostini Stick'},{id:'fr_focaccia',label:'Focaccia Bread'},{id:'fr_ciabatta',label:'Ciabatta Bread'},{id:'fr_baguette',label:'Baguette Bread'},{id:'fr_burgerbun',label:'Burger Buns'}]},
+   {name:'DRESSING AND SAUCES',items:[{id:'fr_mayo',label:'Mayonnaise'},{id:'fr_garlicm',label:'Garlic Mayo'},{id:'fr_tartare',label:'Tartare Sauce'},{id:'fr_italian',label:'Italian Dressing'},{id:'fr_dynamite',label:'Dynamite Sauce'},{id:'fr_pesto',label:'Pesto Sauce'},{id:'fr_citrus',label:'Citrus Dressing'},{id:'fr_balsamic',label:'Balsamic Vinaigrette'},{id:'fr_oliveoil',label:'Olive Oil / Truffle Oil / Olive Tapenade'}]},
+   {name:'BACKUP',items:[{id:'fr_fries',label:'French Fries'},{id:'fr_bbpotato',label:'Boiled Baby Potato'},{id:'fr_chicken',label:'Chicken Strips / Marinara Chicken'},{id:'fr_breaded',label:'Breaded items (zucchini, artichoke, shrimp, beef & chicken Milanese, mozzarella, fish finger)'},{id:'fr_artidip',label:'Artichoke dip'},{id:'fr_bruschet',label:'Wild Mushroom & Eggplant bruschetta / Goat cheese chives Bruschetta'}]},
+   {name:'OTHERS',items:[{id:'fr_printer',label:'Printer working & enough ribbon and paper back-up'},{id:'fr_labels',label:'Labels on every item — No expired Items'},{id:'fr_fire',label:'Fire extinguisher expiry date checked'},{id:'fr_trash',label:'Step on Trash can clean with inserted bag'}]}]},
+  {id:'boh_dishwash',name:'Dishwasher Station',sub:'DISHWASHER STATION CHECKLIST',checkType:'cb',groups:[
+   {name:'DISHWASHER AREA',items:[{id:'dw_water',label:'Hot & Cold water faucet working'},{id:'dw_chem',label:'All chemical mixture working'},{id:'dw_mach',label:'Dishwasher Machine 60°C ON and working'},{id:'dw_grease',label:'All Grease trap clean'},{id:'dw_plates',label:'Plates shelves clean and organized'},{id:'dw_ss',label:'S/S shelves clean and organized'},{id:'dw_trash',label:'All trash bin clean and with plastic'},{id:'dw_mops',label:'All mops, brooms and wiper arranged'},{id:'dw_labels',label:'All labels removed from every container'},{id:'dw_fire',label:'Fire extinguisher expiry date checked'}]}]},
+  {id:'boh_prep',name:'Prep Station',sub:'PREPARATION CHECKLIST — 11:00 AM & 5:00 PM',checkType:'cb',groups:[
+   {name:'EQUIPMENT & TEMP',items:[{id:'pr_aclight',label:'All A/C & Light ON & Working'},{id:'pr_standch',label:'Standing Chiller +0°C to +5°C — Clean and working'}]},
+   {name:'COMPLEMENTARY SALAD PREP',items:[{id:'pr_tomato',label:'Produce, Tomato, Cucumber'},{id:'pr_iceberg',label:'Iceberg, Rocca'},{id:'pr_onion',label:'Onion, Romaine lettuce & Spinach'}]},
+   {name:'OTHERS',items:[{id:'pr_water',label:'Water coming in the sink'},{id:'pr_trash',label:'Step on Trash can clean with inserted bag'},{id:'pr_area',label:'Preparation area always clean'}]}]}
+ ]
+};
+
+
+var CL_BT_ITEMS_DEFAULT={
+  chiller:['Fresh Lemonade + Backup on par','Fresh Iced Tea + Back up on par','Fresh Orange Juice on par','Long Life Milk on par w/expiration','Non-Alcoholic Beer on par','Aqua Panna 500 ml on par','Aqua Panna 1000 ml on par','San Pelligrino 500 ml on par','San Pelligrino 1000 ml on par','Choco Syrup Available','Strawberry Syrup Available','Whipped Cream Available','Pepsi Cans on par','7 UP Cans on par','Diet Pepsi Cans on par','Miranda Cans on par','Mountain Dew Cans on par','Aquafina 330ml on par','Aquafina 500ml on par'],
+  bases:['Simple Syrup Available','Lemon Base Available','Lime Base Available','Mint Infusion Available','Mojito Base Available','Strawberry Puree Available','Blueberry Puree Available','Cucumber Mint Mix Available','Lemonade Available','Margharita Batch Available','Passionfruit Batch Available','Tropical Cooler Base','Pineapple Syrup Available','Passion Fruit Mix Available','Sweet Lime Rim Available','Red Sangria Base Available','White Sangria Base Available','Black Iced Tea Base Available']
+};
+// CL_BT_ITEMS is loaded from Firebase (branch-specific) or falls back to defaults
+var CL_BT_ITEMS = {
+  chiller: CL_BT_ITEMS_DEFAULT.chiller.slice(),
+  bases:   CL_BT_ITEMS_DEFAULT.bases.slice()
+};
+
+// Load bartender items from Firebase — called after branch login
+function clLoadBTItems(){
+  if(!db) return;
+  db.ref(bPath('cl_bt_items')).once('value', function(snap){
+    var v = snap.val();
+    if(v && v.chiller && v.bases){
+      CL_BT_ITEMS.chiller = v.chiller;
+      CL_BT_ITEMS.bases   = v.bases;
+    }
+    // Re-ensure state with updated items
+    clEnsureST();
+  });
+}
+
+// Save bartender items to Firebase
+function clSaveBTItems(){
+  if(!db) return;
+  db.ref(bPath('cl_bt_items')).set({
+    chiller: CL_BT_ITEMS.chiller,
+    bases:   CL_BT_ITEMS.bases
+  }, function(err){
+    if(!err) toast('Bartender items saved ✓','success');
+    else toast('Save error','error');
+  });
+}
+
+var CL_FORM_LIST=[
+  {id:'form_chiller',name:'Chiller Log',label:'Chiller Control Form'},
+  {id:'form_freezer',name:'Freezer Log',label:'Freezer Control Form'},
+  {id:'form_cooling',name:'Cooling Log',label:'Cooling Temperature Log'},
+  {id:'form_pizzadough',name:'Pizza Dough',label:'Pizza Dough Tracker'},
+  {id:'form_stockroom',name:'Stockroom',label:'Stockroom Control'}
+];
+
+var CL_CHILLER_ROWS=['Walk-in Chiller','2-Door Display Chiller A','2-Door Display Chiller B','Salad Chiller','Meat Chiller','Backup Chiller'];
+var CL_FREEZER_ROWS=['Walk-in Freezer','Standing Freezer A','Standing Freezer B','Gelato Freezer'];
+var CL_DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var CL_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var CL_SHIFTS=['AM','PM'];
+var CL_ADMIN_PIN='1422';
+
+
+
+var clSec='mod', clCl={mod:0,foh:0,boh:0,forms:0}, clDay={mod:0,foh:0,boh:0}, clWeekDates=[], clST={}, clRole=null, _clSelRole=null, clFbRef=null, _clBtDay=0, _clCoolDay=0;
+
+
+window.monthlyRecords = {};
+
+
+function clWk(){return clNormWk();}
+
+
+function clFbKey(str){
+  return String(str||'').replace(/[.#$\[\]\/]/g,'_');
+}
+
+
+function clFmtD(d){return d.getDate()+'-'+CL_MONTHS[d.getMonth()];}
+
+
+function clGetWeekDates(v){
+  var arr=[],b=v?new Date(v+'T00:00:00'):new Date();
+  if(v){var dow=b.getDay();b.setDate(b.getDate()-dow);}
+  for(var i=0;i<7;i++){var d=new Date(b);d.setDate(b.getDate()+i);arr.push(d);}
+  return arr;
+}
+
+
+function clXe(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+
+function clIsAdmin(){return clRole==='admin';}
+
+
+function clEnsureST(){
+  var w=clWk();if(!clST[w])clST[w]={};
+  ['mod','foh','boh'].forEach(function(sec){
+    (CL_DATA[sec]||[]).forEach(function(cl){
+      if(cl.checkType==='hygiene'||cl.checkType==='bartender')return;
+      if(!clST[w][cl.id])clST[w][cl.id]={};
+      var allItems=(cl.groups||[]).reduce(function(a,g){return a.concat(g.items||[]);},[]);
+      for(var di=0;di<7;di++){
+        if(!clST[w][cl.id][di])clST[w][cl.id][di]={};
+        allItems.forEach(function(item){
+          if(!clST[w][cl.id][di][item.id])clST[w][cl.id][di][item.id]={flagged:false};
+          CL_SHIFTS.forEach(function(sh){if(!clST[w][cl.id][di][item.id][sh])clST[w][cl.id][di][item.id][sh]={v:null,temp:'',comment:''};});
+        });
+      }
+    });
+  });
+  ['foh_hygiene','hoh_hygiene'].forEach(function(hid){
+    if(!clST[w][hid])clST[w][hid]={employees:[],checks:{}};
+    // Guard: checks may be undefined if Firebase returned partial data
+    if(!clST[w][hid].checks)clST[w][hid].checks={};
+    for(var di=0;di<7;di++){if(!clST[w][hid].checks[di])clST[w][hid].checks[di]={};}
+  });
+  if(!clST[w]['foh_bartender'])clST[w]['foh_bartender']={};
+  CL_BT_ITEMS.chiller.concat(CL_BT_ITEMS.bases).forEach(function(item){
+    var k=clFbKey(item);
+    if(!clST[w]['foh_bartender'][k])clST[w]['foh_bartender'][k]={sl:'',uom:'',prep:{}};
+    // Guard: clWeekDates may be empty before login — use 7-slot loop as fallback
+    if(clWeekDates.length){
+      clWeekDates.forEach(function(_,di){if(!clST[w]['foh_bartender'][k].prep[di])clST[w]['foh_bartender'][k].prep[di]={oh:'',par:'',prep:''};});
+    } else {
+      for(var di=0;di<7;di++){if(!clST[w]['foh_bartender'][k].prep[di])clST[w]['foh_bartender'][k].prep[di]={oh:'',par:'',prep:''};}
+    }
+  });
+  // Forms
+  ['form_chiller','form_freezer','form_cooling','form_pizzadough','form_stockroom'].forEach(function(fid){
+    if(!clST[w][fid])clST[w][fid]={};
+  });
+}
+
+
+function clS(clId,di,itemId,sh){
+  clEnsureST();
+  var wk=clWk();
+  // Ensure full path exists so we return a real reference (not a copy)
+  if(!clST[wk]) clST[wk]={};
+  if(!clST[wk][clId]) clST[wk][clId]={};
+  if(!clST[wk][clId][di]) clST[wk][clId][di]={};
+  if(!clST[wk][clId][di][itemId]) clST[wk][clId][di][itemId]={flagged:false};
+  if(!clST[wk][clId][di][itemId][sh]) clST[wk][clId][di][itemId][sh]={v:null,temp:'',comment:''};
+  return clST[wk][clId][di][itemId][sh];
+}
+
+
+function clSF(clId,di,itemId){clEnsureST();try{return clST[clWk()][clId][di][itemId]||{flagged:false};}catch(e){return {flagged:false};} }
+
+
+function clNormWk(){
+  var el=document.getElementById('cl-period-start');
+  if(el&&el.value&&el.value.match(/^\d{4}-\d{2}-\d{2}$/))return el.value;
+  // Fallback: compute Sunday of current week
+  var now=new Date();
+  var dow=now.getDay();
+  var sun=new Date(now);sun.setDate(now.getDate()-dow);
+  return sun.getFullYear()+'-'+String(sun.getMonth()+1).padStart(2,'0')+'-'+String(sun.getDate()).padStart(2,'0');
+}
+
+
+function clBranch(){
+  return ((document.getElementById('cl-branch')||{}).value||'MOA').toUpperCase().replace(/[.#$\/\[\]]/g,'_');
+}
+
+
+function clWeekRef(){
+  if(!db)return null;
+  return db.ref(bPath('cl_weeks')+'/'+clNormWk());
+}
+
+
+function clSaveNow(){
+  try{
+    var wk=clNormWk();
+    var meta={
+      branch:(document.getElementById('cl-branch')||{}).value||'MOA',
+      modName:(document.getElementById('cl-mod-name')||{}).value||'',
+      weekStart:wk
+    };
+    var payload={state:clST[wk]||{},meta:meta,updatedAt:Date.now()};
+    console.log('[CL] SAVE → cl_weeks/'+wk, 'keys:', Object.keys(payload.state));
+    // Deep sanitize all keys before writing to Firebase
+    function _sanitizeKeys(obj){
+      if(typeof obj!=='object'||obj===null||Array.isArray(obj))return obj;
+      var out={};
+      Object.keys(obj).forEach(function(k){
+        var sk=clFbKey(k);
+        out[sk]=_sanitizeKeys(obj[k]);
+      });
+      return out;
+    }
+    payload.state=_sanitizeKeys(payload.state);
+    if(db){
+      db.ref(bPath('cl_weeks')+'/'+wk).set(payload,function(err){
+        if(err){console.error('[CL] Save ERROR:',err);}
+        else{
+          console.log('[CL] Save SUCCESS for week:',wk);
+          // Update monthly cache
+          window.monthlyRecords[wk]={state:payload.state,meta:meta};
+        }
+      });
+    }
+    var ind=document.getElementById('cl-save-ind');
+    if(ind){ind.textContent='✓ Saved';ind.style.color='var(--grn)';setTimeout(function(){if(ind){ind.textContent='⚡ Live';ind.style.color='var(--text3)';}},2000);}
+  }catch(e){console.error('[CL] clSaveNow error:',e);}
+}
+
+
+function clSave(){
+  clearTimeout(clSaveTmr);
+  clSaveTmr=setTimeout(clSaveNow,700);
+}
+
+
+function clInitFBSync(){
+  if(!db){
+    var el=document.getElementById('cl-fb-status');
+    if(el){el.innerHTML='⏳ Connecting...';el.style.color='var(--gold)';}
+    setTimeout(clInitFBSync,800);
+    return;
+  }
+  var wk=clNormWk();
+  var path=bPath('cl_weeks')+'/'+wk;
+  console.log('[CL] FETCH ← cl_weeks/'+wk);
+  var el=document.getElementById('cl-fb-status');
+  if(el){el.innerHTML='⏳ Loading...';el.style.color='var(--gold)';}
+
+  // Use .on() for real-time sync — same pattern as the rest of the app
+  if(clFbRef)clFbRef.off(); // detach previous listener
+  clFbRef=db.ref(path);
+  clFbRef.on('value',function(snap){
+    var d=snap.val();
+    console.log('[CL] Firebase sync for week '+wk+':', d?'HAS DATA (keys:'+Object.keys(d&&d.state||{}).join(',')+')':'EMPTY/NULL');
+    if(d&&d.state&&Object.keys(d.state).length>0){
+      // Firebase is authoritative — restore this week's state fully
+      if(!clST[wk])clST[wk]={};
+      Object.keys(d.state).forEach(function(k){
+        clST[wk][k]=d.state[k];
+      });
+      window.monthlyRecords[wk]={state:d.state,meta:d.meta||{}};
+    } else {
+      console.warn('[CL] No data for week '+wk+' at path cl_weeks/'+wk);
+    }
+    clEnsureST();
+    // Only re-render if checklist page is currently visible
+    if(clRole&&document.getElementById('cl-wrap')&&S.p==='checklists'){
+      clRenderSec(clSec);
+    }
+    if(el){el.innerHTML='⚡ Live';el.style.color='var(--grn)';}
+  },function(err){
+    console.error('[CL] Firebase error:',err,'path:',path);
+    if(el){el.innerHTML='⚠ Offline';el.style.color='var(--red)';}
+    clEnsureST();
+    if(clRole&&document.getElementById('cl-wrap')&&S.p==='checklists'){
+      clRenderSec(clSec);
+    }
+  });
+}
+
+
+function clLoadMonthlyData(monthYear, callback){
+  // monthYear = 'YYYY-MM'
+  if(!db){if(callback)callback({});return;}
+  var path=bPath('cl_weeks');
+  console.log('[CL] MONTHLY FETCH ← '+path+' for month:'+monthYear);
+  db.ref(path).once('value',function(snap){
+    var all=snap.val()||{};
+    var monthly={};
+    Object.keys(all).forEach(function(wk){
+      if(wk.indexOf(monthYear)===0||clWeekInMonth(wk,monthYear)){
+        monthly[wk]=all[wk];
+        window.monthlyRecords[wk]=all[wk];
+      }
+    });
+    console.log('[CL] Monthly fetch complete. Weeks found:',Object.keys(monthly));
+    if(callback)callback(monthly);
+  },function(err){
+    console.error('[CL] Monthly fetch error:',err);
+    if(callback)callback({});
+  });
+}
+
+
+function clWeekInMonth(wk,monthYear){
+  if(!wk||!wk.match(/^\d{4}-\d{2}-\d{2}$/))return false;
+  var sun=new Date(wk+'T00:00:00');
+  var sat=new Date(sun.getTime()+6*86400000);
+  var mStart=new Date(monthYear+'-01T00:00:00');
+  var mEnd=new Date(mStart.getFullYear(),mStart.getMonth()+1,0,23,59,59);
+  return sun<=mEnd&&sat>=mStart;
+}
+
+
+function clSelectRole(role){
+  _clSelRole=role;
+  document.getElementById('cl-role-staff').classList.toggle('sel',role==='staff');
+  document.getElementById('cl-role-admin').classList.toggle('sel',role==='admin');
+  var pw=document.getElementById('cl-pin-wrap'),lb=document.getElementById('cl-login-btn');
+  if(role==='admin'){pw.style.display='block';lb.disabled=true;document.getElementById('cl-pin-inp').focus();}
+  else{pw.style.display='none';document.getElementById('cl-pin-err').textContent='';lb.disabled=false;}
+}
+
+
+function clOnPinInput(){var v=document.getElementById('cl-pin-inp').value;document.getElementById('cl-login-btn').disabled=v.length<1;document.getElementById('cl-pin-err').textContent='';}
+
+
+function clDoLogin(){
+  if(!_clSelRole)return;
+  if(_clSelRole==='admin'){var pin=document.getElementById('cl-pin-inp').value;if(pin!==CL_ADMIN_PIN){document.getElementById('cl-pin-err').textContent='Incorrect PIN.';document.getElementById('cl-pin-inp').value='';document.getElementById('cl-login-btn').disabled=true;return;}}
+  clRole=_clSelRole;
+  document.getElementById('cl-auth-overlay').classList.remove('show');
+  var b=document.getElementById('cl-role-badge');if(b){b.textContent=clRole==='admin'?'🔐 Admin':'👨‍🍳 Staff';}
+  var pb=document.getElementById('cl-print-btn');if(pb)pb.style.display=clIsAdmin()?'':'none';
+  var eb=document.getElementById('cl-edit-btn');if(eb)eb.style.display=clIsAdmin()?'':'none';
+  // Auto-fill branch from current branch session
+  var branchInp=document.getElementById('cl-branch');
+  if(branchInp&&CURRENT_BRANCH&&CURRENT_BRANCH.name){
+    branchInp.value=CURRENT_BRANCH.name;
+  }
+  // Init period start if empty
+  var ps=document.getElementById('cl-period-start');
+  if(ps&&!ps.value){
+    var _now=new Date();
+    var _dow=_now.getDay();
+    var _sun=new Date(_now);_sun.setDate(_now.getDate()-_dow);
+    ps.value=_sun.getFullYear()+'-'+String(_sun.getMonth()+1).padStart(2,'0')+'-'+String(_sun.getDate()).padStart(2,'0');
+  }
+  clWeekDates=clGetWeekDates(document.getElementById('cl-period-start').value);
+  clEnsureST();
+  // Load branch-specific bartender items
+  clLoadBTItems();
+  // Always fetch latest state from Firebase
+  clInitFBSync();
+}
+
+
+function clSwitchRole(){
+  clRole=null;_clSelRole=null;
+  ['cl-role-staff','cl-role-admin'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('sel');});
+  var pw=document.getElementById('cl-pin-wrap');if(pw)pw.style.display='none';
+  var pi=document.getElementById('cl-pin-inp');if(pi)pi.value='';
+  var pe=document.getElementById('cl-pin-err');if(pe)pe.textContent='';
+  var lb=document.getElementById('cl-login-btn');if(lb)lb.disabled=true;
+  var ao=document.getElementById('cl-auth-overlay');if(ao)ao.classList.add('show');
+}
+
+
+function clSyncMeta(){clSave();}
+
+
+function clOnPeriodChange(){
+  clWeekDates=clGetWeekDates(document.getElementById('cl-period-start').value);
+  clDay={mod:0,foh:0,boh:0};clEnsureST();clInitFBSync();clRenderSec(clSec);clSave();
+}
+
+
+function clBindSecTabs(){
+  var wrap=document.getElementById('cl-sec-tabs');if(!wrap)return;
+  wrap.querySelectorAll('.cl-sec-tab').forEach(function(btn){
+    btn.onclick=function(){
+      wrap.querySelectorAll('.cl-sec-tab').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      clSec=btn.dataset.sec;
+      if(clSec==='forms')clRenderForms();else clRenderSec(clSec);
+    };
+  });
+}
+
+
+function clRenderSec(sec){
+  try{
+    var cls=CL_DATA[sec];if(!cls||!cls.length)return;
+    var ci=clCl[sec]||0,cl=cls[ci];if(!cl)return;
+    var di=clDay[sec]||0;
+    // Sub tabs
+    var tw=document.getElementById('cl-sub-tabs');if(!tw)return;
+    tw.innerHTML='';
+    cls.forEach(function(c,i){
+      var b=document.createElement('button');b.className='cl-sub-tab'+(i===ci?' active':'');
+      b.textContent=c.name;
+      b.onclick=(function(idx){return function(){clCl[sec]=idx;clRenderSec(sec);};})(i);
+      tw.appendChild(b);
+    });
+    var titleEl=document.getElementById('cl-title'),subEl=document.getElementById('cl-sub');
+    if(titleEl)titleEl.textContent=cl.name;if(subEl)subEl.textContent=cl.sub||'';
+    if(cl.checkType==='hygiene'){
+      document.getElementById('cl-prog').style.width='0%';document.getElementById('cl-prog-lbl').textContent='';
+      document.getElementById('cl-day-tabs').innerHTML='';clRenderHygiene(cl);return;
+    }
+    if(cl.checkType==='bartender'){
+      document.getElementById('cl-prog').style.width='0%';document.getElementById('cl-prog-lbl').textContent='';
+      document.getElementById('cl-day-tabs').innerHTML='';clRenderBartender(cl);return;
+    }
+    // Day tabs — guard: clWeekDates may be empty if period-start not yet initialized
+    if(!clWeekDates.length){
+      var _ps=document.getElementById('cl-period-start');
+      if(_ps&&_ps.value){clWeekDates=clGetWeekDates(_ps.value);}
+      else{var _n=new Date(),_s=new Date(_n);_s.setDate(_n.getDate()-_n.getDay());clWeekDates=clGetWeekDates(_s.getFullYear()+'-'+String(_s.getMonth()+1).padStart(2,'0')+'-'+String(_s.getDate()).padStart(2,'0'));}
+    }
+    var dw=document.getElementById('cl-day-tabs');dw.innerHTML='';
+    clWeekDates.forEach(function(d,dIdx){
+      var b=document.createElement('button');b.className='cl-day-tab'+(dIdx===di?' active':'');
+      var st=clDayStatus(cl,dIdx);b.classList.toggle('done',st==='done');b.classList.toggle('partial',st==='partial');
+      b.innerHTML=CL_DAYS[d.getDay()]+' '+clFmtD(d);
+      b.onclick=(function(idx){return function(){clDay[sec]=idx;clRenderSec(sec);};})(dIdx);
+      dw.appendChild(b);
+    });
+    clRenderCards(sec,cl,di);
+    // Progress
+    var tot=0,done=0;
+    (cl.groups||[]).forEach(function(g){(g.items||[]).forEach(function(item){CL_SHIFTS.forEach(function(sh){tot++;var s=clS(cl.id,di,item.id,sh);if(s&&s.v)done++;});});});
+    var pct=tot?Math.round(done/tot*100):0;
+    var pb=document.getElementById('cl-prog'),pl=document.getElementById('cl-prog-lbl');
+    if(pb)pb.style.width=pct+'%';if(pl)pl.textContent=done+'/'+tot+' items  '+pct+'%';
+  }catch(e){console.error('clRenderSec:',e);}
+}
+
+
+function clDayStatus(cl,di){
+  if(!clWeekDates.length)return'empty';
+  clEnsureST();var tot=0,fil=0;if(!cl.groups)return'empty';
+  (cl.groups||[]).forEach(function(g){(g.items||[]).forEach(function(item){CL_SHIFTS.forEach(function(sh){tot++;var s=clS(cl.id,di,item.id,sh);if(s.v!==null)fil++;});});});
+  return fil===0?'empty':fil===tot?'done':'partial';
+}
+
+
+function clRenderCards(sec,cl,di){
+  var wrap=document.getElementById('cl-cards');if(!wrap)return;wrap.innerHTML='';clEnsureST();
+  (cl.groups||[]).forEach(function(grp){
+    var d=document.createElement('div');d.className='cl-grp-div';
+    d.style.cssText='display:flex;align-items:center;justify-content:space-between';
+    var grpSpan=document.createElement('span');grpSpan.textContent=grp.name;d.appendChild(grpSpan);
+    if(clIsAdmin()){
+      var checkAllBtn=document.createElement('button');
+      checkAllBtn.textContent='✅ Complete All';
+      checkAllBtn.style.cssText='font-size:9px;padding:2px 8px;background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.3);border-radius:4px;cursor:pointer;font-family:var(--font);flex-shrink:0';
+      checkAllBtn.onclick=(function(grpRef,clRef,diRef,secRef){
+        return function(){
+          clEnsureST();
+          (grpRef.items||[]).forEach(function(item){
+            CL_SHIFTS.forEach(function(sh){
+              var s=clS(clRef.id,diRef,item.id,sh);
+              s.v=clRef.checkType==='temp'?'yes':'ok';
+            });
+          });
+          clSaveNow();
+          var sec2=clFindSec(clRef.id);
+          clRenderCards(sec2,CL_DATA[sec2][clCl[sec2]],diRef);
+          clRenderSec(sec2);
+        };
+      })(grp,cl,di,sec);
+      d.appendChild(checkAllBtn);
+    }
+    wrap.appendChild(d);
+    (grp.items||[]).forEach(function(item){
+      var amS=clS(cl.id,di,item.id,'AM'),pmS=clS(cl.id,di,item.id,'PM');
+      var allOk=(amS.v==='ok'||amS.v==='yes')&&(pmS.v==='ok'||pmS.v==='yes');
+      var anyNo=amS.v==='no'||pmS.v==='no';
+      var card=document.createElement('div');card.className='cl-item-card'+(allOk?' all-ok':anyNo?' has-no':'');
+      var flagged=clSF(cl.id,di,item.id).flagged;
+      card.innerHTML='<div class="cl-card-inner">'
+        +'<div class="cl-card-top"><div class="cl-card-lbl">'
+        +'<span class="cl-badge'+(item.yellow?' key':'')+'">'+( item.yellow?'⭐ KEY':'CHECK')+'</span>'
+        +'<div class="cl-item-q">'+clXe(item.label)+'</div></div>'
+        +'<button class="cl-flag-btn'+(flagged?' on':'')+'" data-clid="'+clXe(cl.id)+'" data-di="'+di+'" data-iid="'+clXe(item.id)+'">🚩</button>'
+        +'</div>'
+        +'<div class="cl-shifts-row">'+CL_SHIFTS.map(function(sh){return clBuildShift(cl,di,item,sh);}).join('')+'</div>'
+        +'<button class="cl-cmt-btn" onclick="clToggleCmt(this)">+ Add Comment</button>'
+        +'<div class="cl-cmt-box'+(amS.comment?' open':'')+'"><textarea placeholder="Write comment..." data-clid="'+clXe(cl.id)+'" data-di="'+di+'" data-iid="'+clXe(item.id)+'">'+clXe(amS.comment||'')+'</textarea></div>'
+        +'</div>';
+      wrap.appendChild(card);
+      // Wire flag btn via DOM
+      var flagBtn=card.querySelector('.cl-flag-btn');
+      if(flagBtn)(function(btn,cid,d,iid){btn.onclick=function(){clToggleFlag(cid,d,iid,btn);};})(flagBtn,cl.id,di,item.id);
+      // Wire comment textarea
+      var ta=card.querySelector('textarea');
+      if(ta)(function(t,cid,d,iid){t.oninput=function(){clSetComment(cid,d,iid,t.value);};})(ta,cl.id,di,item.id);
+
+      // EXPLICIT .value set on temp inputs — guarantees display even if innerHTML timing issues
+      var w2=clWk();
+      card.querySelectorAll('.cl-shift-temp').forEach(function(inp){
+        var d2=inp.dataset;
+        var saved=(clST[w2]&&clST[w2][d2.clid]&&clST[w2][d2.clid][parseInt(d2.di)]&&clST[w2][d2.clid][parseInt(d2.di)][d2.iid]&&clST[w2][d2.clid][parseInt(d2.di)][d2.iid][d2.sh])||{};
+        var val=saved.temp||'';
+        inp.value=val;
+        if(val){inp.classList.add('has-val');}else{inp.classList.remove('has-val');}
+      });
+    });
+  });
+}
+
+
+function clBuildShift(cl,di,item,sh){
+  // Read DIRECTLY from clST — bypass clS()/clEnsureST() to avoid overwriting saved values
+  var w=clWk();
+  var shiftData=(clST[w]&&clST[w][cl.id]&&clST[w][cl.id][di]&&clST[w][cl.id][di][item.id]&&clST[w][cl.id][di][item.id][sh])||{v:null,temp:'',comment:''};
+  var ct=cl.checkType,c2='';
+  var cid=clXe(cl.id),iid=clXe(item.id);
+  var tv=shiftData.temp||'';
+  if(ct==='temp'){
+    c2='<div class="cl-ctrl-row"><span class="cl-ctrl-lbl">Overall</span><div class="cl-yn-grp">'
+      +'<button class="cl-yn-btn'+(shiftData.v==='yes'?' yes':'')+'" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="yes">✓ YES</button>'
+      +'<button class="cl-yn-btn'+(shiftData.v==='no'?' no':'')+'" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="no">✗ NO</button>'
+      +'</div></div>'
+      +(item.hasTemp?'<div class="cl-ctrl-row"><span class="cl-ctrl-lbl">Temp °C</span>'
+      +'<input class="cl-temp-inp cl-shift-temp'+(tv?' has-val':'')+'" type="text" maxlength="7" placeholder="–" inputmode="decimal" value="'+clXe(tv)+'" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'"></div>':'');
+  }else{
+    c2='<div class="cl-ctrl-row"><span class="cl-ctrl-lbl">Check</span><div class="cl-cb-grp">'
+      +'<div class="cl-cb-item" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="ok"><div class="cl-cb-box'+(shiftData.v==='ok'?' ok':'')+'">✓</div><span class="cl-cb-lbl">Done</span></div>'
+      +'<div class="cl-cb-item" data-clid="'+cid+'" data-di="'+di+'" data-iid="'+iid+'" data-sh="'+sh+'" data-val="no"><div class="cl-cb-box'+(shiftData.v==='no'?' no':'')+'">✗</div><span class="cl-cb-lbl">Issue</span></div>'
+      +'</div></div>';
+  }
+  return '<div class="cl-shift-blk"><div class="cl-sh-title">'+sh+' SHIFT</div>'+c2+'</div>';
+}
+
+
+function clSetV(clId,di,itemId,sh,val){
+  clEnsureST();
+  var s=clS(clId,di,itemId,sh);
+  s.v=s.v===val?null:val;
+  // Save current temp values from DOM before re-render (prevent temp erasure)
+  var cards=document.getElementById('cl-cards');
+  if(cards){
+    cards.querySelectorAll('.cl-shift-temp').forEach(function(inp){
+      var d2=inp.dataset;
+      var wk=clWk();
+      if(clST[wk]&&clST[wk][d2.clid]&&clST[wk][d2.clid][parseInt(d2.di)]&&
+         clST[wk][d2.clid][parseInt(d2.di)][d2.iid]&&clST[wk][d2.clid][parseInt(d2.di)][d2.iid][d2.sh]){
+        clST[wk][d2.clid][parseInt(d2.di)][d2.iid][d2.sh].temp=inp.value;
+      }
+    });
+  }
+  clSaveNow();
+  var sec=clFindSec(clId);
+  clRenderSec(sec); // single render — clRenderSec calls clRenderCards internally
+}
+
+
+function clSetTemp(clId,di,itemId,sh,el){
+  clEnsureST();
+  // Update this specific temp value
+  var s=clS(clId,di,itemId,sh);
+  s.temp=el.value;
+  el.className='cl-temp-inp'+(el.value?' has-val':'');
+  // Also flush ALL visible temp inputs to clST to prevent any racing
+  var wk=clWk();
+  var cards=document.getElementById('cl-cards');
+  if(cards){
+    cards.querySelectorAll('.cl-shift-temp').forEach(function(inp){
+      var d2=inp.dataset;
+      if(d2.clid===clId&&parseInt(d2.di)===di&&d2.iid===itemId&&d2.sh===sh)return; // already set above
+      if(clST[wk]&&clST[wk][d2.clid]&&clST[wk][d2.clid][parseInt(d2.di)]&&
+         clST[wk][d2.clid][parseInt(d2.di)][d2.iid]&&clST[wk][d2.clid][parseInt(d2.di)][d2.iid][d2.sh]){
+        clST[wk][d2.clid][parseInt(d2.di)][d2.iid][d2.sh].temp=inp.value;
+      }
+    });
+  }
+  clSaveNow();
+}
+
+
+function clSetComment(clId,di,itemId,val){clEnsureST();CL_SHIFTS.forEach(function(sh){clS(clId,di,itemId,sh).comment=val;});clSaveNow();}
+
+
+function clToggleFlag(clId,di,itemId,btn){clEnsureST();clSF(clId,di,itemId).flagged=!clSF(clId,di,itemId).flagged;btn.classList.toggle('on');clSaveNow();}
+
+
+function clToggleCmt(btn){var box=btn.nextElementSibling;box.classList.toggle('open');btn.textContent=box.classList.contains('open')?'- Hide Comment':'+ Add Comment';}
+
+
+function clFindSec(clId){for(var sec of['mod','foh','boh'])if((CL_DATA[sec]||[]).find(function(c){return c.id===clId;}))return sec;return'mod';}
+
+
+function clRenderHygiene(cl){
+  var wrap=document.getElementById('cl-cards');if(!wrap)return;wrap.innerHTML='';clEnsureST();
+  var w=clWk(),hid=cl.id,hyg=clST[w][hid],di=clDay.foh;
+  if(!hyg){clST[w][hid]={employees:[],checks:{}};hyg=clST[w][hid];}
+  if(!hyg.checks)hyg.checks={};
+  if(!hyg.employees)hyg.employees=[];
+  // Day tabs
+  var dw=document.createElement('div');dw.className='cl-day-tabs';dw.style.cssText='margin-bottom:8px;flex-shrink:0';
+  if(!clWeekDates.length){var _n=new Date(),_s=new Date(_n);_s.setDate(_n.getDate()-_n.getDay());clWeekDates=clGetWeekDates(_s.getFullYear()+'-'+String(_s.getMonth()+1).padStart(2,'0')+'-'+String(_s.getDate()).padStart(2,'0'));}
+  clWeekDates.forEach(function(d,dIdx){
+    var b=document.createElement('button');b.className='cl-day-tab'+(dIdx===di?' active':'');
+    b.innerHTML=CL_DAYS[d.getDay()]+' '+clFmtD(d);
+    b.onclick=(function(idx){return function(){clDay.foh=idx;clRenderSec('foh');};})(dIdx);
+    dw.appendChild(b);
+  });
+  wrap.appendChild(dw);
+  if(!hyg.checks[di])hyg.checks[di]={};
+  var cols=['Hair','Moustache','Nails','Physical','No Jewelry','Uniform','Name Tag','Baladiya','Blk Shoes','Belt','Ballpen','Core Val.','Mask','Temp<38','Health','Remarks'];
+  var container=document.createElement('div');container.className='cl-hyg-wrap';
+  var tb=document.createElement('div');tb.className='cl-hyg-tb';
+  var completeAllHygBtn = clIsAdmin()
+    ? '<button class="btn sm" style="background:rgba(63,185,80,.15);color:var(--grn);border-color:rgba(63,185,80,.3)" onclick="clHygieneCompleteAll(\''+hid+'\','+di+')">✅ Complete All</button>'
+    : '';
+  var _hygDay=clWeekDates[di]||new Date();
+  tb.innerHTML='<h4>👥 '+cl.section+' — '+CL_DAYS[_hygDay.getDay()]+' '+clFmtD(_hygDay)+'</h4>'
+    +'<div style="display:flex;gap:6px">'
+    +(clIsAdmin()?'<button class="btn sm" onclick="clAddEmployee(\''+hid+'\','+di+')">+ Add</button>':'')+completeAllHygBtn
+    +'</div>';
+  container.appendChild(tb);
+  var scroll=document.createElement('div');scroll.className='cl-hyg-scroll';
+  var thead='<thead><tr><th>#</th><th style="text-align:left;min-width:140px">Name</th><th>SAP</th>'
+    +cols.map(function(c){return '<th>'+c+'</th>';}).join('')+'<th></th></tr></thead>';
+  var tbody='<tbody>';
+  (hyg.employees||[]).forEach(function(emp,ei){
+    if(!hyg.checks[di][ei])hyg.checks[di][ei]={};
+    tbody+='<tr><td style="color:var(--text3);font-size:9px">'+(ei+1)+'</td>'
+      +'<td class="nm"><input class="cl-emp-inp" value="'+clXe(emp.name||'')+'" placeholder="Name" oninput="clSetEmpName(\''+hid+'\','+ei+',this.value)"></td>'
+      +'<td><input class="cl-emp-inp" value="'+clXe(emp.sap||'')+'" placeholder="SAP#" style="width:55px;font-size:9px;font-family:var(--mono)" oninput="clSetEmpSap(\''+hid+'\','+ei+',this.value)"></td>'
+      +cols.map(function(_,ci){var v=hyg.checks[di][ei]&&hyg.checks[di][ei][ci];return'<td><div class="cl-hyg-cb'+(v==='ok'?' ok':v==='no'?' no':'')+'" onclick="clSetHyg(\''+hid+'\','+di+','+ei+','+ci+',this)">'+(v==='ok'?'✓':v==='no'?'✗':'')+'</div></td>';}).join('')
+      +'<td>'+(clIsAdmin()?'<button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px" onclick="clDelEmployee(\''+hid+'\','+di+','+ei+')">🗑</button>':'')+'</td></tr>';
+  });
+  if(clIsAdmin())tbody+='<tr><td colspan="'+(4+cols.length)+'" style="text-align:center;padding:6px"><button class="btn sm" onclick="clAddEmployee(\''+hid+'\','+di+')">+ Add Employee</button></td></tr>';
+  tbody+='</tbody>';
+  var table=document.createElement('table');table.className='cl-hyg-table';table.innerHTML=thead+tbody;
+  scroll.appendChild(table);container.appendChild(scroll);wrap.appendChild(container);
+}
+
+
+function clHygieneCompleteAll(hid,di){
+  clEnsureST();var w=clWk();
+  if(!clST[w][hid])return;
+  var emps=clST[w][hid].employees||[];
+  if(!clST[w][hid].checks[di])clST[w][hid].checks[di]={};
+  var cols=16; // number of hygiene columns
+  emps.forEach(function(_,ei){
+    if(!clST[w][hid].checks[di][ei])clST[w][hid].checks[di][ei]={};
+    for(var ci=0;ci<cols;ci++){clST[w][hid].checks[di][ei][ci]='ok';}
+  });
+  clSaveNow();clRenderSec('foh');toast('✅ All hygiene checks marked OK','success');
+}
+
+
+function clAddEmployee(hid,di){clEnsureST();clST[clWk()][hid].employees.push({name:'',sap:''});clSave();clRenderSec('foh');}
+
+
+function clDelEmployee(hid,di,ei){
+  clEnsureST();var w=clWk();clST[w][hid].employees.splice(ei,1);
+  for(var d=0;d<7;d++){if(clST[w][hid].checks[d]){var nc={};Object.keys(clST[w][hid].checks[d]).forEach(function(k){var ki=parseInt(k);if(ki<ei)nc[ki]=clST[w][hid].checks[d][k];else if(ki>ei)nc[ki-1]=clST[w][hid].checks[d][k];});clST[w][hid].checks[d]=nc;}}
+  clSave();clRenderSec('foh');
+}
+
+
+function clRenderBartender(cl){
+  var wrap=document.getElementById('cl-cards');if(!wrap)return;wrap.innerHTML='';clEnsureST();
+  var w=clWk(),bt=clST[w]['foh_bartender'],di=_clBtDay;
+  if(!clWeekDates.length){var _n=new Date(),_s=new Date(_n);_s.setDate(_n.getDate()-_n.getDay());clWeekDates=clGetWeekDates(_s.getFullYear()+'-'+String(_s.getMonth()+1).padStart(2,'0')+'-'+String(_s.getDate()).padStart(2,'0'));}
+  var drow=document.createElement('div');drow.className='cl-day-tabs';drow.style.cssText='margin-bottom:8px;flex-shrink:0';
+  clWeekDates.forEach(function(d,dIdx){
+    var b=document.createElement('button');b.className='cl-day-tab'+(dIdx===di?' active':'');
+    b.innerHTML=CL_DAYS[d.getDay()]+' '+clFmtD(d);
+    b.onclick=(function(idx){return function(){_clBtDay=idx;clRenderBartender(cl);};})(dIdx);
+    drow.appendChild(b);
+  });
+  wrap.appendChild(drow);
+  var card=document.createElement('div');card.className='cl-cf-card';
+  var hdr=document.createElement('div');hdr.className='cl-cf-hdr';
+  var _btDay=clWeekDates[di]||new Date();
+  hdr.innerHTML='<h4>🍸 Bartender\'s Prep Sheet — '+CL_DAYS[_btDay.getDay()]+' '+clFmtD(_btDay)+'</h4>';
+  card.appendChild(hdr);
+  var scroll=document.createElement('div');scroll.className='cl-cf-scroll';
+  var table=document.createElement('table');table.className='cl-cf-tbl';table.style.minWidth='420px';
+  table.innerHTML='<thead><tr><th style="text-align:left;min-width:200px">Item</th><th>Shelf Life</th><th>UOM</th><th style="background:rgba(88,166,255,.12);color:#60a5fa">OH</th><th style="background:rgba(63,185,80,.1);color:var(--grn)">PAR</th><th style="background:rgba(240,165,0,.1);color:var(--gold)">TO PREP</th></tr></thead>';
+  var tbody=document.createElement('tbody');
+  var addSect=function(sName,items){
+    var cr=document.createElement('tr');cr.innerHTML='<td colspan="6" class="cat-row">'+clXe(sName)+'</td>';tbody.appendChild(cr);
+    items.forEach(function(item,ri){
+      var k=clFbKey(item);var bd=bt[k]||{sl:'',uom:'',prep:{}},pd=(bd.prep&&bd.prep[di])||{oh:'',par:'',prep:''};
+      var tr=document.createElement('tr');tr.style.background=ri%2===0?'var(--bg2)':'var(--bg3)';
+      // Build cells via DOM to avoid quote escaping issues
+      var nameTd=document.createElement('td');nameTd.style.cssText='text-align:left;font-weight:600;font-size:11px;padding:5px 10px;color:var(--text)';nameTd.textContent=item;tr.appendChild(nameTd);
+      [['sl',bd.sl||'','text','width:52px'],['uom',bd.uom||'','text','width:38px;font-weight:700']].forEach(function(f){
+        var td=document.createElement('td');
+        var inp=document.createElement('input');inp.className='cl-bt-inp';inp.type=f[2];inp.value=f[1];inp.placeholder='–';inp.style.cssText=f[3];
+        inp.dataset.btitem=item;inp.dataset.btfield=f[0];
+        inp.oninput=function(){clSetBT(this.dataset.btitem,this.dataset.btfield,this.value);};
+        td.appendChild(inp);tr.appendChild(td);
+      });
+      var dayFields=[['oh',pd.oh,'rgba(88,166,255,.06)','#60a5fa'],['par',pd.par,'rgba(63,185,80,.05)','var(--grn)'],['prep',pd.prep,'rgba(240,165,0,.05)','var(--gold)']];
+      dayFields.forEach(function(f){
+        var td=document.createElement('td');td.style.background=f[2];
+        var inp=document.createElement('input');inp.className='cl-bt-inp';inp.type='text';inp.inputMode='decimal';inp.value=f[1];inp.placeholder='0';inp.style.cssText='width:52px;color:'+f[3];
+        inp.dataset.btitem=item;inp.dataset.btday=di;inp.dataset.btfield=f[0];
+        inp.oninput=function(){clSetBTday(this.dataset.btitem,parseInt(this.dataset.btday),this.dataset.btfield,this.value);};
+        td.appendChild(inp);tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  };
+  addSect('CHILLER',CL_BT_ITEMS.chiller);addSect('BASES AND SYRUPS',CL_BT_ITEMS.bases);
+  table.appendChild(tbody);scroll.appendChild(table);card.appendChild(scroll);
+  var foot=document.createElement('div');foot.style.cssText='padding:7px 11px;font-size:10px;color:var(--text3);background:var(--bg3);border-top:1px solid var(--bd);display:flex;gap:20px';
+  foot.innerHTML='<span><b>Checked By:</b> _____________________</span><span><b>Verified by MOD:</b> _____________________</span>';
+  card.appendChild(foot);wrap.appendChild(card);
+}
+
+
+function clSetBT(item,field,val){clEnsureST();var k=clFbKey(item);var bt=clST[clWk()]['foh_bartender'];if(!bt[k])bt[k]={sl:'',uom:'',prep:{}};bt[k][field]=val;clSaveNow();}
+
+
+function clSetBTday(item,di,field,val){clEnsureST();var k=clFbKey(item);var bt=clST[clWk()]['foh_bartender'];if(!bt[k])bt[k]={sl:'',uom:'',prep:{}};if(!bt[k].prep)bt[k].prep={};if(!bt[k].prep[di])bt[k].prep[di]={oh:'',par:'',prep:''};bt[k].prep[di][field]=val;clSaveNow();}
+
+
+function clRenderForms(){
+  var ci=clCl.forms;
+  var tw=document.getElementById('cl-sub-tabs');if(!tw)return;
+  tw.innerHTML='';
+  CL_FORM_LIST.forEach(function(f,i){
+    var b=document.createElement('button');b.className='cl-sub-tab'+(i===ci?' active':'');
+    b.textContent=f.name;b.onclick=(function(idx){return function(){clCl.forms=idx;clRenderForms();};})(i);
+    tw.appendChild(b);
+  });
+  var f=CL_FORM_LIST[ci];
+  var titleEl=document.getElementById('cl-title'),subEl=document.getElementById('cl-sub');
+  if(titleEl)titleEl.textContent=f.label;if(subEl)subEl.textContent='';
+  document.getElementById('cl-prog').style.width='0%';document.getElementById('cl-prog-lbl').textContent='';
+  document.getElementById('cl-day-tabs').innerHTML='';
+  clEnsureST();
+  var wrap=document.getElementById('cl-cards');if(!wrap)return;wrap.innerHTML='';
+  if(f.id==='form_chiller')clRenderStockForm(wrap,'form_chiller','🌡 Chiller Control Form',CL_CHILLER_CATS,'#60a5fa');
+  else if(f.id==='form_freezer')clRenderStockForm(wrap,'form_freezer','❄ Freezer Control Form',CL_FREEZER_CATS,'#c084fc');
+  else if(f.id==='form_cooling')clRenderCoolingLog(wrap);
+  else if(f.id==='form_pizzadough')clRenderPizzaDough(wrap);
+  else if(f.id==='form_stockroom')clRenderStockForm(wrap,'form_stockroom','📦 Stockroom Control Form',CL_STOCKROOM_CATS,'#f0a500');
+}
+
+
+function clOpenPrint(){
+  var ps=document.getElementById('cl-ps-sec');if(ps)ps.value=clSec;
+  clPrintPopulateCl();
+  // Populate day select
+  var pd=document.getElementById('cl-ps-day');if(pd){
+    pd.innerHTML='<option value="all">All 7 Days (Full Week)</option>';
+    clWeekDates.forEach(function(d,di){
+      var opt=document.createElement('option');opt.value=di;opt.textContent=CL_DAYS[d.getDay()]+' '+clFmtD(d);pd.appendChild(opt);
+    });
+  }
+  document.getElementById('cl-print-modal').classList.add('show');
+}
+
+
+function clPrintBartenderBody(cl,daysToShow){
+  clEnsureST();
+  var w=clWk(),bt=clST[w]['foh_bartender']||{};
+  var chiller=['Orange Juice','Pineapple Juice','Apple Juice','Cranberry Juice','Grapefruit Juice','Passion Fruit','Mango Juice','Lemon Juice','Strawberry Syrup','Mint Leaves'];
+  var bases=['Sweet & Sour','Simple Syrup','Grenadine','Blue Curacao Syrup','Orgeat Syrup','Passion Fruit Syrup','Coconut Cream','Cream','Vanilla Syrup','Caramel Syrup'];
+  var allItems=chiller.concat(bases);
+  var html='';
+  daysToShow.forEach(function(di){
+    var d=clWeekDates[di];
+    html+='<div style="page-break-inside:avoid;margin-bottom:14px">'
+      +'<div style="background:#1e3a5f;color:#fff;font-weight:700;font-size:10px;padding:5px 10px;border-radius:4px 4px 0 0">'
+      +CL_DAYS[d.getDay()]+' — '+clFmtD(d)
+      +'</div>'
+      +'<table><thead><tr>'
+      +'<th style="text-align:left;min-width:160px;font-size:8px">Item</th>'
+      +'<th style="font-size:8px">Shelf Life</th>'
+      +'<th style="font-size:8px">UOM</th>'
+      +'<th style="font-size:8px;background:#dbeafe;color:#1e40af">OH</th>'
+      +'<th style="font-size:8px;background:#dcfce7;color:#166534">PAR</th>'
+      +'<th style="font-size:8px;background:#fef9c3;color:#92400e">TO PREP</th>'
+      +'</tr></thead><tbody>';
+    // Chiller section
+    html+='<tr><td colspan="6" style="background:#1a2340;color:#fff;font-weight:700;font-size:9px;padding:3px 8px;text-transform:uppercase;letter-spacing:.5px">Chiller Items</td></tr>';
+    chiller.forEach(function(item,ri){
+      var k=clFbKey(item);var bd=bt[k]||{sl:'',uom:'',prep:{}},pd=(bd.prep&&bd.prep[di])||{oh:'',par:'',prep:''};
+      html+='<tr style="background:'+(ri%2===0?'#fff':'#f8fafc')+'">'
+        +'<td style="font-weight:600;font-size:9px;text-align:left">'+item+'</td>'
+        +'<td style="font-size:9px;text-align:center">'+clXe(bd.sl||'')+'</td>'
+        +'<td style="font-size:9px;font-weight:700;text-align:center">'+clXe(bd.uom||'')+'</td>'
+        +'<td style="font-size:10px;font-weight:700;text-align:center;background:#eff6ff">'+( pd.oh||'')+'</td>'
+        +'<td style="font-size:10px;font-weight:700;text-align:center;background:#f0fdf4">'+( pd.par||'')+'</td>'
+        +'<td style="font-size:10px;font-weight:700;text-align:center;background:#fef9c3">'+( pd.prep||'')+'</td>'
+        +'</tr>';
+    });
+    // Bases section
+    html+='<tr><td colspan="6" style="background:#1a2340;color:#fff;font-weight:700;font-size:9px;padding:3px 8px;text-transform:uppercase;letter-spacing:.5px">Syrups & Bases</td></tr>';
+    bases.forEach(function(item,ri){
+      var k=clFbKey(item);var bd=bt[k]||{sl:'',uom:'',prep:{}},pd=(bd.prep&&bd.prep[di])||{oh:'',par:'',prep:''};
+      html+='<tr style="background:'+(ri%2===0?'#fff':'#f8fafc')+'">'
+        +'<td style="font-weight:600;font-size:9px;text-align:left">'+item+'</td>'
+        +'<td style="font-size:9px;text-align:center">'+clXe(bd.sl||'')+'</td>'
+        +'<td style="font-size:9px;font-weight:700;text-align:center">'+clXe(bd.uom||'')+'</td>'
+        +'<td style="font-size:10px;font-weight:700;text-align:center;background:#eff6ff">'+( pd.oh||'')+'</td>'
+        +'<td style="font-size:10px;font-weight:700;text-align:center;background:#f0fdf4">'+( pd.par||'')+'</td>'
+        +'<td style="font-size:10px;font-weight:700;text-align:center;background:#fef9c3">'+( pd.prep||'')+'</td>'
+        +'</tr>';
+    });
+    html+='</tbody></table>'
+      +'<div style="font-size:8px;color:#555;margin-top:4px;padding:3px 0">Checked by: ___________________ &nbsp;&nbsp; Verified by MOD: ___________________</div>'
+      +'</div>';
+  });
+  return html;
+}
+
+
+function clOpenEdit(){
+  if(!clIsAdmin()){toast('Admin access required','w');return;}
+  var sec=clSec,ci=clCl[sec];
+  if(sec==='forms'){toast('Form items are fixed','w');return;}
+  var cl=CL_DATA[sec][ci];
+  if(!cl){return;}
+
+  // ── Bartender's Prep Sheet — special edit ──
+  if(cl.checkType==='bartender'){
+    clOpenBartenderEdit();
+    return;
+  }
+
+  if(!cl.groups){toast('This checklist cannot be edited','w');return;}
+  var body=document.getElementById('cl-edit-body');body.innerHTML='';
+  var h='<div style="font-size:11px;color:var(--text3);margin-bottom:10px;font-family:var(--mono)">Editing: <strong style="color:var(--acc2)">'+cl.name+'</strong></div>';
+  cl.groups.forEach(function(grp,gi){
+    h+='<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--blu);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">'+clXe(grp.name)+'</div>';
+    (grp.items||[]).forEach(function(item,ii){
+      h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:5px 8px">'
+        +'<input type="text" value="'+clXe(item.label)+'" style="flex:1;background:transparent;border:none;color:var(--text);font-size:11px;outline:none;font-family:var(--font)" '
+        +'oninput="clEditItemLabel(\''+sec+'\','+ci+','+gi+','+ii+',this.value)">'
+        +'<label style="font-size:9px;color:var(--text3);display:flex;align-items:center;gap:3px;cursor:pointer">'
+        +'<input type="checkbox" '+(item.yellow?'checked':'')+' onchange="clEditItemKey(\''+sec+'\','+ci+','+gi+','+ii+',this.checked)"> ⭐Key</label>'
+        +(cl.checkType==='temp'?'<label style="font-size:9px;color:var(--text3);display:flex;align-items:center;gap:3px;cursor:pointer">'
+        +'<input type="checkbox" '+(item.hasTemp?'checked':'')+' onchange="clEditItemTemp(\''+sec+'\','+ci+','+gi+','+ii+',this.checked)"> °C</label>':'')
+        +'<button style="background:rgba(248,81,73,.15);border:1px solid var(--red);border-radius:4px;color:var(--red);cursor:pointer;font-size:11px;padding:2px 7px" '
+        +'onclick="clDelItem(\''+sec+'\','+ci+','+gi+','+ii+')">✕</button></div>';
+    });
+    h+='<button class="btn sm" style="margin-top:4px;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);color:var(--blu)" '
+      +'onclick="clAddItem(\''+sec+'\','+ci+','+gi+')">+ Add Item</button></div>';
+  });
+  body.innerHTML=h;
+  document.getElementById('cl-edit-modal').classList.add('show');
+}
+
+
+function clOpenBartenderEdit(){
+  function renderBTList(listKey, items){
+    var h='';
+    items.forEach(function(item,i){
+      h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:6px 9px">'
+        +'<span style="font-size:11px;color:var(--text3);font-family:var(--mono);min-width:20px">'+(i+1)+'.</span>'
+        +'<input type="text" value="'+clXe(item)+'" data-btlist="'+listKey+'" data-bti="'+i+'" '
+        +'style="flex:1;background:transparent;border:none;color:var(--text);font-size:11px;outline:none;font-family:var(--font)">'
+        +'<button onclick="clBTDelItem(\''+listKey+'\','+i+')" style="background:rgba(248,81,73,.12);border:1px solid var(--red);border-radius:4px;color:var(--red);cursor:pointer;font-size:11px;padding:2px 8px;flex-shrink:0">✕</button>'
+      +'</div>';
+    });
+    return h;
+  }
+
+  var body=document.getElementById('cl-edit-body');
+  var h='<div style="font-size:11px;color:var(--text3);margin-bottom:14px;background:var(--bg2);padding:8px 12px;border-radius:7px">Editing: <strong style="color:#22d3ee">Bartender\'s Prep Sheet</strong> — changes save to Firebase and affect all bartender prep sheets for this branch.</div>';
+
+  h+='<div style="font-size:11px;font-weight:700;color:var(--cyn);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">🧊 Chiller Items ('+CL_BT_ITEMS.chiller.length+')</div>';
+  h+='<div id="bt-chiller-list">'+renderBTList('chiller',CL_BT_ITEMS.chiller)+'</div>';
+  h+='<button class="btn sm" onclick="clBTAddItem(\'chiller\')" style="margin-bottom:16px;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:var(--cyn)">+ Add Chiller Item</button>';
+
+  h+='<div style="font-size:11px;font-weight:700;color:var(--pur);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">🍹 Bases & Syrups ('+CL_BT_ITEMS.bases.length+')</div>';
+  h+='<div id="bt-bases-list">'+renderBTList('bases',CL_BT_ITEMS.bases)+'</div>';
+  h+='<button class="btn sm" onclick="clBTAddItem(\'bases\')" style="margin-bottom:16px;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.3);color:var(--pur)">+ Add Base/Syrup Item</button>';
+
+  h+='<div style="display:flex;gap:8px;margin-top:8px;padding-top:12px;border-top:1px solid var(--bd)">'
+    +'<button class="btn" onclick="clSaveBTEdits()" style="flex:1;justify-content:center">💾 Save Changes</button>'
+    +'<button class="btn s" onclick="document.getElementById(\'cl-edit-modal\').classList.remove(\'show\')" style="flex:0 0 auto">Cancel</button>'
+    +'</div>';
+
+  body.innerHTML=h;
+
+  // Wire input changes live
+  body.querySelectorAll('input[data-btlist]').forEach(function(inp){
+    inp.oninput=function(){
+      var list=this.dataset.btlist,idx=parseInt(this.dataset.bti);
+      CL_BT_ITEMS[list][idx]=this.value;
+    };
+  });
+
+  document.getElementById('cl-edit-modal').classList.add('show');
+}
+
+
+function clBTAddItem(listKey){
+  CL_BT_ITEMS[listKey].push('New Item');
+  clOpenBartenderEdit(); // re-render
+}
+
+
+function clBTDelItem(listKey,idx){
+  CL_BT_ITEMS[listKey].splice(idx,1);
+  clEnsureST(); // rebuild state for new item list
+  clOpenBartenderEdit();
+}
+
+
+function clSaveBTEdits(){
+  // Flush any typed-but-not-saved values from inputs
+  var body=document.getElementById('cl-edit-body');
+  if(body) body.querySelectorAll('input[data-btlist]').forEach(function(inp){
+    var list=inp.dataset.btlist,idx=parseInt(inp.dataset.bti);
+    if(CL_BT_ITEMS[list]) CL_BT_ITEMS[list][idx]=inp.value;
+  });
+  clSaveBTItems();
+  clEnsureST();
+  document.getElementById('cl-edit-modal').classList.remove('show');
+  clRenderSec('foh');
+}
+
+
+function clEditItemLabel(sec,ci,gi,ii,val){CL_DATA[sec][ci].groups[gi].items[ii].label=val;}
+
+
+function clEditItemKey(sec,ci,gi,ii,val){CL_DATA[sec][ci].groups[gi].items[ii].yellow=val;}
+
+
+function clEditItemTemp(sec,ci,gi,ii,val){CL_DATA[sec][ci].groups[gi].items[ii].hasTemp=val;}
+
+
+function clDelItem(sec,ci,gi,ii){
+  CL_DATA[sec][ci].groups[gi].items.splice(ii,1);
+  clOpenEdit();clRenderSec(sec);
+}
+
+
+function clAddItem(sec,ci,gi){
+  var newId='item_'+Date.now();
+  CL_DATA[sec][ci].groups[gi].items.push({id:newId,label:'New Item',yellow:false,hasTemp:false});
+  clOpenEdit();clRenderSec(sec);
+}
+
+
+function clBindPage(){
+  if(_clPageBound)return;_clPageBound=true;
+  clBindSecTabs();
+  // Set period-start to current Sunday (start of this week) before anything else
+  var ps=document.getElementById('cl-period-start');
+  if(ps&&!ps.value){
+    var _now=new Date();
+    var _dow=_now.getDay();
+    var _sun=new Date(_now);_sun.setDate(_now.getDate()-_dow);
+    ps.value=_sun.getFullYear()+'-'+String(_sun.getMonth()+1).padStart(2,'0')+'-'+String(_sun.getDate()).padStart(2,'0');
+  }
+  clWeekDates=clGetWeekDates(document.getElementById('cl-period-start').value);
+  // State loaded exclusively from Firebase — no localStorage for checklist
+  // If user is already logged in, skip the auth screen entirely
+  if(clRole){
+    var overlay=document.getElementById('cl-auth-overlay');
+    if(overlay)overlay.classList.remove('show');
+    var pb=document.getElementById('cl-print-btn');if(pb)pb.style.display=clIsAdmin()?'':'none';
+    var eb=document.getElementById('cl-edit-btn');if(eb)eb.style.display=clIsAdmin()?'':'none';
+    var rb=document.getElementById('cl-role-badge');if(rb)rb.textContent=clRole==='admin'?'🔐 Admin':'👨‍🍳 Staff';
+    clEnsureST();
+    if(clSec==='forms')clRenderForms();else clRenderSec(clSec);
+    return;
+  }
+  // Event delegation for all cl-cards interactions
+  var cards=document.getElementById('cl-cards');
+  if(cards){
+    cards.addEventListener('click',function(e){
+      // YN buttons and CB items
+      var btn=e.target.closest('[data-clid][data-val]');
+      if(btn){var d=btn.dataset;clSetV(d.clid,parseInt(d.di),d.iid,d.sh,d.val);return;}
+    });
+    cards.addEventListener('input',function(e){
+      // Temp inputs
+      if(e.target.classList.contains('cl-shift-temp')){
+        var d=e.target.dataset;clSetTemp(d.clid,parseInt(d.di),d.iid,d.sh,e.target);
+      }
+    });
+    cards.addEventListener('change',function(e){
+      // Also save on change (blur after edit) for temp inputs
+      if(e.target.classList.contains('cl-shift-temp')){
+        var d=e.target.dataset;clSetTemp(d.clid,parseInt(d.di),d.iid,d.sh,e.target);
+      }
+    });
+  }
+}
+
+
+function clPrintMonthly(){
+  // Determine current month from period-start
+  var ps=(document.getElementById('cl-period-start')||{}).value||'';
+  if(!ps)ps=new Date().toISOString().slice(0,10);
+  var monthYear=ps.slice(0,7); // YYYY-MM
+  var branch=(document.getElementById('cl-branch')||{}).value||'MOA';
+  var modName=(document.getElementById('cl-mod-name')||{}).value||'—';
+
+  // Show loading toast
+  toast('Loading monthly data...','warning');
+
+  clLoadMonthlyData(monthYear,function(monthly){
+    var wks=Object.keys(monthly).sort();
+    if(!wks.length){
+      // Use current week's data from clST
+      var wk=clNormWk();
+      monthly[wk]={state:clST[wk]||{},meta:{weekStart:wk}};
+      wks=[wk];
+    }
+
+    var CSS='<style>'
+      +'@page{size:A4 landscape;margin:8mm}'
+      +'*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}'
+      +'body{background:#fff;color:#111;font-size:8px}'
+      +'table{width:100%;border-collapse:collapse;margin-bottom:12px}'
+      +'th,td{border:1px solid #ccc;padding:2px 4px;vertical-align:middle}'
+      +'th{background:#1e3a5f;color:#fff;font-size:8px;text-align:center}'
+      +'.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:6px;border-bottom:3px solid #1e3a5f}'
+      +'.hdr-brand{font-size:18px;font-weight:900;color:#1e3a5f}'
+      +'.hdr-info{text-align:right;font-size:9px;color:#555;line-height:1.6}'
+      +'.wk-hdr{background:#0f2340;color:#fff;font-weight:700;font-size:9px;padding:4px 8px;margin:8px 0 4px;border-radius:3px}'
+      +'.cat-row td{background:#1e3a5f;color:#fff;font-weight:700;font-size:8px;text-transform:uppercase;letter-spacing:.5px}'
+      +'.yes{color:#16a34a;font-weight:900;font-size:11px;text-align:center}'
+      +'.no{color:#dc2626;font-weight:900;font-size:11px;text-align:center}'
+      +'.temp{color:#1e40af;font-size:9px;font-weight:700;text-align:center}'
+      +'.foot{margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}'
+      +'.foot-cell{border-top:1px solid #333;padding-top:4px;text-align:center;font-size:8px;color:#555}'
+      +'@media print{.no-print{display:none}}'
+      +'</style>';
+
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Monthly Checklist — '+monthYear+'</title>'+CSS+'</head><body>';
+
+    // Header
+    html+='<div class="hdr">'
+      +'<div><div class="hdr-brand">ALFA.CO</div><div style="font-size:9px;color:#666">'+branch+' Operations Checklists</div></div>'
+      +'<div style="text-align:center"><div style="font-size:14px;font-weight:800;color:#1e3a5f">Monthly Checklist Report</div>'
+      +'<div style="font-size:10px;color:#555">'+monthYear+' — All Sections</div></div>'
+      +'<div class="hdr-info"><div>Printed: '+new Date().toLocaleDateString('en-GB')+'</div><div>MOD: '+modName+'</div><div>Branch: '+branch+'</div></div>'
+      +'</div>';
+
+    // For each section (MOD, FOH, BOH)
+    ['mod','foh','boh'].forEach(function(sec){
+      var secLabel={mod:'🔱 MOD',foh:'🍽 FOH',boh:'👨‍🍳 BOH'}[sec];
+      var cls=CL_DATA[sec]||[];
+      cls.forEach(function(cl){
+        if(cl.checkType==='hygiene'||cl.checkType==='bartender')return; // skip special types
+        if(!cl.groups||!cl.groups.length)return;
+
+        // Collect all items
+        var allItems=[];
+        cl.groups.forEach(function(grp){allItems=allItems.concat((grp.items||[]).map(function(it){return{grp:grp.name,item:it};}));});
+        if(!allItems.length)return;
+
+        // Build day columns from all weeks
+        var dayCols=[];
+        wks.forEach(function(wk){
+          var wkState=monthly[wk]&&monthly[wk].state;
+          // Get 7 days of this week
+          var sun=new Date(wk+'T00:00:00');
+          for(var dd=0;dd<7;dd++){
+            var d2=new Date(sun.getTime()+dd*86400000);
+            var ds=d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-'+String(d2.getDate()).padStart(2,'0');
+            // Only include days in the selected month
+            if(ds.slice(0,7)===monthYear){
+              dayCols.push({date:d2,ds:ds,di:dd,wk:wk,wkState:wkState});
+            }
+          }
+        });
+        dayCols.sort(function(a,b){return a.ds.localeCompare(b.ds);});
+        if(!dayCols.length)return;
+
+        html+='<div class="wk-hdr">'+secLabel+' — '+cl.name+'</div>';
+        html+='<table><thead><tr>'
+          +'<th style="text-align:left;min-width:160px;font-size:8px">Item</th>'
+          +'<th style="font-size:8px">Shift</th>'
+          +dayCols.map(function(dc){
+            var DAYS2=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            return '<th style="font-size:7px;min-width:30px">'+DAYS2[dc.date.getDay()]+'<br>'+String(dc.date.getDate()).padStart(2,'0')+'</th>';
+          }).join('')
+          +'</tr></thead><tbody>';
+
+        var lastGrp='';
+        allItems.forEach(function(ai){
+          if(ai.grp!==lastGrp){
+            html+='<tr class="cat-row"><td colspan="'+(2+dayCols.length)+'">'+ai.grp+'</td></tr>';
+            lastGrp=ai.grp;
+          }
+          CL_SHIFTS.forEach(function(sh,si){
+            html+='<tr style="background:'+(si===0?'#fff':'#f8fafc')+'">';
+            if(si===0){
+              html+='<td rowspan="'+CL_SHIFTS.length+'" style="font-weight:'+(ai.item.yellow?'700':'500')+';font-size:8px;text-align:left;padding:2px 6px;border-right:2px solid #e2e8f0">'
+                +(ai.item.yellow?'★ ':'')+ai.item.label+'</td>';
+            }
+            html+='<td style="font-size:8px;color:#888;text-align:center;font-weight:600">'+sh+'</td>';
+            dayCols.forEach(function(dc){
+              var shiftData=null;
+              if(dc.wkState&&dc.wkState[cl.id]&&dc.wkState[cl.id][dc.di]&&dc.wkState[cl.id][dc.di][ai.item.id]){
+                shiftData=dc.wkState[cl.id][dc.di][ai.item.id][sh];
+              }
+              var v=shiftData&&shiftData.v;
+              var tmp=shiftData&&shiftData.temp;
+              var cell='';
+              if(v==='yes'||v==='ok'){cell='<div class="yes">✓</div>'+(tmp?'<div class="temp">'+tmp+'°</div>':'');}
+              else if(v==='no'){cell='<div class="no">✗</div>';}
+              else{cell='<div style="color:#ccc;text-align:center">–</div>';}
+              html+='<td>'+cell+'</td>';
+            });
+            html+='</tr>';
+          });
+        });
+        html+='</tbody></table>';
+      });
+    });
+
+    html+='<div class="foot">'
+      +'<div class="foot-cell">Checked by</div>'
+      +'<div class="foot-cell">Verified by MOD</div>'
+      +'<div class="foot-cell">Date &amp; Signature</div>'
+      +'</div>'
+      +'<div class="no-print" style="text-align:center;margin-top:16px">'
+      +'<button onclick="window.print()" style="background:#1e3a5f;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer;margin-right:8px">🖨 Print / Save PDF</button>'
+      +'<button onclick="window.close()" style="background:#f1f5f9;color:#333;border:1px solid #ddd;border-radius:8px;padding:10px 18px;font-size:13px;cursor:pointer">Close</button>'
+      +'</div>'
+      +'</body></html>';
+
+    var w=window.open('','_blank','width=1200,height=800');
+    if(w){w.document.write(html);w.document.close();}else{toast('Allow pop-ups to print','w');}
+  });
+}
+
+
+function clLoadBTItems(){
+  if(!db) return;
+  db.ref(bPath('cl_bt_items')).once('value', function(snap){
+    var v = snap.val();
+    if(v && v.chiller && v.bases){
+      CL_BT_ITEMS.chiller = v.chiller;
+      CL_BT_ITEMS.bases   = v.bases;
+    }
+    // Re-ensure state with updated items
+    clEnsureST();
+  });
+}
+
+
+function clSaveBTItems(){
+  if(!db) return;
+  db.ref(bPath('cl_bt_items')).set({
+    chiller: CL_BT_ITEMS.chiller,
+    bases:   CL_BT_ITEMS.bases
+  }, function(err){
+    if(!err) toast('Bartender items saved ✓','success');
+    else toast('Save error','error');
+  });
+}
+
+</script>
+</body>
+</html>
