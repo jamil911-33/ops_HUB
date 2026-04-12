@@ -5200,22 +5200,57 @@ function printTsReport(){
 
 function tsPgLeave(){
   var filt=S.tsLTab==='all'?S.tsLeaves:S.tsLeaves.filter(function(l){return l.type===S.tsLTab;});
-  var pend=0,appr=0,rej=0;filt.forEach(function(l){if(l.status==='pending')pend++;else if(l.status==='approved')appr++;else rej++;});
+  var pend=0,appr=0,rej=0;
+  filt.forEach(function(l){if(l.status==='pending')pend++;else if(l.status==='approved')appr++;else rej++;});
   var eo='<option value="">— Select —</option>'+S.tsEmps.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(e){return '<option value="'+xe(e.id)+'">'+xe(e.name)+' ('+xe(e.dept||'')+')</option>';}).join('');
-  var lbar='<div style="display:flex;gap:6px;margin-bottom:16px">'+['all','sick','holiday','dayoff'].map(function(t){var l={all:'All',sick:'Sick',holiday:'Holiday',dayoff:'Day Off'};return '<button class="fbt'+(S.tsLTab===t?' on':'')+'" data-ltab="'+t+'">'+l[t]+'</button>';}).join('')+'</div>';
+  var lbar='<div style="display:flex;gap:6px;margin-bottom:16px">'+['all','sick','holiday','dayoff'].map(function(t){var lb={all:'All',sick:'Sick',holiday:'Holiday',dayoff:'Day Off'};return '<button class="fbt'+(S.tsLTab===t?' on':'')+'" data-ltab="'+t+'">'+lb[t]+'</button>';}).join('')+'</div>';
   var rows=filt.slice().sort(function(a,b){return b.start.localeCompare(a.start);}).map(function(l){
     var lt=TS_LT[l.type]||{l:l.type,c:'#888'};
     var emp=null;for(var i=0;i<S.tsEmps.length;i++)if(S.tsEmps[i].id===l.empId){emp=S.tsEmps[i];break;}
-    var empDisplay=emp?emp.name:(l.empName||'Unknown')+(l.empId==='guest'?' <span style="font-size:9px;background:rgba(240,165,0,.15);color:#f0a500;border-radius:4px;padding:1px 5px">Self-Service</span>':'');
+    var empDisplay=emp?xe(emp.name):(xe(l.empName||'Unknown')+(l.empId==='guest'?' <span style="font-size:9px;background:rgba(240,165,0,.15);color:#f0a500;border-radius:4px;padding:1px 5px">Self-Service</span>':''));
     var sc=l.status==='approved'?'#4aab6e':l.status==='rejected'?'#e05252':'#ffd166';
     return '<tr><td style="font-weight:600">'+empDisplay+'</td><td>'+pl(lt.l,lt.c)+'</td><td style="font-family:var(--mono)">'+l.start+'</td><td style="font-family:var(--mono)">'+l.end+'</td><td style="font-weight:600;font-family:var(--mono)">'+l.days+'d</td><td>'+pl(l.status,sc)+'</td><td><div style="display:flex;gap:5px">'+(l.status==='pending'?'<button class="btn sm g" data-approve-leave="'+l.id+'">Approve</button><button class="btn sm d" data-reject-leave="'+l.id+'">Reject</button>':'')+'<button class="btn sm d" data-del="tsLeaves" data-id="'+l.id+'">Del</button></div></td></tr>';
   }).join('');
-  // QR code card for standalone staff leave request
+
+  // Build QR card using DOM-safe concatenation (avoid nested quote escaping)
   var leaveUrl=window.location.href.split('?')[0]+'?leave=1&branch='+(CURRENT_BRANCH?CURRENT_BRANCH.id:'');
-  var qrApiUrl='https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+encodeURIComponent(leaveUrl);
-  var qrCard='<div class="card" style="margin-bottom:18px;border-color:rgba(192,132,252,.2)"><div class="ct" style="color:var(--pur)">📲 Staff Self-Service Leave QR</div><div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap"><div style="text-align:center"><img src="'+qrApiUrl+'" style="border-radius:8px;background:#fff;padding:8px;width:140px;height:140px" alt="Leave QR"><div style="font-size:9px;color:var(--text3);margin-top:6px;font-family:var(--mono)">Scan to request leave</div></div><div style="flex:1;min-width:180px"><div style="font-size:12px;color:var(--text2);margin-bottom:10px">Share this QR code or link with your staff. They scan it to submit leave requests from their phone — no login needed. All requests appear here for manager approval.</div><button class=\"btn sm\" onclick=\"copyLeaveURL()\">📋 Copy Link</button><button class=\"btn sm\" onclick=\"window.open(window._leaveQRUrl,'_blank')\" style=\"margin-left:8px\">👁 Preview</button></div></div></div>';
   window._leaveQRUrl=leaveUrl;
-  return qrCard+'<div class="card" style="margin-bottom:18px"><div class="ct" style="color:var(--gold)">New Leave Request</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"><div class="mfi" style="margin:0"><label>Employee *</label><select id="ts-lf-emp">'+eo+'</select></div><div class="mfi" style="margin:0"><label>Leave Type *</label><select id="ts-lf-type"><option value="sick">Sick Leave</option><option value="holiday">Annual Holiday</option><option value="dayoff">Day Off</option></select></div><div class="mfi" style="margin:0"><label>Start Date *</label><input type="date" id="ts-lf-start"></div><div class="mfi" style="margin:0"><label>End Date *</label><input type="date" id="ts-lf-end"></div></div><div class="mfi"><label>Notes</label><input type="text" id="ts-lf-note" placeholder="Optional reason or note"></div><button id="ts-save-leave" class="btn">Submit Leave Request</button></div>'+lbar+'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"><div style="text-align:center;background:var(--bg3);border:1px solid rgba(255,209,102,.18);border-radius:9px;padding:12px"><div style="font-size:24px;color:#ffd166;font-weight:300;font-family:var(--mono)">'+pend+'</div><div style="font-size:9px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)">Pending</div></div><div style="text-align:center;background:var(--bg3);border:1px solid rgba(74,171,110,.18);border-radius:9px;padding:12px"><div style="font-size:24px;color:#4aab6e;font-weight:300;font-family:var(--mono)">'+appr+'</div><div style="font-size:9px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)">Approved</div></div><div style="text-align:center;background:var(--bg3);border:1px solid rgba(224,82,82,.18);border-radius:9px;padding:12px"><div style="font-size:24px;color:#e05252;font-weight:300;font-family:var(--mono)">'+rej+'</div><div style="font-size:9px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)">Rejected</div></div><div style="text-align:center;background:var(--bg3);border:1px solid var(--bd);border-radius:9px;padding:12px"><div style="font-size:24px;color:var(--text);font-weight:300;font-family:var(--mono)">'+filt.length+'</div><div style="font-size:9px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)">Total</div></div></div><div class="tw"><div class="tw-s"><table><thead><tr><th>Employee</th><th>Type</th><th>Start</th><th>End</th><th>Days</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+(rows||'<tr><td colspan="7" class="er">No leave requests yet.</td></tr>')+'</tbody></table></div></div>';
+  var qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+encodeURIComponent(leaveUrl);
+  var qrCard='<div class="card" style="margin-bottom:18px;border-color:rgba(192,132,252,.2)">'
+    +'<div class="ct" style="color:var(--pur)">📲 Staff Self-Service Leave QR</div>'
+    +'<div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap">'
+      +'<div style="text-align:center">'
+        +'<img src="'+qrSrc+'" style="border-radius:8px;background:#fff;padding:8px;width:140px;height:140px" alt="Leave QR">'
+        +'<div style="font-size:9px;color:var(--text3);margin-top:6px;font-family:var(--mono)">Scan to request leave</div>'
+      +'</div>'
+      +'<div style="flex:1;min-width:180px">'
+        +'<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Share this QR or link with staff. They submit leave from their phone — no login needed. Requests appear here for approval.</div>'
+        +'<button class="btn sm" id="copy-leave-url-btn">📋 Copy Link</button>'
+        +'<button class="btn sm" id="preview-leave-url-btn" style="margin-left:8px">👁 Preview</button>'
+      +'</div>'
+    +'</div>'
+    +'</div>';
+
+  return qrCard
+    +'<div class="card" style="margin-bottom:18px">'
+    +'<div class="ct" style="color:var(--gold)">New Leave Request</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">'
+      +'<div class="mfi" style="margin:0"><label>Employee *</label><select id="ts-lf-emp">'+eo+'</select></div>'
+      +'<div class="mfi" style="margin:0"><label>Leave Type *</label><select id="ts-lf-type"><option value="sick">Sick Leave</option><option value="holiday">Annual Holiday</option><option value="dayoff">Day Off</option></select></div>'
+      +'<div class="mfi" style="margin:0"><label>Start Date *</label><input type="date" id="ts-lf-start"></div>'
+      +'<div class="mfi" style="margin:0"><label>End Date *</label><input type="date" id="ts-lf-end"></div>'
+    +'</div>'
+    +'<div class="mfi"><label>Notes</label><input type="text" id="ts-lf-note" placeholder="Optional reason or note"></div>'
+    +'<button id="ts-save-leave" class="btn">Submit Leave Request</button>'
+    +'</div>'
+    +lbar
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">'
+      +'<div style="text-align:center;background:var(--bg3);border:1px solid rgba(255,209,102,.18);border-radius:9px;padding:12px"><div style="font-size:24px;color:#ffd166;font-weight:300;font-family:var(--mono)">'+pend+'</div><div style="font-size:9px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)">Pending</div></div>'
+      +'<div style="text-align:center;background:var(--bg3);border:1px solid rgba(74,171,110,.18);border-radius:9px;padding:12px"><div style="font-size:24px;color:#4aab6e;font-weight:300;font-family:var(--mono)">'+appr+'</div><div style="font-size:9px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)">Approved</div></div>'
+      +'<div style="text-align:center;background:var(--bg3);border:1px solid rgba(224,82,82,.18);border-radius:9px;padding:12px"><div style="font-size:24px;color:#e05252;font-weight:300;font-family:var(--mono)">'+rej+'</div><div style="font-size:9px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)">Rejected</div></div>'
+      +'<div style="text-align:center;background:var(--bg3);border:1px solid var(--bd);border-radius:9px;padding:12px"><div style="font-size:24px;color:var(--text);font-weight:300;font-family:var(--mono)">'+filt.length+'</div><div style="font-size:9px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)">Total</div></div>'
+    +'</div>'
+    +'<div class="tw"><div class="tw-s"><table><thead><tr><th>Employee</th><th>Type</th><th>Start</th><th>End</th><th>Days</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+(rows||'<tr><td colspan="7" class="er">No leave requests yet.</td></tr>')+'</tbody></table></div></div>';
 }
 
 function tsPgEmps(){
@@ -6068,6 +6103,10 @@ function bindPg(){
   // Leaves
   document.querySelectorAll('[data-approve-leave]').forEach(function(b){b.onclick=function(){for(var i=0;i<S.tsLeaves.length;i++)if(S.tsLeaves[i].id===b.dataset.approveLeave){S.tsLeaves[i].status='approved';break;}saveStaffCollection('tsLeaves');ren();toast('Leave approved');};});
   document.querySelectorAll('[data-reject-leave]').forEach(function(b){b.onclick=function(){for(var i=0;i<S.tsLeaves.length;i++)if(S.tsLeaves[i].id===b.dataset.rejectLeave){S.tsLeaves[i].status='rejected';break;}saveStaffCollection('tsLeaves');ren();toast('Leave rejected');};});
+  var copyLBtn=document.getElementById('copy-leave-url-btn');
+  if(copyLBtn)copyLBtn.onclick=copyLeaveURL;
+  var prevLBtn=document.getElementById('preview-leave-url-btn');
+  if(prevLBtn)prevLBtn.onclick=function(){window.open(window._leaveQRUrl,'_blank');};
 
   // Orders
   document.querySelectorAll('.oc-h').forEach(function(h){h.onclick=function(e){if(e.target.tagName==='BUTTON')return;var oid=h.dataset.oid;openOrds[oid]=!openOrds[oid];var body=document.getElementById('ob-'+oid),chev=document.querySelector('[data-chevoid="'+oid+'"]');if(body)body.classList.toggle('open',!!openOrds[oid]);if(chev)chev.style.transform=openOrds[oid]?'rotate(180deg)':'';};});
