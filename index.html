@@ -7685,7 +7685,7 @@ function openBranchModal(existing){
     +'</div>'
     +'<div class="fr">'
       +'<div class="fg"><label>Branch Manager</label><input id="bf-mgr" value="'+xe(b.manager||'')+'" placeholder="Manager name"></div>'
-      +'<div class="fg"><label>Branch PIN *</label><input id="bf-pin" type="password" value="'+xe(b.pin||'')+'" placeholder="4-8 digits" maxlength="8" style="font-family:var(--mono);letter-spacing:4px"></div>'
+      +'<div class="fg"><label>Branch PIN *</label><input id="bf-pin" type="text" inputmode="numeric" autocomplete="off" value="'+xe(b.pin||'')+'" placeholder="4-8 digits" maxlength="8" style="font-family:var(--mono);letter-spacing:4px;-webkit-text-security:disc;text-security:disc"></div>'
     +'</div>'
     +'<div class="fg"><label>Icon</label><div id="icon-picker" style="display:flex;flex-wrap:wrap;gap:6px">'+iconsHtml+'</div></div>'
     +'<div class="fg"><label>Color</label><div id="color-picker" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+colorsHtml+'</div></div>'
