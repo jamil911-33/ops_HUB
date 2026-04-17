@@ -64,6 +64,30 @@
   /* Toggle button label */
   --mode-icon:"☀️";
   --mode-label:"Light";
+
+  /* Login page dark mode */
+  --login-bg1:rgba(99,102,241,0.35);
+  --login-bg2:rgba(236,72,153,0.20);
+  --login-bg3:rgba(20,184,166,0.12);
+  --login-base:#050810;
+  --login-card-bg:rgba(255,255,255,0.055);
+  --login-card-border:rgba(255,255,255,0.12);
+  --login-card-shadow:0 20px 60px rgba(0,0,0,.5);
+  --login-title:rgba(255,255,255,0.92);
+  --login-sub:rgba(255,255,255,0.40);
+  --login-label:rgba(255,255,255,0.40);
+  --login-btn-bg:rgba(255,255,255,0.07);
+  --login-btn-border:rgba(255,255,255,0.12);
+  --login-btn-text:rgba(255,255,255,0.60);
+  --login-branch-bg:rgba(255,255,255,0.04);
+  --login-branch-border:rgba(255,255,255,0.09);
+  --login-branch-hover:rgba(255,255,255,0.08);
+  --login-input-bg:rgba(255,255,255,0.07);
+  --login-input-border:rgba(255,255,255,0.13);
+  --login-input-text:rgba(255,255,255,0.90);
+  --login-divider:rgba(255,255,255,0.08);
+  --login-footer:rgba(255,255,255,0.20);
+  --login-sa-text:rgba(255,255,255,0.30);
 }
 
 /* ══ LIGHT MODE ══ */
@@ -113,6 +137,30 @@ html.light {
   --card-inner-bg:rgba(240,244,252,0.70);
   --card-inner-border:rgba(0,0,0,0.09);
   --stat-val-col:rgba(15,20,35,0.92);
+
+  /* Login page light mode */
+  --login-bg1:rgba(99,102,241,0.12);
+  --login-bg2:rgba(236,72,153,0.08);
+  --login-bg3:rgba(20,184,166,0.10);
+  --login-base:#dce4f0;
+  --login-card-bg:rgba(255,255,255,0.80);
+  --login-card-border:rgba(0,0,0,0.10);
+  --login-card-shadow:0 20px 60px rgba(0,0,0,.15);
+  --login-title:rgba(15,20,35,0.90);
+  --login-sub:rgba(15,20,35,0.45);
+  --login-label:rgba(15,20,35,0.45);
+  --login-btn-bg:rgba(0,0,0,0.06);
+  --login-btn-border:rgba(0,0,0,0.10);
+  --login-btn-text:rgba(15,20,35,0.80);
+  --login-branch-bg:rgba(0,0,0,0.04);
+  --login-branch-border:rgba(0,0,0,0.08);
+  --login-branch-hover:rgba(0,0,0,0.08);
+  --login-input-bg:rgba(0,0,0,0.05);
+  --login-input-border:rgba(0,0,0,0.15);
+  --login-input-text:rgba(15,20,35,0.90);
+  --login-divider:rgba(0,0,0,0.08);
+  --login-footer:rgba(15,20,35,0.25);
+  --login-sa-text:rgba(15,20,35,0.35);
 }
 
 
@@ -132,6 +180,54 @@ html.light .bdg{color:var(--text2);}
 html.light .o-sup,html.light .o-meta{color:var(--text2);}
 html.light .sc-val{color:var(--text)!important;}
 html.light .mfi input,html.light .mfi select,html.light .fg input,html.light .fg select{color:var(--text);background:var(--input-bg);}
+
+/* Light mode: fix common inline hardcoded white rgba patterns in dynamic HTML */
+html.light .card { color: var(--text); }
+html.light .sc-val { color: var(--text) !important; }
+html.light .sc-lbl { color: var(--text3) !important; }
+html.light .sc-sub { color: var(--text3) !important; }
+html.light .ct { color: var(--text) !important; }
+html.light .o-sup { color: var(--text2) !important; }
+html.light .o-meta { color: var(--text3) !important; }
+html.light .o-id { color: var(--acc) !important; }
+html.light .al-n { color: var(--red) !important; }
+html.light .al-u { color: var(--text3) !important; }
+html.light .tbl { color: var(--text); }
+html.light .tbl td, html.light .tbl th { color: var(--text); border-color: var(--bd); }
+html.light .tbl thead tr { background: var(--bg2) !important; }
+html.light .er { color: var(--text3) !important; }
+html.light select { color: var(--text); background: var(--input-bg); border-color: var(--input-border); }
+html.light input { color: var(--text); background: var(--input-bg); }
+html.light .bdg { color: var(--text2); }
+html.light .bdg-ok { color: #16a34a !important; }
+html.light .bdg-red { color: #dc2626 !important; }
+html.light .bdg-amb { color: #b45309 !important; }
+html.light .bdg-blu { color: #2563eb !important; }
+
+/* Fix hardcoded white colors in JS-generated card inner boxes */
+html.light [style*="background:rgba(255,255,255,0.04)"] { background: rgba(0,0,0,0.03) !important; }
+html.light [style*="background:rgba(255,255,255,.04)"] { background: rgba(0,0,0,0.03) !important; }
+html.light [style*="background:rgba(255,255,255,.06)"] { background: rgba(0,0,0,0.04) !important; }
+html.light [style*="background:rgba(255,255,255,.07)"] { background: rgba(0,0,0,0.05) !important; }
+html.light [style*="color:rgba(255,255,255,.9)"] { color: var(--text) !important; }
+html.light [style*="color:rgba(255,255,255,0.9)"] { color: var(--text) !important; }
+html.light [style*="color:rgba(255,255,255,.7)"] { color: var(--text2) !important; }
+html.light [style*="color:rgba(255,255,255,.6)"] { color: var(--text2) !important; }
+html.light [style*="color:rgba(255,255,255,.5)"] { color: var(--text2) !important; }
+html.light [style*="color:rgba(255,255,255,.4)"] { color: var(--text3) !important; }
+html.light [style*="color:rgba(255,255,255,.35)"] { color: var(--text3) !important; }
+html.light [style*="color:rgba(255,255,255,.3)"] { color: var(--text3) !important; }
+html.light [style*="color:rgba(255,255,255,.2)"] { color: var(--text3) !important; }
+html.light [style*="border:1px solid rgba(255,255,255,.1)"] { border-color: var(--bd) !important; }
+html.light [style*="border:1px solid rgba(255,255,255,.08)"] { border-color: var(--bd) !important; }
+html.light [style*="border:1px solid rgba(255,255,255,.09)"] { border-color: var(--bd) !important; }
+html.light [style*="border-color:rgba(255,255,255,.1)"] { border-color: var(--bd) !important; }
+html.light [style*="border-top:1px solid rgba(255,255,255,.08)"] { border-top-color: var(--bd) !important; }
+html.light [style*="border-bottom:1px solid rgba(255,255,255,.08)"] { border-bottom-color: var(--bd) !important; }
+
+/* SVG text in food cost gauge */
+html.light svg text { fill: var(--text) !important; }
+html.light svg text[fill="rgba(255,255,255,.4)"] { fill: var(--text3) !important; }
 
 /* ══ RESET ══ */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -740,27 +836,27 @@ select.fi-s option{background:var(--select-opt-bg);color:var(--text)}
 <!-- ══════════════════════════════════════════
      🔐 BRANCH LOGIN SCREEN
 ══════════════════════════════════════════ -->
-<div id="login-screen" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:radial-gradient(ellipse at 20% 30%,rgba(99,102,241,0.35) 0%,transparent 55%),radial-gradient(ellipse at 80% 70%,rgba(236,72,153,0.20) 0%,transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(20,184,166,0.12) 0%,transparent 65%),linear-gradient(160deg,#050810 0%,#090d1a 50%,#070c14 100%)">
+<div id="login-screen" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:radial-gradient(ellipse at 20% 30%,var(--login-bg1) 0%,transparent 55%),radial-gradient(ellipse at 80% 70%,var(--login-bg2) 0%,transparent 50%),radial-gradient(ellipse at 50% 50%,var(--login-bg3) 0%,transparent 65%),var(--body-bg1)">
   <div style="width:100%;max-width:440px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:0">
 
     <!-- Logo -->
     <div style="text-align:center;margin-bottom:28px">
       <div style="font-size:48px;margin-bottom:6px">⚡</div>
-      <div style="font-size:22px;font-weight:800;color:rgba(255,255,255,.92);letter-spacing:-0.5px">Ops Hub</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;font-family:var(--mono)">ALFA.CO Management Suite</div>
+      <div style="font-size:22px;font-weight:800;color:var(--login-title);letter-spacing:-0.5px">Ops Hub</div>
+      <div style="font-size:11px;color:var(--login-sub);margin-top:3px;font-family:var(--mono)">ALFA.CO Management Suite</div>
     </div>
 
     <!-- Card -->
-    <div id="login-card" style="width:100%;background:rgba(255,255,255,0.055);backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div id="login-card" style="width:100%;background:var(--login-card-bg);backdrop-filter:blur(22px);border:1px solid var(--login-card-border);border-radius:20px;padding:28px;box-shadow:var(--login-card-shadow)">
 
       <!-- Branch selector step -->
       <div id="login-step-branch">
-        <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:16px;text-align:center;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)">Select Your Branch</div>
+        <div style="font-size:13px;font-weight:700;color:var(--login-label);margin-bottom:16px;text-align:center;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)">Select Your Branch</div>
         <div id="branch-list" style="display:flex;flex-direction:column;gap:8px;min-height:60px">
-          <div style="text-align:center;color:rgba(255,255,255,.35);font-size:12px;padding:20px">Loading branches…</div>
+          <div style="text-align:center;color:var(--text3);font-size:12px;padding:20px">Loading branches…</div>
         </div>
-        <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08);text-align:center">
-          <button id="btn-super-admin" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:11px;font-family:var(--mono);cursor:pointer;padding:4px 12px;transition:color .2s" onmouseover="this.style.color='rgba(240,165,0,.8)'" onmouseout="this.style.color='rgba(255,255,255,.3)'">
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--login-divider);text-align:center">
+          <button id="btn-super-admin" style="background:none;border:none;color:var(--login-sa-text);font-size:11px;font-family:var(--mono);cursor:pointer;padding:4px 12px;transition:color .2s" onmouseover="this.style.color='var(--acc)'" onmouseout="this.style.color='var(--login-sa-text)'">
             🔐 Super Admin Access
           </button>
         </div>
@@ -769,24 +865,24 @@ select.fi-s option{background:var(--select-opt-bg);color:var(--text)}
       <!-- PIN entry step -->
       <div id="login-step-pin" style="display:none">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
-          <button id="login-back" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:rgba(255,255,255,.6);font-size:16px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>
+          <button id="login-back" style="background:var(--login-btn-bg);border:1px solid var(--login-btn-border);border-radius:8px;color:var(--login-btn-text);font-size:16px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>
           <div>
-            <div id="pin-branch-name" style="font-size:14px;font-weight:700;color:rgba(255,255,255,.9)"></div>
-            <div id="pin-branch-sub" style="font-size:10px;color:rgba(255,255,255,.4);font-family:var(--mono)"></div>
+            <div id="pin-branch-name" style="font-size:14px;font-weight:700;color:var(--login-title)"></div>
+            <div id="pin-branch-sub" style="font-size:10px;color:var(--login-sub);font-family:var(--mono)"></div>
           </div>
         </div>
-        <label style="font-size:10px;color:rgba(255,255,255,.4);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px">Branch PIN</label>
+        <label style="font-size:10px;color:var(--login-label);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px">Branch PIN</label>
         <input id="login-pin-inp" type="password" inputmode="numeric" maxlength="8" placeholder="Enter PIN" autocomplete="off"
-          style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;padding:12px 16px;color:rgba(255,255,255,.9);font-size:20px;font-family:var(--mono);letter-spacing:6px;text-align:center;outline:none;transition:border-color .2s;box-sizing:border-box">
-        <div id="login-pin-err" style="font-size:10px;color:#f87171;min-height:16px;margin-top:6px;text-align:center"></div>
-        <button id="login-submit" style="width:100%;margin-top:12px;padding:13px;background:linear-gradient(135deg,#f0a500,#d97706);color:#000;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font);transition:opacity .2s">
+          style="width:100%;background:var(--login-input-bg);border:1.5px solid var(--login-input-border);border-radius:10px;padding:12px 16px;color:var(--login-input-text);font-size:20px;font-family:var(--mono);letter-spacing:6px;text-align:center;outline:none;transition:border-color .2s;box-sizing:border-box">
+        <div id="login-pin-err" style="font-size:10px;color:var(--red);min-height:16px;margin-top:6px;text-align:center"></div>
+        <button id="login-submit" style="width:100%;margin-top:12px;padding:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#000;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font);transition:opacity .2s">
           Enter Branch →
         </button>
       </div>
 
     </div>
 
-    <div style="margin-top:14px;font-size:10px;color:rgba(255,255,255,.2);font-family:var(--mono)">v2.0 · Multi-Branch · Firebase Realtime</div>
+    <div style="margin-top:14px;font-size:10px;color:var(--login-footer);font-family:var(--mono)">v2.0 · Multi-Branch · Firebase Realtime</div>
   </div>
 </div>
 
@@ -3989,15 +4085,15 @@ function pInvDash(){
   var _gFill=Math.min(100,fcPct)/100;
   h+='<div style="display:flex;flex-direction:column;align-items:center;gap:6px">';
   h+='<svg width="110" height="110" viewBox="0 0 110 110">';
-  h+='<circle cx="55" cy="55" r="'+_gr+'" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="10"/>';
+  h+='<circle cx="55" cy="55" r="'+_gr+'" fill="none" stroke="var(--bd2)" stroke-width="10"/>';
   var _tFill=(Math.min(100,fcTarget)/100)*_gc;
   h+='<circle cx="55" cy="55" r="'+_gr+'" fill="none" stroke="rgba(240,165,0,.2)" stroke-width="10" stroke-dasharray="'+_tFill.toFixed(1)+' '+_gc.toFixed(1)+'" stroke-dashoffset="'+(_gc/4).toFixed(1)+'" stroke-linecap="round"/>';
   if(fcPct>0){var _aFill=_gFill*_gc;h+='<circle cx="55" cy="55" r="'+_gr+'" fill="none" stroke="'+fcColor+'" stroke-width="10" stroke-dasharray="'+_aFill.toFixed(1)+' '+_gc.toFixed(1)+'" stroke-dashoffset="'+(_gc/4).toFixed(1)+'" stroke-linecap="round"/>';}
   h+='<text x="55" y="50" text-anchor="middle" fill="'+fcColor+'" font-size="18" font-weight="800" font-family="var(--mono)">'+fcPct.toFixed(1)+'%</text>';
-  h+='<text x="55" y="65" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="9" font-family="var(--mono)">FOOD COST</text>';
+  h+='<text x="55" y="65" text-anchor="middle" fill="var(--text3)" font-size="9" font-family="var(--mono)">FOOD COST</text>';
   h+='</svg>';
   var _sLbl=fcPct===0?'No Data':fcOk?'✅ On Track':fcHigh?'⚠️ Caution':'🔴 Over Target';
-  var _sBg=fcPct===0?'rgba(255,255,255,.06)':fcOk?'rgba(52,211,153,.12)':fcHigh?'rgba(240,165,0,.12)':'rgba(239,68,68,.12)';
+  var _sBg=fcPct===0?'var(--bg3)':fcOk?'rgba(52,211,153,.12)':fcHigh?'rgba(240,165,0,.12)':'rgba(239,68,68,.12)';
   h+='<div style="font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;background:'+_sBg+';color:'+fcColor+'">'+_sLbl+'</div>';
   h+='</div>';
 
@@ -4029,14 +4125,14 @@ function pInvDash(){
   fcMonths.forEach(function(m,i){
     var _isCur=(i===2);
     var _bW=_maxFC>0?Math.max(4,m.pct/_maxFC*100):0;
-    var _bCol=m.pct===0?'rgba(255,255,255,.1)':m.pct<=fcTarget?'var(--grn)':m.pct<=fcTarget*1.1?'var(--gold)':'var(--red)';
+    var _bCol=m.pct===0?'var(--bd)':m.pct<=fcTarget?'var(--grn)':m.pct<=fcTarget*1.1?'var(--gold)':'var(--red)';
     var _mLbl=_mNames[parseInt(m.pfx.slice(5))]||m.pfx.slice(5);
     var _tX=(fcTarget/_maxFC*100).toFixed(1);
     h+='<div style="display:flex;align-items:center;gap:8px">';
     h+='<div style="font-size:9px;color:'+(  _isCur?'var(--text)':'var(--text3)')+';font-family:var(--mono);width:26px;text-align:right;font-weight:'+(_isCur?'700':'400')+'">'+_mLbl+'</div>';
     h+='<div style="flex:1;height:16px;background:var(--bg2);border-radius:4px;overflow:hidden;position:relative">';
     h+='<div style="position:absolute;top:0;left:0;height:100%;width:'+_bW.toFixed(1)+'%;background:'+_bCol+';border-radius:4px"></div>';
-    h+='<div style="position:absolute;top:0;left:'+_tX+'%;height:100%;width:1.5px;background:rgba(240,165,0,.5)"></div>';
+    h+='<div style="position:absolute;top:0;left:'+_tX+'%;height:100%;width:1.5px;background:var(--gold);opacity:0.5"></div>';
     h+='</div>';
     h+='<div style="font-size:9px;font-family:var(--mono);color:'+(m.pct===0?'var(--text3)':_bCol)+';width:34px;text-align:right;font-weight:700">'+(m.pct>0?m.pct.toFixed(1)+'%':'—')+'</div>';
     h+='</div>';
@@ -4063,7 +4159,7 @@ function pInvDash(){
   h+='<div style="display:flex;align-items:center;gap:8px">';
   h+='<div style="width:10px;height:10px;border-radius:50%;background:'+_bcolor+';box-shadow:0 0 8px '+_bcolor+'"></div>';
   h+='<span style="font-size:13px;font-weight:700;color:var(--text)">'+_bicon+' '+xe(_bname)+'</span>';
-  if(_brd) h+='<span style="font-size:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:1px 8px;color:var(--text3);font-family:var(--mono)">'+xe(_brd)+'</span>';
+  if(_brd) h+='<span style="font-size:10px;background:var(--bg3);border:1px solid var(--bd);border-radius:20px;padding:1px 8px;color:var(--text3);font-family:var(--mono)">'+xe(_brd)+'</span>';
   h+='</div>';
   h+='<span style="font-size:10px;color:var(--text3);opacity:.7">✏️ edit</span>';
   h+='</div>';
@@ -7012,10 +7108,10 @@ function renderBranchList(branches){
   var html='';
   branches.forEach(function(b){
     var col=b.color||'#f0a500';
-    html+='<button class="branch-login-btn" data-bid="'+b.id+'" style="display:flex;align-items:center;gap:12px;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;transition:all .2s;font-family:var(--font)">'
+    html+='<button class="branch-login-btn" data-bid="'+b.id+'" style="display:flex;align-items:center;gap:12px;width:100%;background:var(--login-branch-bg);border:1px solid var(--login-branch-border);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;transition:all .2s;font-family:var(--font)">'
       +'<div style="width:40px;height:40px;border-radius:10px;background:'+col+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.3)">'+(b.icon||'🍽')+'</div>'
       +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.9)">'+(b.name||b.id)+'</div>'
+        +'<div style="font-size:13px;font-weight:700;color:var(--login-title)">'+(b.name||b.id)+'</div>'
         +'<div style="font-size:10px;color:rgba(255,255,255,.4);font-family:var(--mono)">'+(b.brand||'')+(b.location?' · '+b.location:'')+'</div>'
       +'</div>'
       +'<div style="font-size:18px;color:rgba(255,255,255,.2)">›</div>'
@@ -7605,13 +7701,16 @@ function openBranchModal(existing){
     null  // no _cb needed — buttons wired inline above
   );
 
-  // Wire icon/color pickers and expose state
+  // Wire icon/color pickers — pre-set globals before setTimeout fires
+  window._bm_icon=b.icon||'🍽';
+  window._bm_color=b.color||'#f0a500';
   setTimeout(function(){
-    var _selIcon=b.icon||'🍽';
-    var _selColor=b.color||'#f0a500';
+    var _selIcon=window._bm_icon;
+    var _selColor=window._bm_color;
     document.querySelectorAll('.icon-opt').forEach(function(btn){
       btn.onclick=function(){
         _selIcon=this.dataset.ic;
+        window._bm_icon=_selIcon;
         document.querySelectorAll('.icon-opt').forEach(function(x){x.style.background='var(--bg3)';x.style.borderColor='var(--bd)';});
         this.style.background='rgba(240,165,0,.15)';this.style.borderColor='var(--acc)';
       };
@@ -7619,11 +7718,14 @@ function openBranchModal(existing){
     document.querySelectorAll('.col-opt').forEach(function(btn){
       btn.onclick=function(){
         _selColor=this.dataset.col;
+        window._bm_color=_selColor;
         document.querySelectorAll('.col-opt').forEach(function(x){x.style.borderColor='transparent';});
         this.style.borderColor='#fff';
       };
     });
-    window._branchModalState={getIcon:function(){return _selIcon;},getColor:function(){return _selColor;}};
+    window._bm_icon=_selIcon;
+    window._bm_color=_selColor;
+    window._branchModalState={getIcon:function(){return window._bm_icon;},getColor:function(){return window._bm_color;}};
   },50);
 }
 
