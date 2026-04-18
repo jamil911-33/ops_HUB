@@ -1310,6 +1310,17 @@ function attachListeners(){
     if(S.p === 'ts') ren();
   });
 
+  // Load branchInfo (fallback editable fields saved by non-super-admin users)
+  db.ref(bPath('branchInfo')).once('value',function(snap){
+    var info=snap.val();
+    if(info&&CURRENT_BRANCH){
+      Object.assign(CURRENT_BRANCH,info);
+      var bl=document.getElementById('branch-label');
+      if(bl&&info.name) bl.textContent=info.name;
+      if(S.p==='inv-dash') ren();
+    }
+  });
+
   // Pre-load current week's checklist data when app starts
   // so it's ready when user navigates to Checklists
   var _preloadWk=(function(){
@@ -7750,26 +7761,25 @@ function saveBranchModal(){
     icon:state.getIcon?state.getIcon():'🍽',
     color:state.getColor?state.getColor():'#f0a500',
     active:document.getElementById('bf-active').value!=='false',
-    createdAt:_editBranchId?undefined:TODAY,
     updatedAt:TODAY
   };
   if(!_editBranchId) b.createdAt=TODAY;
 
-  db.ref('admin/branches/'+id).set(b,function(e){
-    if(e){toast('Error saving branch','error');return;}
+  // Disable save button to prevent double-click
+  var saveBtn=document.getElementById('bm-save');
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Saving…';}
+
+  function _onSaved(){
     toast((_editBranchId?'Branch updated':'Branch created')+': '+name,'success');
     cm();
     if(typeof loadAdminBranches==='function') loadAdminBranches();
     if(db&&typeof loadBranchesForLogin==='function') loadBranchesForLogin();
-    // Also update CURRENT_BRANCH if editing the branch we're in
     if(CURRENT_BRANCH&&CURRENT_BRANCH.id===id){
-      CURRENT_BRANCH=b;
-      // Update session storage
+      CURRENT_BRANCH=Object.assign(CURRENT_BRANCH,b);
       try{
         var sess=JSON.parse(localStorage.getItem(SESSION_KEY)||'{}');
-        if(sess.branchId===id){sess.branch=b;localStorage.setItem(SESSION_KEY,JSON.stringify(sess));}
+        if(sess.branchId===id){sess.branch=CURRENT_BRANCH;localStorage.setItem(SESSION_KEY,JSON.stringify(sess));}
       }catch(ex){}
-      // Update header
       var bl=document.getElementById('branch-label');
       if(bl) bl.textContent=b.name;
       var bd2=document.getElementById('branch-dot');
@@ -7780,9 +7790,32 @@ function saveBranchModal(){
       if(htitle) htitle.textContent=b.name||'';
       var hsub=document.getElementById('header-branch-sub');
       if(hsub) hsub.textContent=(b.brand||'')+(b.location?' · '+b.location:'');
-      // Re-render dashboard if currently visible
       if(S.p==='inv-dash') ren();
     }
+  }
+
+  function _onError(e){
+    if(saveBtn){saveBtn.disabled=false;saveBtn.textContent=_editBranchId?'Save Changes':'Create Branch';}
+    if(err) err.textContent='Save failed: '+(e&&e.message?e.message:'Permission denied');
+    toast('Save failed — check Firebase rules','error');
+    console.error('saveBranchModal error:',e);
+  }
+
+  // Use update() — works for partial writes; fallback to branchInfo path for non-super-admins
+  db.ref('admin/branches/'+id).update(b,function(e){
+    if(e){
+      if(!IS_SUPER_ADMIN&&CURRENT_BRANCH&&CURRENT_BRANCH.id===id){
+        var localInfo={name:b.name,brand:b.brand,location:b.location,manager:b.manager,icon:b.icon,color:b.color,active:b.active,updatedAt:TODAY};
+        db.ref(bPath('branchInfo')).update(localInfo,function(e2){
+          if(e2){_onError(e2);return;}
+          _onSaved();
+        });
+      } else {
+        _onError(e);
+      }
+      return;
+    }
+    _onSaved();
   });
 }
 
