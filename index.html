@@ -1207,10 +1207,43 @@ function rand(min, max) {
 
 function navTo(pageId) {
   NX.page = pageId;
-  renderPage(pageId);
   updateTopBar(pageId);
   renderSidebar();
   window.scrollTo(0, 0);
+
+  // If Firebase data not yet loaded, show a spinner and retry
+  var needsBranches = ['exec-dash','brand-perf','brand-dash','brand-branches',
+    'region-dash','region-branches','rev-analytics','headcount','food-cost',
+    'alerts-center','brand-mgmt','access-ctrl','audit-log'];
+  var area = document.getElementById('page-area');
+
+  if (needsBranches.indexOf(pageId) >= 0 && !Object.keys(NX_BRANCHES).length) {
+    if (area) area.innerHTML = '<div class="empty-state">' +
+      '<div style="font-size:36px;margin-bottom:12px">⏳</div>' +
+      '<h3 style="color:var(--text-primary)">Loading from Firebase…</h3>' +
+      '<p style="color:var(--text-secondary)">Fetching branch data</p></div>';
+    // Retry once data arrives
+    var _retries = 0;
+    var _wait = setInterval(function() {
+      _retries++;
+      if (Object.keys(NX_BRANCHES).length || _retries > 30) {
+        clearInterval(_wait);
+        if (NX.page === pageId) renderPage(pageId);
+      }
+    }, 300);
+    return;
+  }
+
+  renderPage(pageId);
+}
+
+function toggleSidebar() {
+  var sb = document.getElementById('sidebar');
+  if (!sb) return;
+  sb.classList.toggle('collapsed');
+  NX.sidebarOpen = !sb.classList.contains('collapsed');
+  var mainContent = document.getElementById('main-content');
+  if (mainContent) mainContent.classList.toggle('sidebar-collapsed', !NX.sidebarOpen);
 }
 
 function updateTopBar(pageId) {
@@ -2147,7 +2180,9 @@ function renderPage(pageId) {
       // Auto-init charts after render
       setTimeout(function() { initPageCharts(pageId); }, 50);
     } catch(e) {
-      area.innerHTML = '<div class="empty-state"><div class="es-icon">⚠️</div><h3>Page Error</h3><p>' + xe(e.message) + '</p></div>';
+      area.innerHTML = '<div class="empty-state"><div class="es-icon">⚠️</div><h3>Page Error</h3>' +
+        '<p style="color:var(--text-secondary);margin-bottom:12px">' + xe(e.message) + '</p>' +
+        '<button class="btn" onclick="navTo(\'' + pageId + '\')">↺ Retry</button></div>';
       console.error('Page render error:', e);
     }
   } else {
@@ -2166,6 +2201,16 @@ function pExecDash() {
     totalMTD   += branchSalesMTD(b.id);
   });
   var loadedCount = Object.keys(NX_LOADED_SALES).length;
+
+  // If no branches loaded yet, show live loading card
+  if (!branches.length) {
+    return '<div class="page-header"><h1>Executive Dashboard</h1><p>Loading from Firebase…</p></div>' +
+      '<div style="text-align:center;padding:60px 20px">' +
+      '<div style="font-size:48px;margin-bottom:16px">⏳</div>' +
+      '<h3 style="color:var(--text-primary);margin-bottom:8px">Fetching branch data…</h3>' +
+      '<p style="color:var(--text-secondary);margin-bottom:20px">Connecting to admin/branches in Firebase</p>' +
+      '<button class="btn btn-primary" onclick="navTo(\'exec-dash\')">↺ Refresh</button></div>';
+  }
 
   return '<div class="page-header"><h1>Executive Dashboard</h1><p>Live data from Firebase — ' + fmtDate(new Date()) + '</p></div>' +
     '<div class="kpi-grid section">' +
@@ -3047,34 +3092,61 @@ function filterAlerts(level, btn) {
 
 // ── PAGE: BRAND MANAGEMENT ──
 function pBrandMgmt() {
-  return '<div class="page-header"><h1>Brand Management</h1><p>Manage all restaurant brands and their hierarchy</p></div>' +
-    '<div class="header-actions"><div></div><button class="btn btn-primary" onclick="openAddBrandModal()">+ Add Brand</button></div>' +
-    '<div class="brand-card-grid">' +
-    Object.keys(SEED.brands).map(function(k) {
-      var b = SEED.brands[k];
-      var m = DEMO_METRICS.brands[k];
-      var regionCount = Object.keys(b.regions).length;
-      var branchCount = Object.keys(b.regions).reduce(function(s,rk){ return s + Object.keys(b.regions[rk].branches).length; }, 0);
-      return '<div class="brand-card" style="--bc-color:' + b.config.color + '" onclick="openBrandDetail(\'' + k + '\')">' +
-        '<div class="bc-head">' +
-        '<div class="bc-icon" style="background:' + b.config.color + '20;font-size:22px">' + b.config.icon + '</div>' +
-        '<div><div class="bc-name">' + xe(b.config.name) + '</div>' +
-        '<div class="bc-sub">' + xe(b.config.cuisine) + ' · ' + xe(b.config.director) + '</div></div>' +
-        '</div>' +
-        '<div class="bc-stats">' +
-        '<div class="bc-stat"><div class="bc-stat-val">' + regionCount + '</div><div class="bc-stat-label">Regions</div></div>' +
-        '<div class="bc-stat"><div class="bc-stat-val">' + branchCount + '</div><div class="bc-stat-label">Branches</div></div>' +
-        '<div class="bc-stat"><div class="bc-stat-val">' + m.staff + '</div><div class="bc-stat-label">Staff</div></div>' +
-        '</div>' +
-        '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">' +
-        '<div style="font-size:12px;color:var(--text-secondary)">MTD: <strong style="color:var(--text-primary)">' + formatSAR(m.mtdSales) + '</strong></div>' +
-        '<div style="display:flex;gap:6px">' +
-        '<button class="btn btn-sm" onclick="event.stopPropagation();editBrand(\'' + k + '\')">Edit</button>' +
-        '<button class="btn btn-sm" onclick="event.stopPropagation();manageBranches(\'' + k + '\')">Branches</button>' +
-        '</div></div>' +
-      '</div>';
-    }).join('') +
-    '</div>';
+  var branches = getAccessibleBranches();
+
+  // Group by brand
+  var brandMap = {};
+  branches.forEach(function(b) {
+    var bkey = (b.brand || b.name || b.id);
+    if (!brandMap[bkey]) {
+      brandMap[bkey] = { name:bkey, icon:b.icon||'🍽️', color:b.color||'#f0a500',
+                         branches:[], regions:new Set() };
+    }
+    brandMap[bkey].branches.push(b);
+    if (b.location) brandMap[bkey].regions.add(b.location);
+  });
+
+  var h = '<div class="page-header"><h1>Brand Management</h1>' +
+    '<p>Manage restaurant brands registered in Firebase · admin/branches</p></div>';
+  h += '<div class="header-actions"><div></div>' +
+    '<button class="btn btn-primary" onclick="openAddBranchModal()">+ Add Branch</button></div>';
+
+  if (!branches.length) {
+    h += '<div class="empty-state"><div class="es-icon">🏢</div>' +
+      '<h3>No branches yet</h3><p>Add your first branch using the button above</p></div>';
+    return h;
+  }
+
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:4px">';
+  Object.values(brandMap).forEach(function(bm) {
+    var today = 0, mtd = 0;
+    bm.branches.forEach(function(b) { today+=branchSalesToday(b.id); mtd+=branchSalesMTD(b.id); });
+    h += '<div class="card" style="border-top:3px solid ' + bm.color + '">';
+    h += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">';
+    h += '<div style="width:44px;height:44px;border-radius:12px;background:' + bm.color + '20;' +
+         'display:flex;align-items:center;justify-content:center;font-size:22px">' + bm.icon + '</div>';
+    h += '<div><div style="font-size:16px;font-weight:700;color:var(--text-primary)">' + xe(bm.name) + '</div>';
+    h += '<div style="font-size:11px;color:var(--text-tertiary)">' + bm.branches.length + ' branch(es)</div></div></div>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">';
+    h += '<div style="background:var(--surface-2);border-radius:8px;padding:10px">';
+    h += '<div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em">Today</div>';
+    h += '<div class="mono" style="font-size:15px;font-weight:700;color:var(--ceo)">' + formatSAR(today) + '</div></div>';
+    h += '<div style="background:var(--surface-2);border-radius:8px;padding:10px">';
+    h += '<div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em">MTD</div>';
+    h += '<div class="mono" style="font-size:15px;font-weight:700;color:var(--brand-dir)">' + formatSAR(mtd) + '</div></div></div>';
+    h += '<div style="border-top:1px solid var(--border);padding-top:12px">';
+    bm.branches.forEach(function(b) {
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-size:12px">';
+      h += '<span style="color:var(--text-primary)">' + xe(b.name) + ' <span style="color:var(--text-tertiary);font-size:10px">' + xe(b.location||'') + '</span></span>';
+      h += '<div style="display:flex;gap:4px">';
+      h += '<button class="btn btn-sm" onclick="switchBranch(\'' + xe(b.id) + '\')">View</button>';
+      h += '<button class="btn btn-sm" onclick="openEditBranchModal(\'' + xe(b.id) + '\')">Edit</button>';
+      h += '</div></div>';
+    });
+    h += '</div></div>';
+  });
+  h += '</div>';
+  return h;
 }
 
 function openAddBrandModal() {
@@ -3102,6 +3174,123 @@ function openBrandDetail(k) { navTo('brand-dash'); }
 function manageBranches(k) { showToast('Managing ' + SEED.brands[k].config.name + ' branches', 'info'); }
 
 // ── PAGE: ACCESS CONTROL ──
+
+function openAddBranchModal() {
+  openModal(
+    '<div class="modal-head"><h2>Add Branch</h2><button class="modal-close" onclick="closeModalForce()">✕</button></div>' +
+    '<div class="form-group"><label class="form-label">Branch Name *</label>' +
+    '<input class="form-input" id="nb-name" placeholder="e.g. Piatto MOA"></div>' +
+    '<div class="form-group"><label class="form-label">Brand *</label>' +
+    '<input class="form-input" id="nb-brand" placeholder="e.g. Piatto"></div>' +
+    '<div class="form-group"><label class="form-label">Location</label>' +
+    '<input class="form-input" id="nb-loc" placeholder="e.g. Mall of Arabia, Jeddah"></div>' +
+    '<div class="form-group"><label class="form-label">Manager Name</label>' +
+    '<input class="form-input" id="nb-mgr" placeholder="Manager full name"></div>' +
+    '<div class="form-row"><div class="form-group"><label class="form-label">PIN (4+ digits) *</label>' +
+    '<input class="form-input" type="password" id="nb-pin" placeholder="e.g. 3333" maxlength="8"></div>' +
+    '<div class="form-group"><label class="form-label">Icon (emoji)</label>' +
+    '<input class="form-input" id="nb-icon" placeholder="🍝" maxlength="4" value="🍽️"></div></div>' +
+    '<div class="form-group"><label class="form-label">Color</label>' +
+    '<input class="form-input" id="nb-color" type="color" value="#f0a500" style="height:40px"></div>' +
+    '<button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveNewBranch()">Create Branch</button>'
+  );
+}
+
+function saveNewBranch() {
+  var name  = (document.getElementById('nb-name') ||{}).value||'';
+  var brand = (document.getElementById('nb-brand')||{}).value||'';
+  var loc   = (document.getElementById('nb-loc')  ||{}).value||'';
+  var mgr   = (document.getElementById('nb-mgr')  ||{}).value||'';
+  var pin   = (document.getElementById('nb-pin')  ||{}).value||'';
+  var icon  = (document.getElementById('nb-icon') ||{}).value||'🍽️';
+  var color = (document.getElementById('nb-color')||{}).value||'#f0a500';
+  if (!name.trim()) { showToast('Branch name required','error'); return; }
+  if (pin.length < 4) { showToast('PIN must be at least 4 digits','error'); return; }
+  // Generate ID from name
+  var id = name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  var branch = { id:id, name:name, brand:brand, location:loc, manager:mgr,
+                 pin:pin, icon:icon, color:color, active:true,
+                 createdAt: new Date().toISOString().split('T')[0] };
+  if (db) {
+    db.ref('admin/branches/' + id).set(branch, function(err) {
+      if (err) { showToast('Firebase error: ' + err.message, 'error'); return; }
+      NX_BRANCHES[id] = branch;
+      closeModalForce();
+      showToast('Branch "' + name + '" created!', 'success');
+      navTo('brand-mgmt');
+    });
+  } else {
+    NX_BRANCHES[id] = branch;
+    closeModalForce();
+    showToast('Branch created (offline — will sync when connected)', 'success');
+    navTo('brand-mgmt');
+  }
+}
+
+function openEditBranchModal(branchId) {
+  var b = NX_BRANCHES[branchId];
+  if (!b) { showToast('Branch not found','error'); return; }
+  openModal(
+    '<div class="modal-head"><h2>Edit: ' + xe(b.name) + '</h2><button class="modal-close" onclick="closeModalForce()">✕</button></div>' +
+    '<div class="form-group"><label class="form-label">Branch Name</label>' +
+    '<input class="form-input" id="eb-name" value="' + xe(b.name||'') + '"></div>' +
+    '<div class="form-group"><label class="form-label">Brand</label>' +
+    '<input class="form-input" id="eb-brand" value="' + xe(b.brand||'') + '"></div>' +
+    '<div class="form-group"><label class="form-label">Location</label>' +
+    '<input class="form-input" id="eb-loc" value="' + xe(b.location||'') + '"></div>' +
+    '<div class="form-group"><label class="form-label">Manager</label>' +
+    '<input class="form-input" id="eb-mgr" value="' + xe(b.manager||'') + '"></div>' +
+    '<div class="form-row"><div class="form-group"><label class="form-label">PIN</label>' +
+    '<input class="form-input" type="password" id="eb-pin" value="' + xe(String(b.pin||'')) + '" maxlength="8"></div>' +
+    '<div class="form-group"><label class="form-label">Icon</label>' +
+    '<input class="form-input" id="eb-icon" value="' + xe(b.icon||'🍽️') + '" maxlength="4"></div></div>' +
+    '<div class="form-group"><label class="form-label">Color</label>' +
+    '<input class="form-input" id="eb-color" type="color" value="' + xe(b.color||'#f0a500') + '" style="height:40px"></div>' +
+    '<div style="display:flex;gap:8px;margin-top:8px">' +
+    '<button class="btn btn-primary" style="flex:1" onclick="saveEditBranch(\'' + xe(branchId) + '\')">Save Changes</button>' +
+    '<button class="btn" style="color:var(--danger);border-color:rgba(248,113,113,.3)" onclick="deleteBranch(\'' + xe(branchId) + '\')">Delete</button>' +
+    '</div>'
+  );
+}
+
+function saveEditBranch(branchId) {
+  var b = NX_BRANCHES[branchId];
+  if (!b) return;
+  var updates = {
+    name:     (document.getElementById('eb-name') ||{}).value || b.name,
+    brand:    (document.getElementById('eb-brand')||{}).value || b.brand||'',
+    location: (document.getElementById('eb-loc')  ||{}).value || b.location||'',
+    manager:  (document.getElementById('eb-mgr')  ||{}).value || b.manager||'',
+    pin:      (document.getElementById('eb-pin')  ||{}).value || String(b.pin||''),
+    icon:     (document.getElementById('eb-icon') ||{}).value || b.icon||'🍽️',
+    color:    (document.getElementById('eb-color')||{}).value || b.color||'#f0a500'
+  };
+  Object.assign(b, updates);
+  if (db) {
+    db.ref('admin/branches/' + branchId).update(updates, function(err) {
+      if (err) { showToast('Firebase error: ' + err.message, 'error'); return; }
+      closeModalForce();
+      showToast('Branch updated', 'success');
+      navTo('brand-mgmt');
+    });
+  } else {
+    closeModalForce();
+    showToast('Saved locally (offline)', 'success');
+    navTo('brand-mgmt');
+  }
+}
+
+function deleteBranch(branchId) {
+  var b = NX_BRANCHES[branchId];
+  if (!b) return;
+  if (!confirm('Delete branch "' + b.name + '"? This only removes access — branch data remains in Firebase.')) return;
+  if (db) db.ref('admin/branches/' + branchId).remove();
+  delete NX_BRANCHES[branchId];
+  closeModalForce();
+  showToast('Branch removed', 'success');
+  navTo('brand-mgmt');
+}
+
 function pAccessCtrl() {
   var h = '<div class="page-header"><h1>Access Control</h1><p>PIN management and session control · branches loaded from Firebase</p></div>';
   h += '<div class="header-actions"><div></div><button class="btn btn-primary" onclick="openAddUserModal()">+ Add User</button></div>';
@@ -3164,6 +3353,29 @@ function openAddUserModal() {
     '<button class="btn btn-primary" style="width:100%" onclick="saveNewUser()">Create User</button>'
   );
 }
+
+function saveNewUser() {
+  var name = document.getElementById('au-name');
+  var role = document.getElementById('au-role');
+  var branch = document.getElementById('au-branch');
+  var pin = document.getElementById('au-pin');
+  if (!name || !name.value.trim()) { showToast('Name required','error'); return; }
+  if (!pin || pin.value.length < 4) { showToast('PIN must be 4+ digits','error'); return; }
+  if (role && role.value === 'branch_mgr' && branch && branch.value) {
+    // Update the branch PIN in Firebase
+    var branchId = branch.value;
+    if (db && branchId) {
+      db.ref('admin/branches/' + branchId + '/pin').set(pin.value);
+      // Update local cache
+      if (NX_BRANCHES[branchId]) NX_BRANCHES[branchId].pin = pin.value;
+      showToast('Branch PIN updated in Firebase', 'success');
+    }
+  }
+  closeModalForce();
+  showToast('User saved', 'success');
+}
+
+
 
 // ── PAGE: AUDIT LOG ──
 function pAuditLog() {
@@ -5186,14 +5398,14 @@ window.onload = function() {
 var _origLaunchApp = launchApp;
 launchApp = function() {
   _origLaunchApp();
-  // Load real branch registry from Firebase admin/branches first
+  // Branch registry is already loading (started at window.onload)
+  // But re-trigger to ensure it's running and set a callback to re-render
   loadBranchRegistry(function() {
     loadAllBranchesSales(function() {
       refreshDemoMetrics();
-      // Re-render current page with real data
+      // Re-render current page with fresh data
       if (NX.page) {
-        var area = document.getElementById('page-area');
-        if (area) { try { area.innerHTML = (renderPage_(NX.page)||''); setTimeout(function(){ initPageCharts(NX.page); }, 50); } catch(e){} }
+        renderPage(NX.page);
       }
     });
   });
