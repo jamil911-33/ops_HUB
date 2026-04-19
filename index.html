@@ -1137,6 +1137,236 @@ function clearSession() {
   NX.session = null;
 }
 
+// ── Core utility functions ────────────────────────────────────────────────────
+
+function xe(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatSAR(val) {
+  if (isNaN(val) || val === null || val === undefined) return 'SAR 0.00';
+  return 'SAR ' + Number(val).toLocaleString('en-SA', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function formatNum(val) {
+  if (isNaN(val)) return '0';
+  return Number(val).toLocaleString('en-SA');
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  if (typeof d === 'string') d = new Date(d + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+}
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+
+function navTo(pageId) {
+  NX.page = pageId;
+  renderPage(pageId);
+  updateTopBar(pageId);
+  renderSidebar();
+  window.scrollTo(0, 0);
+}
+
+function updateTopBar(pageId) {
+  var bc = document.getElementById('tb-breadcrumb');
+  if (!bc) return;
+  var s = NX.session || {};
+  var parts = ['ALFA.CO'];
+  if (s.brandName)  parts.push(xe(s.brandName));
+  if (s.regionName) parts.push(xe(s.regionName));
+  if (s.branchName && s.branchName !== s.brandName) parts.push(xe(s.branchName));
+
+  var labels = {
+    'exec-dash':'Executive Dashboard','brand-perf':'Brand Performance',
+    'rev-analytics':'Revenue Analytics','headcount':'Headcount',
+    'food-cost':'Food Cost','alerts-center':'Alerts Center',
+    'brand-mgmt':'Brand Management','access-ctrl':'Access Control',
+    'audit-log':'Audit Log','brand-dash':'Brand Dashboard',
+    'brand-branches':'My Branches','region-dash':'Region Dashboard',
+    'region-branches':'Region Branches','branch-dash':'Branch Dashboard',
+    'inv-items':'Inventory','inv-moves':'Receive / Issue',
+    'inv-orders':'Purchase Orders','low-stock':'Low Stock',
+    'inv-report':'Monthly Report','wastage':'Wastage Log',
+    'staff':'Staff','schedule':'Schedule','timesheet':'Timesheet',
+    'health-cards':'Health Cards','sales':'Sales','petty-cash':'Petty Cash',
+    'checklists':'Checklists','qr-checkin':'QR Check-In'
+  };
+  if (pageId && labels[pageId]) parts.push(labels[pageId]);
+
+  bc.innerHTML = parts.map(function(p, i) {
+    return '<span>' + p + '</span>' + (i < parts.length - 1 ? '<span class="sep">›</span>' : '');
+  }).join('');
+}
+
+function switchBranch(branchId) {
+  // Switch view to a specific branch (for brand director / regional drill-down)
+  var b = NX_BRANCHES[branchId];
+  if (!b) { showToast('Branch not found', 'error'); return; }
+  // Load its sales data then navigate to branch dashboard
+  loadBranchSalesData(branchId, function() {
+    var prev = NX.session || {};
+    // Temporarily augment session with this branch's data
+    NX.session = Object.assign({}, prev, {
+      branchId: branchId,
+      branchName: b.name,
+      brandName: b.brand || b.name,
+      regionName: b.location || ''
+    });
+    // Reset branch state
+    _bListenersAttached = false;
+    BS = { q:'', fd:'All', wo:0, tsTab:'att', tsLTab:'all', tsViewDate:TODAY_BS,
+           staff:[], sales:[], waste:[], rem:[], pc:[], health:[], invoices:[],
+           tsEmps:[], tsLeaves:[], sch:{}, tsAtt:{}, _branchConfig:{} };
+    navTo('branch-dash');
+  });
+}
+
+// ── Sidebar ──────────────────────────────────────────────────────────────────
+
+function renderSidebar() {
+  var s = NX.session;
+  if (!s) return;
+  var role  = s.role;
+  var color = getRoleColor(role);
+
+  var rb = document.getElementById('sb-role-badge');
+  if (rb) {
+    rb.style.color       = color;
+    rb.style.borderColor = color + '40';
+    rb.innerHTML = getRoleIcon(role) + ' ' + getRoleLabel(role);
+  }
+  var en = document.getElementById('sb-entity-name');
+  if (en) en.textContent = s.branchName || s.entityName || 'ALFA.CO';
+
+  var av = document.getElementById('user-avatar');
+  if (av) {
+    av.textContent = (s.branchName || s.entityName || 'U').charAt(0).toUpperCase();
+    av.title = getRoleLabel(role) + (s.entityName ? ' — ' + s.entityName : '');
+  }
+
+  var navConf = NAV_CONFIG[role] || NAV_CONFIG.branch_mgr;
+  var nav = document.getElementById('sb-nav');
+  if (!nav) return;
+
+  nav.innerHTML = navConf.map(function(section) {
+    var items = section.items.map(function(item) {
+      var active = NX.page === item.id;
+      return '<div class="nav-item' + (active ? ' active' : '') + '" data-page="' + item.id + '" onclick="navTo(\'' + item.id + '\')">' +
+        '<span class="ni-icon">' + item.icon + '</span>' +
+        '<span class="ni-label">' + xe(item.label) + '</span>' +
+        (item.badge ? '<span class="nav-badge" id="nb-' + item.badge + '" style="display:none">0</span>' : '') +
+      '</div>';
+    }).join('');
+    return '<div class="nav-section-label">' + xe(section.section) + '</div>' + items;
+  }).join('');
+}
+
+function getRoleColor(role) {
+  var m = { super_admin:'#ff6b6b', ceo:'#f0c040', brand_dir:'#7c6ff7', regional:'#3b9eff', branch_mgr:'#34d399', staff:'#94a3b8' };
+  return m[role] || '#94a3b8';
+}
+function getRoleLabel(role) {
+  var m = { super_admin:'Super Admin', ceo:'CEO', brand_dir:'Brand Director', regional:'Regional Manager', branch_mgr:'Branch Manager', staff:'Staff' };
+  return m[role] || role;
+}
+function getRoleIcon(role) {
+  var m = { super_admin:'🔑', ceo:'👑', brand_dir:'🎯', regional:'🗺️', branch_mgr:'🏪', staff:'👤' };
+  return m[role] || '👤';
+}
+
+var NAV_CONFIG = {
+  ceo: [
+    { section:'EXECUTIVE', items:[
+      { id:'exec-dash',    icon:'📊', label:'Executive Dashboard' },
+      { id:'brand-perf',   icon:'🏆', label:'Brand Performance' },
+      { id:'rev-analytics',icon:'📈', label:'Revenue Analytics' },
+      { id:'headcount',    icon:'👥', label:'Headcount Overview' },
+      { id:'food-cost',    icon:'🍽️', label:'Food Cost Analysis' },
+      { id:'alerts-center',icon:'⚠️', label:'Alerts Center', badge:'alerts' }
+    ]},
+    { section:'MANAGEMENT', items:[
+      { id:'brand-mgmt',  icon:'🏢', label:'Brand Management' },
+      { id:'access-ctrl', icon:'🔐', label:'Access Control' },
+      { id:'audit-log',   icon:'📋', label:'Audit Log' }
+    ]}
+  ],
+  super_admin: [
+    { section:'EXECUTIVE', items:[
+      { id:'exec-dash',    icon:'📊', label:'Executive Dashboard' },
+      { id:'brand-perf',   icon:'🏆', label:'Brand Performance' },
+      { id:'alerts-center',icon:'⚠️', label:'Alerts Center', badge:'alerts' }
+    ]},
+    { section:'SYSTEM', items:[
+      { id:'brand-mgmt',  icon:'🏢', label:'Brand Management' },
+      { id:'access-ctrl', icon:'🔐', label:'Access Control' },
+      { id:'audit-log',   icon:'📋', label:'Audit Log' }
+    ]}
+  ],
+  brand_dir: [
+    { section:'BRAND OPS', items:[
+      { id:'brand-dash',     icon:'📊', label:'Brand Dashboard' },
+      { id:'brand-branches', icon:'🏪', label:'My Branches' },
+      { id:'rev-analytics',  icon:'📈', label:'Sales & Revenue' },
+      { id:'food-cost',      icon:'🍽️', label:'Food Cost' },
+      { id:'headcount',      icon:'👥', label:'Staff Overview' },
+      { id:'alerts-center',  icon:'⚠️', label:'Compliance', badge:'alerts' }
+    ]}
+  ],
+  regional: [
+    { section:'REGION OPS', items:[
+      { id:'region-dash',    icon:'📊', label:'Region Dashboard' },
+      { id:'region-branches',icon:'🏪', label:'My Branches' },
+      { id:'rev-analytics',  icon:'📊', label:'Sales Comparison' },
+      { id:'headcount',      icon:'👥', label:'Staff Management' },
+      { id:'alerts-center',  icon:'⚠️', label:'Alerts', badge:'alerts' }
+    ]}
+  ],
+  branch_mgr: [
+    { section:'INVENTORY', items:[
+      { id:'branch-dash', icon:'📊', label:'Dashboard' },
+      { id:'inv-items',   icon:'📋', label:'Items' },
+      { id:'inv-moves',   icon:'🔄', label:'Receive / Issue' },
+      { id:'inv-orders',  icon:'🛒', label:'Purchase Orders' },
+      { id:'low-stock',   icon:'🚨', label:'Low Stock', badge:'lowstock' },
+      { id:'inv-report',  icon:'📅', label:'Monthly Report' }
+    ]},
+    { section:'OPERATIONS', items:[
+      { id:'wastage', icon:'🗑️', label:'Wastage Log' }
+    ]},
+    { section:'TEAM', items:[
+      { id:'staff',        icon:'👥', label:'Staff' },
+      { id:'schedule',     icon:'🗓️', label:'Schedule' },
+      { id:'timesheet',    icon:'⏱️', label:'Time Sheet' },
+      { id:'health-cards', icon:'💳', label:'Health Cards' },
+      { id:'sales',        icon:'💰', label:'Sales' },
+      { id:'petty-cash',   icon:'🧾', label:'Petty Cash' }
+    ]},
+    { section:'MOBILE', items:[
+      { id:'qr-checkin', icon:'📱', label:'QR Check-In' },
+      { id:'checklists', icon:'✅', label:'Checklists' }
+    ]}
+  ],
+  staff: [
+    { section:'MY BRANCH', items:[
+      { id:'branch-dash', icon:'📊', label:'Dashboard' },
+      { id:'checklists',  icon:'✅', label:'Checklists' },
+      { id:'qr-checkin',  icon:'📱', label:'Check-In' }
+    ]}
+  ]
+};
+
 
 // ══════════════════════════════════════════════════════
 // REAL DATA LAYER — reads from same Firebase paths as OpsHub
@@ -3105,6 +3335,71 @@ function bweekDates() {
 }
 function bfindItem(code) { for(var i=0;i<bItems.length;i++) if(bItems[i].code===code) return bItems[i]; return null; }
 function bfindOrder(id) { for(var i=0;i<bOrders.length;i++) if(bOrders[i].id===id) return bOrders[i]; return null; }
+// ── Real staff seed data (from OpsHub) ──────────────────────────────────────
+function defStaff() {
+  var d = [
+    ['1','KHALED AHMED','Manager','Manager'],
+    ['2','Raymond Buenavista','Kitchen','Staff'],
+    ['3','Raed Abdullah Al Ghamdi','FOH','Staff'],
+    ['4','Yam RANA','Kitchen','Staff'],
+    ['5','ANTONIO JR DUMAYAS','Kitchen','Staff'],
+    ['6','SABIN GURUNG','Kitchen','Staff'],
+    ['7','LESTER ALCABASA','FOH','Staff'],
+    ['8','Gabby Dolete','FOH','Staff'],
+    ['9','KRISHNA THAPA','Kitchen','Staff'],
+    ['10','MUHAMMAD ISTIYAQUE ANSARI','Kitchen','Staff'],
+    ['11','Mohammed Zubair Mohamed Yakub','Kitchen','Staff'],
+    ['12','Regino Yadao','FOH','Staff'],
+    ['13','WEJDAN SULEMAN ALEMAYRI','FOH','Staff'],
+    ['14','Ifurung Michael','Kitchen','Staff'],
+    ['15','Jennifer Balagtas','FOH','Staff'],
+    ['16','Roselyn Arceo','FOH','Staff'],
+    ['17','Gyanu Poudel','Kitchen','Staff'],
+    ['18','KASHIRAM PAUDEL','Kitchen','Staff'],
+    ['19','Birendra Chaudhari','Kitchen','Staff'],
+    ['20','CHITRA BAHADUR KUNWAR','Kitchen','Staff'],
+    ['21','ASHOK RAJBANSHI','Kitchen','Staff'],
+    ['22','Yogesh Pathak','Kitchen','Staff'],
+    ['23','Boy Gorge','FOH','Staff'],
+    ['24','Rabindra Malla','Kitchen','Staff'],
+    ['25','Edwin Castro','Kitchen','Staff'],
+    ['26','Rommel Santocildes','FOH','Staff'],
+    ['27','VALENTINO HOLZINGER','Manager','Manager'],
+    ['28','Isaac Hugo','FOH','Staff'],
+    ['29','Ashok Rai','Kitchen','Staff'],
+    ['30','Prem Bahadur','Kitchen','Staff'],
+    ['31','Ansari Sarfaraj','Kitchen','Staff'],
+    ['32','JHESS MINAS','FOH','Staff'],
+    ['33','MARK ORIBELLO','FOH','Staff'],
+    ['34','ATHEER MOHAMMED ALJOHANI','Manager','Manager'],
+    ['35','Razan Hassan','FOH','Staff'],
+    ['36','SHUKAT MANSUR','Kitchen','Staff'],
+    ['37','MARIANE HIPE','FOH','Staff'],
+    ['38','SUMAN MAJAKUTY','Kitchen','Staff'],
+    ['39','Khaled Al Halafi','Manager','Admin'],
+    ['40','Nawal Al Ghamdi','FOH','Staff'],
+    ['41','ABDULRHMAN ALZHRANI','Kitchen','Staff'],
+    ['42','JAWAD KHAN','Kitchen','Staff']
+  ];
+  return d.map(function(r) {
+    return { id:r[0], name:r[1], dept:r[2], access:r[3],
+             role:'', shift:'', status:'Active', phone:'', sap:'' };
+  });
+}
+
+// Seed staff to Firebase if branch has no staff yet
+function seedIfEmpty() {
+  if (!db || !NX.session || !NX.session.branchId) return;
+  db.ref(bPath('staff')).once('value', function(snap) {
+    if (!snap.val()) {
+      var obj = {};
+      defStaff().forEach(function(m) { obj[m.id] = m; });
+      db.ref(bPath('staff')).set(obj);
+      console.log('Staff seeded from defStaff for branch:', NX.session.branchId);
+    }
+  });
+}
+
 function bsyncTSFromStaff() {
   BS.staff.forEach(function(m){
     var sid=String(m.id),ex=null;
