@@ -4787,6 +4787,41 @@ function pBranchDash() {
   h += '</div>';
 
   // FOOD COST PANEL
+  // ── Tables / Seats + Branch Info (same as index.html dashboard) ──────────
+  var _bc2=BS._branchConfig||{};
+  var _bcolor2=b.color||'#f0a500';
+  var act2str=act2+' active';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
+  // Left: Tables & Seats
+  h += '<div class="card" style="padding:16px;cursor:pointer;border-color:'+_bcolor2+'33" onclick="openBranchConfigModal()" title="Click to edit tables & seats">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h += '<div style="display:flex;align-items:center;gap:8px">';
+  h += '<div style="width:10px;height:10px;border-radius:50%;background:'+_bcolor2+';box-shadow:0 0 8px '+_bcolor2+'"></div>';
+  h += '<span style="font-size:13px;font-weight:700">'+xe(b.icon||'\ud83c\udfea')+' '+xe(branchName)+'</span>';
+  if(b.brand)h += '<span style="font-size:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:1px 8px;color:var(--text-tertiary)">'+xe(b.brand)+'</span>';
+  h += '</div><span style="font-size:10px;color:var(--text-tertiary);opacity:.7">✏️ edit</span></div>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  h += '<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center">';
+  h += '<div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;font-family:var(--mono)">Tables</div>';
+  h += '<div style="font-size:34px;font-weight:300;color:var(--ceo);font-family:var(--mono)">'+(_bc2.tables||b.tables||'—')+'</div></div>';
+  h += '<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center">';
+  h += '<div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;font-family:var(--mono)">Seats</div>';
+  h += '<div style="font-size:34px;font-weight:300;color:#60a5fa;font-family:var(--mono)">'+(_bc2.seats||b.seats||'—')+'</div></div>';
+  h += '</div></div>';
+  // Right: Branch Info
+  h += '<div class="card" style="padding:16px">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h += '<span style="font-size:12px;font-weight:700;color:var(--text-secondary)">Branch Info</span>';
+  h += '<button class="btn btn-sm" onclick="openBranchConfigModal()">✏️ Edit</button></div>';
+  h += '<div style="display:flex;flex-direction:column;gap:9px">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span style="color:var(--text-tertiary)">Brand</span><span style="font-weight:700;color:var(--text-primary)">'+xe(b.brand||'—')+'</span></div>';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span style="color:var(--text-tertiary)">Location</span><span style="color:var(--text-secondary);text-align:right;max-width:200px">'+xe(b.location||'—')+'</span></div>';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span style="color:var(--text-tertiary)">Manager</span><span style="font-weight:600;color:var(--text-secondary)">'+xe(b.manager||'—')+'</span></div>';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span style="color:var(--text-tertiary)">Active Staff</span><span style="font-weight:700;color:#34d399">'+act2+'</span></div>';
+  if(_bc2.area)h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span style="color:var(--text-tertiary)">Dining Area</span><span style="color:var(--text-secondary)">'+xe(_bc2.area)+'</span></div>';
+  h += '</div></div>';
+  h += '</div>';
+
   h += '<div class="card" style="padding:16px;margin-bottom:10px">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
   h += '<span style="font-size:13px;font-weight:700">\ud83c\udf7d\ufe0f Food Cost \xb7 '+tm+'</span>';
@@ -4982,6 +5017,29 @@ function openBranchItemModal(code){
 }
 
 // ── Location management (Firebase-backed, same as index.html) ──────────────
+function openBranchConfigModal(){
+  var cfg=BS._branchConfig||{};
+  var html='<div class="modal-head"><h2>Branch Configuration</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
+  html+='<div class="form-row"><div class="bfg"><label class="form-label">Number of Tables</label><input class="form-input" type="number" id="bcfg-tables" min="0" value="'+(cfg.tables||0)+'" style="font-size:22px;font-weight:300;text-align:center;font-family:var(--mono)"></div>';
+  html+='<div class="bfg"><label class="form-label">Number of Seats</label><input class="form-input" type="number" id="bcfg-seats" min="0" value="'+(cfg.seats||0)+'" style="font-size:22px;font-weight:300;text-align:center;font-family:var(--mono)"></div></div>';
+  html+='<div class="bfg"><label class="form-label">Dining Area (optional)</label><input class="form-input" id="bcfg-area" value="'+bxe(cfg.area||'')+'" placeholder="e.g. Piatto Tables 21 Seats 86 — SH Tables 16 Seats 74"></div>';
+  html+='<div class="bfg"><label class="form-label">Food Cost Target (%)</label><input class="form-input" type="number" id="bcfg-fc" min="0" max="100" value="'+(cfg.fcTarget||30)+'" placeholder="30"></div>';
+  html+='<button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBranchConfig()">Save</button>';
+  openModal(html);
+}
+function saveBranchConfig(){
+  var tables=parseInt(bgv('bcfg-tables'))||0;
+  var seats=parseInt(bgv('bcfg-seats'))||0;
+  var area=bgv('bcfg-area');
+  var fcTarget=parseFloat(bgv('bcfg-fc'))||30;
+  var cfg=Object.assign({},BS._branchConfig||{},{tables:tables,seats:seats,area:area,fcTarget:fcTarget});
+  BS._branchConfig=cfg;
+  if(db)db.ref(bPath('config')).set(cfg,function(err){
+    if(err)showToast('Save failed: '+err.message,'error');
+    else{showToast('Branch config saved \u2713','success');closeModalForce();navTo('branch-dash');}
+  });
+}
+
 function nxAddLocationModal(){
   var html='<div class="modal-head"><h2>Add Location</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
   html+='<div class="bfg"><label class="form-label">Location Name *</label><input class="form-input" id="nx-new-loc" placeholder="e.g. Walk-in Chiller"></div>';
@@ -5884,26 +5942,145 @@ function pSales() {
   var now=new Date(),cy=now.getFullYear(),ly=cy-1,tm=bmthKey(0),lm=bmthKey(-1);
   var dow=now.getDay();
   function dsOf(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-  var tws=new Date(now);tws.setDate(now.getDate()-dow);tws.setHours(0,0,0,0);
-  var lws=new Date(tws);lws.setDate(tws.getDate()-7);
-  var lwe=new Date(tws);lwe.setDate(tws.getDate()-1);
-  var todayStr=dsOf(now),twsStr=dsOf(tws),lwsStr=dsOf(lws),lweStr=dsOf(lwe);
-  var tA=0,tT=0,lmA=0,thisWk=0,lastWk=0,todaySales=0,ytdA=0,ytdLY=0;
-  BS.sales.forEach(function(e){if(!e.date)return;var a=+e.actual||0,t=+e.target||0;if(e.date.indexOf(tm)===0){tA+=a;tT+=t;}if(e.date.indexOf(lm)===0)lmA+=a;if(e.date>=twsStr&&e.date<=todayStr)thisWk+=a;if(e.date>=lwsStr&&e.date<=lweStr)lastWk+=a;if(e.date===todayStr)todaySales+=a;if(e.date.slice(0,4)===String(cy))ytdA+=a;if(e.date.slice(0,4)===String(ly))ytdLY+=a;});
+  var thisWkStart=new Date(now);thisWkStart.setDate(now.getDate()-dow);thisWkStart.setHours(0,0,0,0);
+  var lastWkStart=new Date(thisWkStart);lastWkStart.setDate(thisWkStart.getDate()-7);
+  var lastWkEnd=new Date(thisWkStart);lastWkEnd.setDate(thisWkStart.getDate()-1);
+  var todayStr=dsOf(now),twsStr=dsOf(thisWkStart),lwsStr=dsOf(lastWkStart),lweStr=dsOf(lastWkEnd);
+  var lwDayStr=dsOf(new Date(now.getTime()-7*86400000));
+  var tA=0,tT=0,lmA=0,lmT=0,thisWk=0,lastWk=0,wkT=0,lastWkT=0,ytdA=0,ytdT=0,ytdLY=0;
+  BS.sales.forEach(function(e){
+    if(!e.date)return;
+    var a=+e.actual||0,t=+e.target||0;
+    if(e.date.indexOf(tm)===0){tA+=a;tT+=t;}
+    if(e.date.indexOf(lm)===0){lmA+=a;lmT+=t;}
+    if(e.date>=twsStr&&e.date<=todayStr){thisWk+=a;wkT+=t;}
+    if(e.date>=lwsStr&&e.date<=lweStr){lastWk+=a;lastWkT+=t;}
+    if(e.date.slice(0,4)===String(cy)){ytdA+=a;ytdT+=t;}
+    if(e.date.slice(0,4)===String(ly))ytdLY+=a;
+  });
+
   function pct(a,b){if(!b)return null;return((a-b)/b*100).toFixed(1);}
-  function arrow(v){if(v===null)return '<span style="color:var(--text-tertiary)">\u2014</span>';var up=parseFloat(v)>=0;return '<span style="color:'+(up?'#34d399':'#f87171')+';font-size:24px;font-weight:700">'+(up?'+':'')+v+'%</span>';}
-  function pbar(val,tot,col){var w=tot>0?Math.min(100,val/tot*100):0;return '<div style="height:5px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin-top:6px"><div style="height:100%;width:'+w.toFixed(1)+'%;background:'+col+';border-radius:99px"></div></div><div class="bmono" style="font-size:9px;color:var(--text-tertiary);margin-top:3px">'+bfsar(val)+' / '+bfsar(tot)+' ('+(tot>0?(val/tot*100).toFixed(1):0)+'%)</div>';}
-  var h='<div class="page-header"><h1>Sales</h1></div>';
-  h+='<div class="bgrid-4" style="margin-bottom:12px"><div class="bsc"><div class="bsc-lbl">THIS MONTH</div><div class="bsc-val bcgold" style="font-size:22px">'+bfsar(tA)+'</div><div class="bsc-sub">'+(tT>0?(tA/tT*100).toFixed(1)+'% of target':'No target set')+'</div></div><div class="bsc"><div class="bsc-lbl">MONTHLY TARGET</div><div class="bsc-val" style="font-size:22px;color:var(--text-secondary)">'+bfsar(tT)+'</div></div><div class="bsc"><div class="bsc-lbl">VS LAST MONTH</div>'+arrow(pct(tA,lmA))+'<div class="bsc-sub">Last: '+bfsar(lmA)+'</div></div><div class="bsc"><div class="bsc-lbl">WEEK VS LAST</div>'+arrow(pct(thisWk,lastWk))+'<div class="bsc-sub">Last: '+bfsar(lastWk)+'</div></div></div>';
-  var salesMonthVals=[];for(var smi=11;smi>=0;smi--){var smpfx=bmthKey(-smi);salesMonthVals.push(BS.sales.reduce(function(acc,e){return e.date&&e.date.indexOf(smpfx)===0?acc+(+e.actual||0):acc;},0));}
-  var smxM=Math.max.apply(null,salesMonthVals)||1;
-  var salesBars=salesMonthVals.map(function(mv,idx){var isC=(idx===11);var bh=mv>0?Math.max(4,Math.round(mv/smxM*56)):4;return '<div title="'+bfsar(mv)+'" style="flex:1;height:'+bh+'px;background:'+(isC?'var(--ceo)':'var(--surface-4)')+';border-radius:2px 2px 0 0;opacity:'+(isC?1:.65)+';cursor:default"></div>';}).join('');
-  h+='<div class="bgrid-2" style="margin-bottom:12px"><div class="bcard"><div style="font-size:11px;font-weight:700;margin-bottom:10px">Monthly Progress</div>'+pbar(tA,tT,'linear-gradient(90deg,var(--ceo),#34d399)')+'<div class="bgrid-2" style="margin-top:12px"><div style="background:var(--surface-2);border-radius:7px;padding:10px"><div class="bmono" style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;margin-bottom:4px">This Week</div><div class="bmono" style="font-size:18px;font-weight:700;color:var(--ceo)">'+bfsar(thisWk)+'</div></div><div style="background:var(--surface-2);border-radius:7px;padding:10px"><div class="bmono" style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;margin-bottom:4px">Last Week</div><div class="bmono" style="font-size:18px;font-weight:700;color:var(--text-secondary)">'+bfsar(lastWk)+'</div></div></div></div>';
-  h+='<div class="bcard"><div style="font-size:11px;font-weight:700;margin-bottom:8px">YTD '+cy+'</div><div class="bmono" style="font-size:28px;font-weight:300;color:var(--ceo);margin-bottom:4px">'+bfsar(ytdA)+'</div>'+arrow(pct(ytdA,ytdLY))+'<div class="bsc-sub" style="margin-top:4px;margin-bottom:10px">vs '+ly+' YTD</div><div style="display:flex;align-items:flex-end;gap:2px;height:56px">'+salesBars+'</div><div style="display:flex;justify-content:space-between;margin-top:4px"><span class="bmono" style="font-size:9px;color:var(--text-tertiary)">12 months ago</span><span class="bmono" style="font-size:9px;color:var(--ceo)">Now</span></div></div></div>';
-  h+='<div class="header-actions"><div></div><button class="btn btn-primary" onclick="openBranchSalesModal(null)">+ Log Sales</button></div>';
-  var rows=BS.sales.slice().sort(function(a,b){return(b.date||'').localeCompare(a.date||'');}).map(function(e){var df=(+e.actual||0)-(+e.target||0);var dfc=df>=0?'#34d399':'#f87171';var p=e.target>0?((+e.actual||0)/(+e.target||0)*100).toFixed(1)+'%':'\u2014';return '<tr><td class="bmono" style="color:var(--text-tertiary);font-size:11px">'+bfdate(e.date)+'</td><td class="bmono" style="font-weight:700;color:var(--ceo)">'+bfsar(e.actual)+'</td><td class="bmono" style="color:var(--text-secondary)">'+bfsar(e.target)+'</td><td class="bmono" style="color:'+dfc+';font-weight:600">'+(df>=0?'+':'')+bfsar(df)+'</td><td class="bmono" style="color:'+dfc+';font-weight:600">'+bxe(p)+'</td><td><div style="display:flex;gap:4px"><button class="btn btn-sm" onclick="openBranchSalesModal(\''+bxe(e.id)+'\')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchSales(\''+bxe(e.id)+'\')">Del</button></div></td></tr>';}).join('');
-  return h+'<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th>Actual</th><th>Target</th><th>Variance</th><th>Achievement</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="6" style="text-align:center;color:var(--text-tertiary);padding:24px">No entries yet</td></tr>')+'</tbody></table></div></div>';
+  function arrow(v,sz){
+    if(v===null)return '<span style="color:var(--text-tertiary)">—</span>';
+    sz=sz||'22px';
+    var up=parseFloat(v)>=0;
+    return '<span style="color:'+(up?'#34d399':'#f87171')+';font-size:'+sz+';font-weight:700;font-family:var(--mono)">'+(up?'+':'')+v+'%</span>';
+  }
+  function pbar(val,tot,col){
+    var w=tot>0?Math.min(100,val/tot*100):0;
+    return '<div style="height:5px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin-top:6px"><div style="height:100%;width:'+w.toFixed(1)+'%;background:'+col+';border-radius:99px;transition:width .6s"></div></div>'
+      +'<div style="font-size:9px;color:var(--text-tertiary);font-family:var(--mono);margin-top:3px">'+bfsar(val)+' / '+bfsar(tot)+' ('+(tot>0?(val/tot*100).toFixed(1):0)+'%)</div>';
+  }
+
+  var s=NX.session||{};
+  var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  h+='<div style="font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono)">All Entries</div>';
+  h+='<button class="btn btn-primary" onclick="openBranchSalesModal(null)">+ Add Sales</button></div>';
+
+  // ── ROW 1: 4 KPI cards ──
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">';
+  h+='<div class="card"><div class="bsc-lbl">THIS MONTH</div><div class="bsc-val bcgold" style="font-size:24px;font-weight:300">'+bfsar(tA)+'</div><div class="bsc-sub">'+(tT>0?(tA/tT*100).toFixed(1)+'% of target':'No target set')+'</div></div>';
+  h+='<div class="card"><div class="bsc-lbl">MONTHLY TARGET</div><div class="bsc-val" style="font-size:24px;font-weight:300;color:var(--text-secondary)">'+bfsar(tT)+'</div><div class="bsc-sub">'+tm+'</div></div>';
+  h+='<div class="card"><div class="bsc-lbl">VS LAST MONTH</div>'+arrow(pct(tA,lmA),'28px')+'<div class="bsc-sub" style="margin-top:4px">Last: '+bfsar(lmA)+'</div></div>';
+  h+='<div class="card"><div class="bsc-lbl">WEEK VS LAST WEEK</div>'+arrow(pct(thisWk,lastWk),'28px')+'<div class="bsc-sub" style="margin-top:4px">Last: '+bfsar(lastWk)+'</div></div>';
+  h+='</div>';
+
+  // ── ROW 2: YTD large / YTD Target / Year vs Year ──
+  h+='<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:10px">';
+  h+='<div class="card"><div class="bsc-lbl">YEAR TO DATE '+cy+'</div><div class="bsc-val bcgold" style="font-size:28px;font-weight:300">'+bfsar(ytdA)+'</div><div class="bsc-sub">'+(ytdT>0?(ytdA/ytdT*100).toFixed(1)+'% of YTD target':'')+'</div></div>';
+  h+='<div class="card"><div class="bsc-lbl">YTD TARGET '+cy+'</div><div class="bsc-val" style="font-size:22px;font-weight:300;color:var(--text-secondary)">'+bfsar(ytdT)+'</div><div class="bsc-sub">Sum of monthly targets</div></div>';
+  h+='<div class="card"><div class="bsc-lbl">'+cy+' VS '+ly+'</div>'+arrow(pct(ytdA,ytdLY),'28px')+'<div class="bsc-sub" style="margin-top:4px">Last year: '+bfsar(ytdLY)+'</div></div>';
+  h+='</div>';
+
+  // ── ROW 3: Last 7 Days + Year Monthly Comparison ──
+  // Last 7 days bars
+  var chartDays=[];
+  for(var dd=6;dd>=0;dd--){var d2=new Date(now.getTime()-dd*86400000);chartDays.push({date:d2,ds:dsOf(d2),sales:0});}
+  BS.sales.forEach(function(e){chartDays.forEach(function(d2){if(e.date===d2.ds)d2.sales+=(+e.actual||0);});});
+  var maxSales=Math.max.apply(null,chartDays.map(function(d2){return d2.sales;}))||1;
+  var bars7=chartDays.map(function(d2){
+    var bh=Math.max(4,Math.round(d2.sales/maxSales*80));
+    var isToday=d2.ds===todayStr;
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">'
+      +'<div style="height:80px;display:flex;align-items:flex-end;width:100%">'
+      +'<div style="width:100%;height:'+bh+'%;background:'+(isToday?'var(--ceo)':'rgba(240,165,0,.4)')+';border-radius:3px 3px 0 0;min-height:4px"></div></div>'
+      +'<div style="font-size:9px;color:'+(isToday?'var(--ceo)':'var(--text-tertiary)')+';font-family:var(--mono);white-space:nowrap;font-weight:'+(isToday?'700':'400')+'">'+d2.ds.slice(5).replace('-',' ')+'</div>'
+      +'</div>';
+  }).join('');
+  // Monthly comparison bars
+  var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var cyData={},lyData={};
+  BS.sales.forEach(function(e){
+    if(!e.date)return;
+    var yr=e.date.slice(0,4),mo=e.date.slice(5,7);
+    if(yr===String(cy)){if(!cyData[mo])cyData[mo]=0;cyData[mo]+=(+e.actual||0);}
+    if(yr===String(ly)){if(!lyData[mo])lyData[mo]=0;lyData[mo]+=(+e.actual||0);}
+  });
+  var allVals=[];MONTHS.forEach(function(_,i){var m=String(i+1).padStart(2,'0');allVals.push(cyData[m]||0,lyData[m]||0);});
+  var maxM=Math.max.apply(null,allVals)||1;
+  var monthlyBars=MONTHS.map(function(mn,i){
+    var m=String(i+1).padStart(2,'0');var cy2=cyData[m]||0;var ly2=lyData[m]||0;
+    var hc=Math.max(2,Math.round(cy2/maxM*70));var hl=Math.max(2,Math.round(ly2/maxM*70));
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">'
+      +'<div style="height:70px;display:flex;align-items:flex-end;gap:1px;width:100%">'
+      +'<div style="flex:1;height:'+hc+'px;background:var(--ceo);border-radius:2px 2px 0 0;min-height:2px"></div>'
+      +'<div style="flex:1;height:'+hl+'px;background:rgba(240,165,0,.3);border-radius:2px 2px 0 0;min-height:2px"></div>'
+      +'</div><div style="font-size:8px;color:var(--text-tertiary);font-family:var(--mono)">'+mn+'</div></div>';
+  }).join('');
+
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
+  h+='<div class="card"><div style="font-size:11px;font-weight:700;margin-bottom:10px">Last 7 Days</div>';
+  h+='<div style="display:flex;align-items:flex-end;gap:3px;height:96px">'+bars7+'</div></div>';
+  h+='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+  h+='<div style="font-size:11px;font-weight:700">'+cy+' vs '+ly+' — Monthly</div>';
+  h+='<div style="display:flex;gap:8px;font-size:9px"><span style="color:var(--ceo)">■ '+cy+'</span><span style="color:rgba(240,165,0,.4)">■ '+ly+'</span></div></div>';
+  h+='<div style="display:flex;align-items:flex-end;gap:2px;height:80px">'+monthlyBars+'</div></div>';
+  h+='</div>';
+
+  // ── ROW 4: Progress + YTD Progress (identical to index.html) ──
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
+  // Monthly Progress card
+  h+='<div class="card"><div style="font-size:11px;font-weight:700;margin-bottom:10px">Progress</div>';
+  h+='<div style="font-size:10px;color:var(--text-tertiary);font-weight:600;margin-bottom:4px">Monthly Progress</div>';
+  h+=pbar(tA,tT,'linear-gradient(90deg,var(--ceo),#34d399)');
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">';
+  h+='<div style="background:var(--surface-2);border-radius:7px;padding:10px"><div class="bmono" style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px">THIS WEEK</div>';
+  h+='<div class="bmono" style="font-size:18px;font-weight:700;color:var(--ceo)">'+bfsar(thisWk)+'</div>';
+  h+='<div style="font-size:9px;color:var(--text-tertiary)">Target: '+bfsar(wkT)+'</div></div>';
+  h+='<div style="background:var(--surface-2);border-radius:7px;padding:10px"><div class="bmono" style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px">LAST WEEK</div>';
+  h+='<div class="bmono" style="font-size:18px;font-weight:700;color:var(--text-secondary)">'+bfsar(lastWk)+'</div>';
+  h+='<div style="font-size:9px;color:var(--text-tertiary)">Target: '+bfsar(lastWkT)+'</div></div>';
+  h+='</div></div>';
+  // YTD Progress card
+  h+='<div class="card"><div style="font-size:11px;font-weight:700;margin-bottom:10px">YTD Progress '+cy+'</div>';
+  h+='<div style="font-size:10px;color:var(--text-tertiary);font-weight:600;margin-bottom:4px">Year to Date</div>';
+  h+=pbar(ytdA,ytdT,'linear-gradient(90deg,#f59e0b,var(--ceo))');
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">';
+  h+='<div style="background:var(--surface-2);border-radius:7px;padding:10px"><div class="bmono" style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px">YTD ACTUAL</div>';
+  h+='<div class="bmono" style="font-size:18px;font-weight:700;color:var(--ceo)">'+bfsar(ytdA)+'</div>';
+  h+='<div style="font-size:9px;color:var(--text-tertiary)">'+arrow(pct(ytdA,ytdLY))+' vs '+ly+'</div></div>';
+  h+='<div style="background:var(--surface-2);border-radius:7px;padding:10px"><div class="bmono" style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px">YTD TARGET</div>';
+  h+='<div class="bmono" style="font-size:18px;font-weight:700;color:var(--text-secondary)">'+bfsar(ytdT)+'</div>';
+  h+='<div style="font-size:9px;color:var(--text-tertiary)">'+cy+' plan</div></div>';
+  h+='</div></div>';
+  h+='</div>';
+
+  // ── Entries table ──
+  var rows=BS.sales.slice().sort(function(a,b){return(b.date||'').localeCompare(a.date||'');}).map(function(e){
+    var df=(+e.actual||0)-(+e.target||0);var dfc=df>=0?'#34d399':'#f87171';var p=e.target>0?((+e.actual||0)/(+e.target||0)*100).toFixed(1)+'%':'\u2014';
+    return '<tr><td class="bmono" style="color:var(--text-tertiary);font-size:11px">'+bfdate(e.date)+'</td>'
+      +'<td class="bmono" style="font-weight:700;color:var(--ceo)">'+bfsar(e.actual)+'</td>'
+      +'<td class="bmono" style="color:var(--text-secondary)">'+bfsar(e.target)+'</td>'
+      +'<td class="bmono" style="color:'+dfc+';font-weight:600">'+(df>=0?'+':'')+bfsar(df)+'</td>'
+      +'<td class="bmono" style="color:'+dfc+';font-weight:600">'+bxe(p)+'</td>'
+      +'<td><div style="display:flex;gap:4px"><button class="btn btn-sm" onclick="openBranchSalesModal(\''+bxe(e.id)+'\')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchSales(\''+bxe(e.id)+'\')">Del</button></div></td></tr>';
+  }).join('');
+  h+='<div style="font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono);margin-bottom:6px">All Entries</div>';
+  h+='<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th>Actual</th><th>Target</th><th>Variance</th><th>Achievement</th><th></th></tr></thead>';
+  h+='<tbody>'+(rows||'<tr><td colspan="6" style="text-align:center;color:var(--text-tertiary);padding:24px">No entries yet</td></tr>')+'</tbody></table></div></div>';
+  return h;
 }
+
 function openBranchSalesModal(id){var e=id?BS.sales.find(function(x){return x.id===id;}):null;var html='<div class="modal-head"><h2>'+(e?'Edit Sales Entry':'Add Sales Entry')+'</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div><div class="bfg"><label class="form-label">Date *</label><input class="form-input" type="date" id="bsl-date" value="'+(e?e.date:TODAY_BS)+'"></div><div class="form-row"><div class="bfg"><label class="form-label">Actual Sales (SAR) *</label><input class="form-input" type="number" step="0.01" id="bsl-actual" value="'+(e?e.actual:'')+'" placeholder="0.00"></div><div class="bfg"><label class="form-label">Sales Target (SAR) *</label><input class="form-input" type="number" step="0.01" id="bsl-target" value="'+(e?e.target:'')+'" placeholder="0.00"></div></div><button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBranchSales(\''+bxe(id||'')+'\')">Save Entry</button>';openModal(html);}
 function saveBranchSales(id){var dt=bgv('bsl-date'),a=bgv('bsl-actual'),t=bgv('bsl-target');if(!dt||!a||!t){showToast('All fields required','error');return;}if(id){var i=BS.sales.findIndex(function(x){return x.id===id;});if(i>=0){BS.sales[i].date=dt;BS.sales[i].actual=parseFloat(a);BS.sales[i].target=parseFloat(t);}}else{BS.sales=BS.sales.filter(function(s2){return s2.date!==dt;});BS.sales.push({id:buid(),date:dt,actual:parseFloat(a),target:parseFloat(t)});}bSaveColl('sales',BS.sales);closeModalForce();showToast('Sales saved','success');navTo('sales');}
 function delBranchSales(id){if(!confirm('Delete this sales entry?'))return;BS.sales=BS.sales.filter(function(x){return x.id!==id;});bSaveColl('sales',BS.sales);showToast('Deleted');navTo('sales');}
