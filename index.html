@@ -4966,14 +4966,23 @@ function pBranchDash() {
   h += '</div></div>';
 
   // Staff Portals
+  var _bid=encodeURIComponent(s.branchId||'');
+  var _portals=[
+    ['staff.html','🏃','Staff Portal','staff.html'],
+    ['leave.html','📝','Leave Request','leave.html'],
+    ['checklists.html','✅','Checklists','checklists.html'],
+    ['server-drop.html','💰','Server Drop','server-drop.html'],
+    ['staff.html','🔑','Staff Login','staff.html']
+  ];
   h += '<div class="card section"><h3 style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Staff Portals (Standalone)</h3>';
-  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
-  [['staff.html','\ud83c\udfc3','Staff Portal'],['leave.html','\ud83d\udcdd','Leave Request'],['checklists.html','\u2705','Checklists']].forEach(function(p){
-    h += '<a href="'+p[0]+'" target="_blank" style="text-decoration:none">';
-    h += '<div class="card" style="text-align:center;padding:12px 8px;cursor:pointer">';
-    h += '<div style="font-size:24px;margin-bottom:6px">'+p[1]+'</div>';
-    h += '<div style="font-size:11px;font-weight:600">'+p[2]+'</div>';
-    h += '<div style="font-size:9px;color:var(--text-tertiary);margin-top:2px">'+p[0]+'</div></div></a>';
+  h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">';
+  _portals.forEach(function(p){
+    var url=p[0]+(s.branchId?'?branch='+_bid:'');
+    h += '<a href="'+url+'" target="_blank" style="text-decoration:none">';
+    h += '<div class="card" style="text-align:center;padding:16px 10px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor=\'var(--accent)\'" onmouseout="this.style.borderColor=\'\'">';
+    h += '<div style="font-size:28px;margin-bottom:8px">'+p[1]+'</div>';
+    h += '<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:3px">'+p[2]+'</div>';
+    h += '<div style="font-size:9px;color:var(--text-tertiary)">'+p[3]+'</div></div></a>';
   });
   h += '</div></div>';
   return h;
