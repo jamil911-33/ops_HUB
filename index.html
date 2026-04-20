@@ -4332,7 +4332,7 @@ var PCC = ['Kitchen','FOH','Bar','Management','Maintenance','Transport','Office'
 var INV_S = ['Pending','Received','Approved','Paid','Overdue','Disputed'];
 var INV_SC = {Pending:'#ffd166',Received:'#00e5ff',Approved:'#a78bfa',Paid:'#6aaf7e',Overdue:'#e55',Disputed:'#f97316'};
 var INV_CAT = ['Food & Beverage','Cleaning Supplies','Kitchen Equipment','Maintenance','Packaging','Uniforms','Marketing','Other'];
-var TS_ST_BRANCH = {present:{l:'Present',c:'#34d399'},late:{l:'Late',c:'#f59e0b'},absent:{l:'Absent',c:'#f87171'},sick:{l:'Sick Leave',c:'#f97316'},holiday:{l:'Holiday',c:'#a78bfa'},dayoff:{l:'Day Off',c:'#34d399'}};
+var TS_ST_BRANCH = {present:{l:'Present',c:'#00e5ff'},late:{l:'Late',c:'#ffd166'},absent:{l:'Absent',c:'#f87171'},sick:{l:'Sick Leave',c:'#f97316'},holiday:{l:'Holiday',c:'#a78bfa'},dayoff:{l:'Day Off',c:'#34d399'}};
 var TS_LT_BRANCH = {sick:{l:'Sick Leave',c:'#f97316'},holiday:{l:'Annual Holiday',c:'#a78bfa'},dayoff:{l:'Day Off',c:'#34d399'}};
 var MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 var DAYS_WEEK = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -5709,7 +5709,89 @@ function pTimesheet() {
   if(BS.tsTab==='leave')return bar+btsPgLeave();
   return bar+btsPgEmps();
 }
-function btsPgAtt(){var vd=BS.tsViewDate||TODAY_BS;var stBtns=Object.keys(TS_ST_BRANCH).map(function(s2){var c=TS_ST_BRANCH[s2];return '<button class="bts-st-btn" style="padding:5px 10px;border-radius:6px;border:1px solid '+(BS.tsSt===s2?c.c:'var(--border)')+';background:'+(BS.tsSt===s2?c.c+'18':'transparent')+';color:'+(BS.tsSt===s2?c.c:'var(--text-secondary)')+';" onclick="BS.tsSt=\''+s2+'\'">'+c.l+'</button>';}).join('');var attFilts=['all'].concat(Object.keys(TS_ST_BRANCH));var afBtns=attFilts.map(function(f){var lbl=f==='all'?'All':(TS_ST_BRANCH[f]?TS_ST_BRANCH[f].l:f);var ac=f==='all'?'var(--text-primary)':(TS_ST_BRANCH[f]?TS_ST_BRANCH[f].c:'#888');var isOn=BS.attFilt===f;return '<button class="bfbt'+(isOn?' on':'')+'" style="'+(isOn?'border-color:'+ac+';background:'+ac+'22;color:'+ac:'')+'" onclick="BS.attFilt=\''+f+'\';navTo(\'timesheet\')">'+lbl+'</button>';}).join('');var sorted=BS.tsEmps.slice().sort(function(a,b){return(a.dept||'').localeCompare(b.dept||'')||a.name.localeCompare(b.name);});var eo='<option value="">Select Employee</option>';var ld='';sorted.forEach(function(e){if(e.dept!==ld){if(ld)eo+='</optgroup>';eo+='<optgroup label="'+bxe(e.dept||'Other')+'">';ld=e.dept;}eo+='<option value="'+bxe(e.id)+'">'+bxe(e.name)+'</option>';});if(ld)eo+='</optgroup>';var pCt=0,aCt=0,oCt=0;var attRows=BS.tsEmps.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).filter(function(e){if(!BS.attFilt||BS.attFilt==='all')return true;var key=vd.slice(0,7),recs=(BS.tsAtt[e.id]&&BS.tsAtt[e.id][key])||[],r=null;for(var i=0;i<recs.length;i++)if(recs[i].date===vd){r=recs[i];break;}return r?r.st===BS.attFilt:false;}).map(function(e){var key=vd.slice(0,7),recs=(BS.tsAtt[e.id]&&BS.tsAtt[e.id][key])||[],r=null;for(var i=0;i<recs.length;i++)if(recs[i].date===vd){r=recs[i];break;}if(r){if(r.st==='present'||r.st==='late')pCt++;else if(r.st==='absent')aCt++;else oCt++;}return '<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="bav">'+bini(e.name)+'</div><strong style="font-size:12px">'+bxe(e.name)+'</strong></div></td><td>'+bpl(e.dept||'\u2014',bdc(e.dept||'FOH'))+'</td><td class="bmono" style="font-size:11px">'+(r&&r.ci||'\u2014')+'</td><td class="bmono" style="font-size:11px">'+(r&&r.co||'\u2014')+'</td><td class="bmono" style="font-size:11px;color:var(--info);font-weight:600">'+(r&&r.brk||'\u2014')+'</td><td class="bmono" style="font-size:11px">'+(r?btsHrs(r.ci,r.co):'\u2014')+'</td><td>'+(r?btsBadge(r.st):'<span style="color:var(--text-tertiary);font-size:10px;font-style:italic">Not recorded</span>')+'</td><td style="font-size:11px;color:var(--text-secondary)">'+(r&&r.note||'')+'</td></tr>';}).join('');var dateLbl=vd===TODAY_BS?'Today \u2014 '+TODAY_BS:new Date(vd+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});var h='<div class="bgrid-2" style="margin-bottom:16px"><div class="bcard"><div style="font-size:13px;font-weight:700;color:var(--ceo);margin-bottom:14px">Manual Entry</div><div class="bfg"><label class="form-label">Employee</label><select class="form-input form-select" id="bts-emp">'+eo+'</select></div><div class="form-row"><div class="bfg"><label class="form-label">Date</label><input class="form-input" type="date" id="bts-date" value="'+vd+'"></div><div class="bfg"><label class="form-label">Check In</label><input class="form-input" type="time" id="bts-in"></div></div><div class="form-row"><div class="bfg"><label class="form-label">Check Out</label><input class="form-input" type="time" id="bts-out"></div><div class="bfg"><label class="form-label">Break</label><input class="form-input" id="bts-brk" placeholder="e.g. 30m"></div></div><div class="bfg"><label class="form-label">Note</label><input class="form-input" id="bts-note" placeholder="Optional"></div><div class="bfg"><label class="form-label">Status</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px">'+stBtns+'</div></div><button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="saveBranchAttendance()">Save Attendance</button></div><div class="bcard"><div style="font-size:13px;font-weight:700;color:var(--ceo);margin-bottom:14px">Quick Check-In</div><p style="font-size:11px;color:var(--text-secondary);margin-bottom:12px">Use QR Check-In page on any mobile device.</p><button class="btn" style="width:100%;margin-bottom:10px" onclick="navTo(\'qr-checkin\')">Go to QR Check-In</button></div></div>';h+='<div class="btw"><div class="bttb" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><label class="form-label" style="margin:0">Date:</label><input class="bfi" type="date" id="bts-view-date" value="'+vd+'" max="'+TODAY_BS+'" style="width:auto"><button class="btn btn-sm" onclick="BS.tsViewDate=document.getElementById(\'bts-view-date\').value;navTo(\'timesheet\')">View</button>'+(vd!==TODAY_BS?'<button class="btn btn-sm" onclick="BS.tsViewDate=\''+TODAY_BS+'\';navTo(\'timesheet\')">Today</button>':'')+'<span style="flex:1"></span><strong style="color:'+(vd===TODAY_BS?'var(--ceo)':'var(--brand-dir)')+'">'+bxe(dateLbl)+'</strong><span class="bmono" style="font-size:10px;color:var(--text-tertiary)">'+pCt+' present \u00b7 '+aCt+' absent \u00b7 '+oCt+' other</span></div><div style="display:flex;gap:5px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--surface-2)">'+afBtns+'</div><div class="btw-s"><table class="btbl"><thead><tr><th>Name</th><th>Dept</th><th>In</th><th>Out</th><th>Break</th><th>Hours</th><th>Status</th><th>Note</th></tr></thead><tbody>'+(attRows||'<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:24px">No records for this date</td></tr>')+'</tbody></table></div></div>';return h;}
+function btsPgAtt(){
+  var vd=BS.tsViewDate||TODAY_BS;
+  // Status buttons — use data-st + setTimeout wiring (same pattern as index.html ts-st-btn)
+  var stBtns=Object.keys(TS_ST_BRANCH).map(function(s2){
+    var c2=TS_ST_BRANCH[s2];
+    var isOn=BS.tsSt===s2;
+    return '<button class="bts-st-btn" data-st="'+s2+'" style="padding:6px 14px;border-radius:7px;border:1px solid '+(isOn?c2.c:'var(--border)')+';background:'+(isOn?c2.c+'22':'transparent')+';color:'+(isOn?c2.c:'var(--text-secondary)')+';font-size:12px;font-weight:'+(isOn?'700':'500')+';cursor:pointer;font-family:var(--font);transition:all .15s">'+c2.l+'</button>';
+  }).join('');
+  var attFilts=['all'].concat(Object.keys(TS_ST_BRANCH));
+  var afBtns=attFilts.map(function(f){
+    var lbl=f==='all'?'All':(TS_ST_BRANCH[f]?TS_ST_BRANCH[f].l:f);
+    var ac=f==='all'?'var(--text-primary)':(TS_ST_BRANCH[f]?TS_ST_BRANCH[f].c:'#888');
+    var isOn=BS.attFilt===f;
+    return '<button class="bfbt'+(isOn?' on':'')+'" style="'+(isOn?'border-color:'+ac+';background:'+ac+'22;color:'+ac:'')+'" onclick="BS.attFilt=\''+f+'\';navTo(\'timesheet\')">'+lbl+'</button>';
+  }).join('');
+  var sorted=BS.tsEmps.slice().sort(function(a,b){return(a.dept||'').localeCompare(b.dept||'')||a.name.localeCompare(b.name);});
+  var eo='<option value="">Select Employee</option>';
+  var ld='';
+  sorted.forEach(function(e){
+    if(e.dept!==ld){if(ld)eo+='</optgroup>';eo+='<optgroup label="'+bxe(e.dept||'Other')+'">';ld=e.dept;}
+    eo+='<option value="'+bxe(e.id)+'">'+bxe(e.name)+'</option>';
+  });
+  if(ld)eo+='</optgroup>';
+  var pCt=0,aCt=0,oCt=0;
+  var attRows=BS.tsEmps.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).filter(function(e){
+    if(!BS.attFilt||BS.attFilt==='all')return true;
+    var key=vd.slice(0,7),recs=(BS.tsAtt[e.id]&&BS.tsAtt[e.id][key])||[],r=null;
+    for(var i=0;i<recs.length;i++)if(recs[i].date===vd){r=recs[i];break;}
+    return r?r.st===BS.attFilt:false;
+  }).map(function(e){
+    var key=vd.slice(0,7),recs=(BS.tsAtt[e.id]&&BS.tsAtt[e.id][key])||[],r=null;
+    for(var i=0;i<recs.length;i++)if(recs[i].date===vd){r=recs[i];break;}
+    if(r){if(r.st==='present'||r.st==='late')pCt++;else if(r.st==='absent')aCt++;else oCt++;}
+    return '<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="bav">'+bini(e.name)+'</div><strong style="font-size:12px">'+bxe(e.name)+'</strong></div></td><td>'+bpl(e.dept||'\u2014',bdc(e.dept||'FOH'))+'</td><td class="bmono" style="font-size:11px">'+(r&&r.ci||'\u2014')+'</td><td class="bmono" style="font-size:11px">'+(r&&r.co||'\u2014')+'</td><td class="bmono" style="font-size:11px;color:var(--info);font-weight:600">'+(r&&r.brk||'\u2014')+'</td><td class="bmono" style="font-size:11px">'+(r?btsHrs(r.ci,r.co):'\u2014')+'</td><td>'+(r?btsBadge(r.st):'<span style="color:var(--text-tertiary);font-size:10px;font-style:italic">Not recorded</span>')+'</td><td style="font-size:11px;color:var(--text-secondary)">'+(r&&r.note||'')+'</td></tr>';
+  }).join('');
+  var dateLbl=vd===TODAY_BS?'Today \u2014 '+TODAY_BS:new Date(vd+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  var h='<div class="bgrid-2" style="margin-bottom:16px"><div class="bcard">';
+  h+='<div style="font-size:13px;font-weight:700;color:var(--ceo);margin-bottom:14px">Manual Entry</div>';
+  h+='<div class="bfg"><label class="form-label">Employee</label><select class="form-input form-select" id="bts-emp">'+eo+'</select></div>';
+  h+='<div class="form-row"><div class="bfg"><label class="form-label">Date</label><input class="form-input" type="date" id="bts-date" value="'+vd+'"></div><div class="bfg"><label class="form-label">Check In</label><input class="form-input" type="time" id="bts-in"></div></div>';
+  h+='<div class="form-row"><div class="bfg"><label class="form-label">Check Out</label><input class="form-input" type="time" id="bts-out"></div><div class="bfg"><label class="form-label">Break</label><input class="form-input" id="bts-brk" placeholder="e.g. 30m"></div></div>';
+  h+='<div class="bfg"><label class="form-label">Note</label><input class="form-input" id="bts-note" placeholder="Optional"></div>';
+  h+='<div class="bfg"><label class="form-label">Status</label><div id="bts-st-wrap" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">'+stBtns+'</div></div>';
+  h+='<button class="btn btn-primary" style="width:100%;margin-top:12px" id="bts-save-att">Save Attendance</button>';
+  h+='</div>';
+  h+='<div class="bcard"><div style="font-size:13px;font-weight:700;color:var(--ceo);margin-bottom:14px">Quick Check-In</div><p style="font-size:11px;color:var(--text-secondary);margin-bottom:12px">Use QR Check-In page on any mobile device.</p><button class="btn" style="width:100%;margin-bottom:10px" onclick="navTo(\'qr-checkin\')">Go to QR Check-In</button></div></div>';
+  h+='<div class="btw"><div class="bttb" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
+  h+='<label class="form-label" style="margin:0">Date:</label>';
+  h+='<input class="bfi" type="date" id="bts-view-date" value="'+vd+'" max="'+TODAY_BS+'" style="width:auto">';
+  h+='<button class="btn btn-sm" onclick="BS.tsViewDate=document.getElementById(\'bts-view-date\').value;navTo(\'timesheet\')">View</button>';
+  h+=(vd!==TODAY_BS?'<button class="btn btn-sm" onclick="BS.tsViewDate=\''+TODAY_BS+'\';navTo(\'timesheet\')">Today</button>':'');
+  h+='<span style="flex:1"></span>';
+  h+='<strong style="color:'+(vd===TODAY_BS?'var(--ceo)':'var(--brand-dir)')+'">'+bxe(dateLbl)+'</strong>';
+  h+='<span class="bmono" style="font-size:10px;color:var(--text-tertiary)">'+pCt+' present \u00b7 '+aCt+' absent \u00b7 '+oCt+' other</span></div>';
+  h+='<div style="display:flex;gap:5px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--surface-2)">'+afBtns+'</div>';
+  h+='<div class="btw-s"><table class="btbl"><thead><tr><th>Name</th><th>Dept</th><th>In</th><th>Out</th><th>Break</th><th>Hours</th><th>Status</th><th>Note</th></tr></thead>';
+  h+='<tbody>'+(attRows||'<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:24px">No records for this date</td></tr>')+'</tbody></table></div></div>';
+
+  // Wire up status buttons and save button AFTER render via setTimeout
+  setTimeout(function(){
+    // Status buttons — clicking updates BS.tsSt and refreshes button styles immediately
+    document.querySelectorAll('.bts-st-btn').forEach(function(btn){
+      btn.onclick=function(){
+        BS.tsSt=this.dataset.st;
+        // Visually update all buttons immediately without full re-render
+        document.querySelectorAll('.bts-st-btn').forEach(function(b){
+          var st2=b.dataset.st;
+          var c2=TS_ST_BRANCH[st2];
+          var isOn=BS.tsSt===st2;
+          b.style.border='1px solid '+(isOn?c2.c:'var(--border)');
+          b.style.background=isOn?c2.c+'22':'transparent';
+          b.style.color=isOn?c2.c:'var(--text-secondary)';
+          b.style.fontWeight=isOn?'700':'500';
+        });
+      };
+    });
+    // Save button
+    var saveBtn=document.getElementById('bts-save-att');
+    if(saveBtn)saveBtn.onclick=saveBranchAttendance;
+  },0);
+
+  return h;
+}
 function nxSetTsSt(st) {
   BS.tsSt = st;
   Object.keys(TS_ST_BRANCH).forEach(function(k) {
@@ -5722,7 +5804,64 @@ function nxSetTsSt(st) {
     btn.style.fontWeight=isAct?'700':'500';
   });
 }
-function saveBranchAttendance(){var eid=bgv('bts-emp'),dt=bgv('bts-date')||TODAY_BS,ci=bgv('bts-in'),co=bgv('bts-out'),brk=bgv('bts-brk'),note=bgv('bts-note'),st=BS.tsSt||'present';if(!eid){showToast('Select an employee','error');return;}var key=dt.slice(0,7);if(!BS.tsAtt[eid])BS.tsAtt[eid]={};if(!BS.tsAtt[eid][key])BS.tsAtt[eid][key]=[];var recs=BS.tsAtt[eid][key];var ex=recs.findIndex(function(r){return r.date===dt;});var rec={date:dt,ci:ci,co:co,brk:brk,note:note,st:st};if(ex>=0)recs[ex]=rec;else recs.push(rec);bSaveTsAtt();showToast('Attendance saved','success');if((st==='absent'||st==='sick')&&dt===TODAY_BS){var emp=BS.tsEmps.find(function(e){return e.id===eid;});if(emp&&emp.phone){var msg=encodeURIComponent('\ud83d\udea8 غياب\nEmployee: '+emp.name+'\nDate: '+dt+'\nStatus: '+st.toUpperCase()+'\nBranch: '+(NX.session&&NX.session.branchName||''));setTimeout(function(){window.location.href='https://wa.me/'+emp.phone.replace(/[^0-9]/g,'')+'?text='+msg;},300);}}}
+function saveBranchAttendance(){
+  var eid=bgv('bts-emp'),dt=bgv('bts-date')||TODAY_BS;
+  var ci=(document.getElementById('bts-in')||{}).value||'';
+  var co=(document.getElementById('bts-out')||{}).value||'';
+  var brk=bgv('bts-brk'),note=bgv('bts-note'),st=BS.tsSt||'present';
+  if(!eid){showToast('Select an employee','error');return;}
+  var key=dt.slice(0,7);
+  if(!BS.tsAtt[eid])BS.tsAtt[eid]={};
+  if(!BS.tsAtt[eid][key])BS.tsAtt[eid][key]=[];
+  var recs=BS.tsAtt[eid][key];
+  var ex=recs.findIndex(function(r){return r.date===dt;});
+  var rec={date:dt,ci:ci,co:co,brk:brk,note:note,st:st};
+  if(ex>=0)recs[ex]=rec;else recs.push(rec);
+  // Save to Firebase using targeted path (not full set) to avoid overwriting other employees
+  if(db){
+    var path=bPath('tsAtt')+'/'+eid+'/'+key;
+    db.ref(path).set(recs,function(err){
+      if(err){showToast('Save failed: '+err.message,'error');return;}
+      showToast('Attendance saved \u2713','success');
+      // Refresh just the view date table without full page re-render
+      var vd=BS.tsViewDate||TODAY_BS;
+      if(vd===dt)_refreshAttTable(vd);
+    });
+  } else {
+    showToast('Not connected','error');
+    return;
+  }
+  // WhatsApp alert for absent/sick
+  if((st==='absent'||st==='sick')&&dt===TODAY_BS){
+    var emp=BS.tsEmps.find(function(e){return e.id===eid;});
+    if(emp&&emp.phone){
+      var msg=encodeURIComponent('\ud83d\udea8 \u063a\u064a\u0627\u0628\nEmployee: '+emp.name+'\nDate: '+dt+'\nStatus: '+st.toUpperCase()+'\nBranch: '+(NX.session&&NX.session.branchName||''));
+      setTimeout(function(){window.location.href='https://wa.me/'+emp.phone.replace(/[^0-9]/g,'')+'?text='+msg;},300);
+    }
+  }
+}
+
+// Refresh just the attendance table rows without full page re-render
+function _refreshAttTable(vd){
+  var tbody=document.querySelector('.btw .btw-s table tbody');
+  if(!tbody)return;
+  var pCt=0,aCt=0,oCt=0;
+  var rows=BS.tsEmps.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).filter(function(e){
+    if(!BS.attFilt||BS.attFilt==='all')return true;
+    var key=vd.slice(0,7),recs=(BS.tsAtt[e.id]&&BS.tsAtt[e.id][key])||[],r=null;
+    for(var i=0;i<recs.length;i++)if(recs[i].date===vd){r=recs[i];break;}
+    return r?r.st===BS.attFilt:false;
+  }).map(function(e){
+    var key=vd.slice(0,7),recs=(BS.tsAtt[e.id]&&BS.tsAtt[e.id][key])||[],r=null;
+    for(var i=0;i<recs.length;i++)if(recs[i].date===vd){r=recs[i];break;}
+    if(r){if(r.st==='present'||r.st==='late')pCt++;else if(r.st==='absent')aCt++;else oCt++;}
+    return '<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="bav">'+bini(e.name)+'</div><strong style="font-size:12px">'+bxe(e.name)+'</strong></div></td><td>'+bpl(e.dept||'\u2014',bdc(e.dept||'FOH'))+'</td><td class="bmono" style="font-size:11px">'+(r&&r.ci||'\u2014')+'</td><td class="bmono" style="font-size:11px">'+(r&&r.co||'\u2014')+'</td><td class="bmono" style="font-size:11px;color:var(--info);font-weight:600">'+(r&&r.brk||'\u2014')+'</td><td class="bmono" style="font-size:11px">'+(r?btsHrs(r.ci,r.co):'\u2014')+'</td><td>'+(r?btsBadge(r.st):'<span style="color:var(--text-tertiary);font-size:10px;font-style:italic">Not recorded</span>')+'</td><td style="font-size:11px;color:var(--text-secondary)">'+(r&&r.note||'')+'</td></tr>';
+  }).join('');
+  tbody.innerHTML=rows||'<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:24px">No records for this date</td></tr>';
+  // Update counter line
+  var ctr=document.querySelector('.bttb .bmono');
+  if(ctr)ctr.textContent=pCt+' present \u00b7 '+aCt+' absent \u00b7 '+oCt+' other';
+}
 function btsPgReport(){var mo=new Date().getMonth()+1,yr=new Date().getFullYear();var moOpts='<option value="0">All Months</option>'+MONTHS_FULL.map(function(m2,i){return '<option value="'+(i+1)+'"'+(i+1===mo?' selected':'')+'>'+bxe(m2)+'</option>';}).join('');var eo='<option value="">All Staff</option>'+BS.tsEmps.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(e){return '<option value="'+bxe(e.id)+'">'+bxe(e.name)+' ('+bxe(e.dept||'')+')</option>';}).join('');return '<div class="bcard" style="margin-bottom:16px"><div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end"><div class="bfg" style="flex:2 1 160px;margin-bottom:0"><label class="form-label">Employee</label><select class="form-input form-select" id="bts-r-emp">'+eo+'</select></div><div class="bfg" style="flex:1 1 120px;margin-bottom:0"><label class="form-label">Month</label><select class="form-input form-select" id="bts-r-mo">'+moOpts+'</select></div><div class="bfg" style="flex:1 1 90px;margin-bottom:0"><label class="form-label">Year</label><select class="form-input form-select" id="bts-r-yr"><option '+(yr===2024?'selected':'')+'>2024</option><option '+(yr===2025?'selected':'')+'>2025</option><option '+(yr===2026?'selected':'')+'>2026</option></select></div><button class="btn btn-primary" onclick="runBranchTsReport()">Generate</button><button class="btn" id="bts-print-btn" style="display:none" onclick="printBranchTsReport()">Print</button></div></div><div id="bts-report-out"></div>';}
 function runBranchTsReport(){var eid=bgv('bts-r-emp'),mo=parseInt(bgv('bts-r-mo')),yr=bgv('bts-r-yr'),out=document.getElementById('bts-report-out');if(!out)return;function getRecs(empId){var recs=[];if(mo===0){for(var mi=1;mi<=12;mi++){var key2=yr+'-'+(mi<10?'0':'')+mi;recs=recs.concat((BS.tsAtt[empId]&&BS.tsAtt[empId][key2])||[]);}}else{var key2=yr+'-'+(mo<10?'0':'')+mo;recs=(BS.tsAtt[empId]&&BS.tsAtt[empId][key2])||[];}return recs;}function countSt(recs){var c={present:0,late:0,absent:0,sick:0,holiday:0,dayoff:0};recs.forEach(function(r){if(c[r.st]!==undefined)c[r.st]++;});return c;}var pb=document.getElementById('bts-print-btn');if(pb)pb.style.display='none';if(!eid){var allRows='';BS.tsEmps.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).forEach(function(emp){var recs=getRecs(emp.id),cnt=countSt(recs),tot=recs.length,worked=cnt.present+cnt.late,pct=tot?Math.round(worked/tot*100)+'%':'\u2014';allRows+='<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="bav">'+bini(emp.name)+'</div><div><div style="font-size:12px;font-weight:600">'+bxe(emp.name)+'</div><div style="font-size:10px;color:'+bdc(emp.dept||'FOH')+'">'+bxe(emp.dept||'')+'</div></div></div></td><td class="bmono" style="text-align:center">'+tot+'</td><td class="bmono" style="text-align:center;color:#34d399">'+cnt.present+'</td><td class="bmono" style="text-align:center;color:#f59e0b">'+cnt.late+'</td><td class="bmono" style="text-align:center;color:#f87171">'+cnt.absent+'</td><td class="bmono" style="text-align:center;color:#f97316">'+cnt.sick+'</td><td class="bmono" style="text-align:center;color:#a78bfa">'+cnt.holiday+'</td><td class="bmono" style="text-align:center;color:#34d399">'+cnt.dayoff+'</td><td class="bmono" style="text-align:center">'+pct+'</td></tr>';});out.innerHTML='<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Employee</th><th style="text-align:center">Total</th><th style="text-align:center;color:#34d399">Present</th><th style="text-align:center;color:#f59e0b">Late</th><th style="text-align:center;color:#f87171">Absent</th><th style="text-align:center;color:#f97316">Sick</th><th style="text-align:center;color:#a78bfa">Holiday</th><th style="text-align:center;color:#34d399">Day Off</th><th style="text-align:center">Rate</th></tr></thead><tbody>'+(allRows||'<tr><td colspan="9" style="text-align:center;color:var(--text-tertiary);padding:20px">No records</td></tr>')+'</tbody></table></div></div>';return;}var emp=BS.tsEmps.find(function(e){return e.id===eid;});if(!emp){out.innerHTML='<div style="color:var(--danger);padding:12px">Employee not found.</div>';return;}var recs=getRecs(emp.id),cnt=countSt(recs),tot=recs.length,worked=cnt.present+cnt.late,pct=tot?Math.round(worked/tot*100)+'%':'\u2014';if(pb)pb.style.display='';var rows=recs.map(function(r){return '<tr><td class="bmono">'+bxe(r.date)+'</td><td class="bmono" style="text-align:center">'+(r.ci||'\u2014')+'</td><td class="bmono" style="text-align:center">'+(r.co||'\u2014')+'</td><td class="bmono" style="text-align:center;color:var(--info);font-weight:600">'+(r.brk||'\u2014')+'</td><td class="bmono" style="text-align:center">'+btsHrs(r.ci,r.co)+'</td><td>'+btsBadge(r.st)+'</td><td style="font-size:11px;color:var(--text-secondary)">'+(r.note||'')+'</td></tr>';}).join('');out.innerHTML='<div class="bcard" style="margin-bottom:14px"><div style="font-size:15px;font-weight:700">'+bxe(emp.name)+'</div><div style="font-size:11px;color:var(--ceo);margin-top:3px">'+bxe(emp.dept||'')+' \u00b7 '+(mo===0?'Full Year':MONTHS_FULL[mo-1])+' '+yr+'</div></div><div class="bgrid-4" style="margin-bottom:14px">'+[['Total',tot,'var(--text-primary)'],['Present',cnt.present,'#34d399'],['Absent',cnt.absent,'#f87171'],['Rate',pct,'#34d399']].map(function(x){return '<div style="text-align:center;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px"><div class="bmono" style="font-size:22px;font-weight:300;color:'+x[2]+'">'+bxe(String(x[1]))+'</div><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px;margin-top:3px">'+x[0]+'</div></div>';}).join('')+'</div>'+(recs.length?'<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th style="text-align:center">In</th><th style="text-align:center">Out</th><th style="text-align:center">Break</th><th style="text-align:center">Hours</th><th>Status</th><th>Note</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>':'<div style="color:var(--text-tertiary);text-align:center;padding:28px;font-style:italic">No records for this period.</div>');}
 function printBranchTsReport(){var eid=bgv('bts-r-emp'),mo=parseInt(bgv('bts-r-mo')),yr=bgv('bts-r-yr');if(!eid){showToast('Select an employee first','error');return;}var emp=BS.tsEmps.find(function(e){return e.id===eid;});if(!emp)return;var recs=[];if(mo===0){for(var mi=1;mi<=12;mi++){var k=yr+'-'+(mi<10?'0':'')+mi;recs=recs.concat((BS.tsAtt[emp.id]&&BS.tsAtt[emp.id][k])||[]);}}else{var k=yr+'-'+(mo<10?'0':'')+mo;recs=(BS.tsAtt[emp.id]&&BS.tsAtt[emp.id][k])||[];}var cnt={present:0,late:0,absent:0,sick:0,holiday:0,dayoff:0};recs.forEach(function(r){if(cnt[r.st]!==undefined)cnt[r.st]++;});var tot=recs.length,worked=cnt.present+cnt.late,pct=tot?Math.round(worked/tot*100)+'%':'\u2014';var TC={present:'#16a34a',late:'#d97706',absent:'#dc2626',sick:'#ea580c',holiday:'#7c3aed',dayoff:'#0891b2'};var TL={present:'Present',late:'Late',absent:'Absent',sick:'Sick Leave',holiday:'Holiday',dayoff:'Day Off'};var rows=recs.map(function(r,i){var col=TC[r.st]||'#888';return '<tr style="background:'+(i%2===0?'#fff':'#f8fafc')+'"><td style="padding:7px 10px;font-family:monospace;font-size:11px;color:#64748b">'+bxe(r.date)+'</td><td style="padding:7px 10px;text-align:center;font-weight:600;font-family:monospace">'+(r.ci||'\u2014')+'</td><td style="padding:7px 10px;text-align:center;font-weight:600;font-family:monospace">'+(r.co||'\u2014')+'</td><td style="padding:7px 10px;text-align:center;font-weight:600;font-family:monospace;color:#0891b2">'+(r.brk||'\u2014')+'</td><td style="padding:7px 10px;text-align:center;font-weight:700;font-family:monospace">'+btsHrs(r.ci,r.co)+'</td><td style="padding:7px 10px;text-align:center"><span style="background:'+col+'20;color:'+col+';border:1px solid '+col+'40;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700">'+(TL[r.st]||r.st)+'</span></td><td style="padding:7px 10px;font-size:11px;color:#64748b">'+(r.note||'')+'</td></tr>';}).join('');var s=NX.session||{};var moLabel=mo===0?'Full Year '+yr:MONTHS_FULL[mo-1]+' '+yr;var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Timesheet \u2014 '+bxe(emp.name)+'</title><style>@page{size:A4;margin:10mm}*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}body{background:#fff;color:#111;font-size:12px}table{width:100%;border-collapse:collapse}th{background:#1a2340;color:#fff;padding:8px 10px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:1px}.c{text-align:center}.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}.stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 8px;text-align:center}.stat-n{font-size:22px;font-weight:300;font-family:monospace}.stat-l{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-top:3px}.foot{margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:30px}.foot-cell{border-top:1px solid #333;padding-top:5px;text-align:center;font-size:9px;color:#64748b}@media print{.np{display:none!important}}</style></head><body>';html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10px;margin-bottom:16px;border-bottom:3px solid #1a2340"><div><div style="font-size:20px;font-weight:900;color:#1a2340">ALFA.CO</div><div style="font-size:10px;color:#64748b">'+bxe(s.branchName||s.entityName||'')+'</div></div><div style="text-align:center"><h1 style="font-size:16px;font-weight:800;color:#1a2340">Employee Timesheet</h1><p style="font-size:11px;color:#64748b">'+bxe(emp.name)+' \u00b7 '+bxe(emp.dept||'')+' \u00b7 '+bxe(moLabel)+'</p></div><div style="text-align:right;font-size:10px;color:#64748b"><div>Printed: '+new Date().toLocaleDateString('en-GB')+'</div><div>Work Rate: '+pct+'</div></div></div>';html+='<div class="stats"><div class="stat"><div class="stat-n" style="color:#1a2340">'+tot+'</div><div class="stat-l">Total</div></div><div class="stat"><div class="stat-n" style="color:#16a34a">'+cnt.present+'</div><div class="stat-l">Present</div></div><div class="stat"><div class="stat-n" style="color:#d97706">'+cnt.late+'</div><div class="stat-l">Late</div></div><div class="stat"><div class="stat-n" style="color:#dc2626">'+cnt.absent+'</div><div class="stat-l">Absent</div></div><div class="stat"><div class="stat-n" style="color:#ea580c">'+cnt.sick+'</div><div class="stat-l">Sick</div></div><div class="stat"><div class="stat-n" style="color:#0d9488">'+pct+'</div><div class="stat-l">Rate</div></div></div>';html+=(recs.length?'<table><thead><tr><th>Date</th><th class="c">In</th><th class="c">Out</th><th class="c">Break</th><th class="c">Hours</th><th class="c">Status</th><th>Note</th></tr></thead><tbody>'+rows+'</tbody></table>':'<div style="text-align:center;padding:30px;color:#94a3b8;font-style:italic">No records.</div>');html+='<div class="foot"><div class="foot-cell">Employee Signature</div><div class="foot-cell">HR / Manager</div><div class="foot-cell">Date &amp; Stamp</div></div><div class="np" style="text-align:center;margin-top:20px"><button onclick="window.print()" style="background:#1a2340;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer">Print / Save PDF</button></div></body></html>';var w=window.open('','_blank','width=900,height=700');if(w){w.document.write(html);w.document.close();}else showToast('Allow pop-ups to print','error');}
