@@ -6272,22 +6272,22 @@ function pDSR(){
       body+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">';
       body+='<div style="font-size:13px;font-weight:700;flex:1">'+bxe(s.name||'Server '+(si+1))+(s.sap?' <span style="color:var(--text-tertiary);font-size:10px">'+bxe(s.sap)+'</span>':'')+'</div>';
       if(pend>0)body+='<span style="background:rgba(245,158,11,.15);color:#f59e0b;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">'+pend+' pending</span>';
-      body+='<span style="background:'+dc+'18;color:'+dc+';border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700">'+dl+'</span>';
+      body+='<span id="srv-tally-'+si+'" style="background:'+dc+'18;color:'+dc+';border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700">'+dl+'</span>';
       body+='<button onclick="dsrRmServer('+si+')" style="color:var(--danger);background:transparent;border:1px solid rgba(248,113,113,.3);border-radius:6px;padding:3px 9px;cursor:pointer;font-size:12px">×</button>';
       body+='</div>';
       body+='<div style="'+grid3+'margin-bottom:12px">';
       body+=grp('Server Name',fi_t('srv_name_'+si,s.name,'Full name','dsrUpdSrv('+si+',\'name\',this.value)'));
       body+=grp('SAP Number',fi_t('srv_sap_'+si,s.sap,'SAP-XXXX','dsrUpdSrv('+si+',\'sap\',this.value)'));
-      body+=grp('Total Sales (SAR)',fi_n('srv_tot_'+si,s.totalSales,'0.00','dsrUpdSrv('+si+',\'totalSales\',this.value);dsrRecalc()'));
-      body+=grp('Cash Sales (SAR)',fi_n('srv_cash_'+si,s.cashSales,'0.00','dsrUpdSrv('+si+',\'cashSales\',this.value);dsrRecalc()'));
-      body+=grp('MADA (SAR)',fi_n('srv_mada_'+si,s.madaSales,'0.00','dsrUpdSrv('+si+',\'madaSales\',this.value);dsrRecalc()'));
-      body+=grp('VISA (SAR)',fi_n('srv_visa_'+si,s.visaSales,'0.00','dsrUpdSrv('+si+',\'visaSales\',this.value);dsrRecalc()'));
-      body+=grp('Master Card (SAR)',fi_n('srv_mc_'+si,s.mcSales,'0.00','dsrUpdSrv('+si+',\'mcSales\',this.value);dsrRecalc()'));
-      body+=grp('AMEX (SAR)',fi_n('srv_amex_'+si,s.amexSales,'0.00','dsrUpdSrv('+si+',\'amexSales\',this.value);dsrRecalc()'));
-      body+=grp('Qlub (SAR)',fi_n('srv_qlub_'+si,s.qlubSales,'0.00','dsrUpdSrv('+si+',\'qlubSales\',this.value);dsrRecalc()'));
-      body+=grp('Loyalty Point (SAR)',fi_n('srv_loy_'+si,s.loyaltySales,'0.00','dsrUpdSrv('+si+',\'loyaltySales\',this.value);dsrRecalc()'));
-      body+=grp('Delivery (SAR)',fi_n('srv_del_'+si,s.deliverySales,'0.00','dsrUpdSrv('+si+',\'deliverySales\',this.value);dsrRecalc()'));
-      body+=grp('VAT on ALFA (SAR)',fi_n('srv_vatalfa_'+si,s.vatAlfaSales,'0.00','dsrUpdSrv('+si+',\'vatAlfaSales\',this.value);dsrRecalc()'));
+      body+=grp('Total Sales (SAR)',fi_n('srv_tot_'+si,s.totalSales,'0.00','dsrUpdSrv('+si+',\'totalSales\',this.value);dsrRecalc('+si+')'));
+      body+=grp('Cash Sales (SAR)',fi_n('srv_cash_'+si,s.cashSales,'0.00','dsrUpdSrv('+si+',\'cashSales\',this.value);dsrRecalc('+si+')'));
+      body+=grp('MADA (SAR)',fi_n('srv_mada_'+si,s.madaSales,'0.00','dsrUpdSrv('+si+',\'madaSales\',this.value);dsrRecalc('+si+')'));
+      body+=grp('VISA (SAR)',fi_n('srv_visa_'+si,s.visaSales,'0.00','dsrUpdSrv('+si+',\'visaSales\',this.value);dsrRecalc('+si+')'));
+      body+=grp('Master Card (SAR)',fi_n('srv_mc_'+si,s.mcSales,'0.00','dsrUpdSrv('+si+',\'mcSales\',this.value);dsrRecalc('+si+')'));
+      body+=grp('AMEX (SAR)',fi_n('srv_amex_'+si,s.amexSales,'0.00','dsrUpdSrv('+si+',\'amexSales\',this.value);dsrRecalc('+si+')'));
+      body+=grp('Qlub (SAR)',fi_n('srv_qlub_'+si,s.qlubSales,'0.00','dsrUpdSrv('+si+',\'qlubSales\',this.value);dsrRecalc('+si+')'));
+      body+=grp('Loyalty Point (SAR)',fi_n('srv_loy_'+si,s.loyaltySales,'0.00','dsrUpdSrv('+si+',\'loyaltySales\',this.value);dsrRecalc('+si+')'));
+      body+=grp('Delivery (SAR)',fi_n('srv_del_'+si,s.deliverySales,'0.00','dsrUpdSrv('+si+',\'deliverySales\',this.value);dsrRecalc('+si+')'));
+      body+=grp('VAT on ALFA (SAR)',fi_n('srv_vatalfa_'+si,s.vatAlfaSales,'0.00','dsrUpdSrv('+si+',\'vatAlfaSales\',this.value);dsrRecalc('+si+')'));
       body+='</div>';
       // Tips
       body+='<div style="margin-bottom:12px;padding-top:10px;border-top:1px solid var(--border)">';
@@ -6324,7 +6324,7 @@ function pDSR(){
         VRR.forEach(function(r){body+='<option'+(v.reason===r?' selected':'')+'>'+r+'</option>';});
         body+='</select>';
         body+='<input type="text" placeholder="Check#" value="'+bxe(v.check||'')+'" oninput="dsrUpdVR('+si+',\'voids\',\''+v.id+'\',\'check\',this.value)" style="'+fi+'width:70px;flex:none;font-size:11px">';
-        body+='<input type="number" step="0.01" placeholder="SAR" value="'+(v.amount||'')+'" oninput="dsrUpdVR('+si+',\'voids\',\''+v.id+'\',\'amount\',this.value);dsrRecalc()" style="'+fi+'width:80px;flex:none;font-size:11px">';
+        body+='<input type="number" step="0.01" placeholder="SAR" value="'+(v.amount||'')+'" oninput="dsrUpdVR('+si+',\'voids\',\''+v.id+'\',\'amount\',this.value);dsrRecalc('+si+')" style="'+fi+'width:80px;flex:none;font-size:11px">';
         body+='<span style="background:'+vc+'18;color:'+vc+';border:1px solid '+vc+'40;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;flex:none;white-space:nowrap">'+v.status.toUpperCase()+'</span>';
         if(v.status==='pending'){
           body+='<button onclick="dsrApprVR('+si+',\'voids\',\''+v.id+'\')" style="padding:5px 12px;border-radius:7px;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35);color:#34d399;font-size:12px;font-weight:700;cursor:pointer;flex:none;white-space:nowrap">✓ OK</button>';
@@ -6348,7 +6348,7 @@ function pDSR(){
         VRR.forEach(function(r){body+='<option'+(v.reason===r?' selected':'')+'>'+r+'</option>';});
         body+='</select>';
         body+='<input type="text" placeholder="Check#" value="'+bxe(v.check||'')+'" oninput="dsrUpdVR('+si+',\'returns\',\''+v.id+'\',\'check\',this.value)" style="'+fi+'width:70px;flex:none;font-size:11px">';
-        body+='<input type="number" step="0.01" placeholder="SAR" value="'+(v.amount||'')+'" oninput="dsrUpdVR('+si+',\'returns\',\''+v.id+'\',\'amount\',this.value);dsrRecalc()" style="'+fi+'width:80px;flex:none;font-size:11px">';
+        body+='<input type="number" step="0.01" placeholder="SAR" value="'+(v.amount||'')+'" oninput="dsrUpdVR('+si+',\'returns\',\''+v.id+'\',\'amount\',this.value);dsrRecalc('+si+')" style="'+fi+'width:80px;flex:none;font-size:11px">';
         body+='<span style="background:'+vc+'18;color:'+vc+';border:1px solid '+vc+'40;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;flex:none;white-space:nowrap">'+v.status.toUpperCase()+'</span>';
         if(v.status==='pending'){
           body+='<button onclick="dsrApprVR('+si+',\'returns\',\''+v.id+'\')" style="padding:5px 12px;border-radius:7px;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35);color:#34d399;font-size:12px;font-weight:700;cursor:pointer;flex:none;white-space:nowrap">✓ OK</button>';
@@ -6360,11 +6360,11 @@ function pDSR(){
         body+='</div>';
       });
       body+='</div>';
-      body+='<div style="display:flex;gap:12px;padding-top:10px;border-top:1px solid var(--border);margin-top:8px">';
-      body+='<span style="font-size:11px;color:var(--text-secondary)">Cash: '+bfsar(parseFloat(s.cashSales)||0)+'</span>';
-      body+='<span style="font-size:11px;color:var(--text-secondary)">Tips: '+bfsar(approvedT)+'</span>';
-      body+='<span style="font-size:11px;color:var(--text-secondary)">Drop: '+bfsar(cashDrop)+'</span>';
-      body+='<span style="margin-left:auto;font-size:11px;font-weight:700;color:'+dc+'">'+dl+'</span>';
+      body+='<div id="srv-footer-'+si+'" style="display:flex;gap:12px;padding-top:10px;border-top:1px solid var(--border);margin-top:8px">';
+      body+='<span style="font-size:11px;color:var(--text-secondary)">Cash: <span id="srv-fc-'+si+'">'+bfsar(parseFloat(s.cashSales)||0)+'</span></span>';
+      body+='<span style="font-size:11px;color:var(--text-secondary)">Tips: <span id="srv-ft-'+si+'">'+bfsar(approvedT)+'</span></span>';
+      body+='<span style="font-size:11px;color:var(--text-secondary)">Drop: <span id="srv-fd-'+si+'">'+bfsar(cashDrop)+'</span></span>';
+      body+='<span id="srv-fs-'+si+'" style="margin-left:auto;font-size:11px;font-weight:700;color:'+dc+'">'+dl+'</span>';
       body+='</div>';
       body+='</div>';
     });
@@ -6515,7 +6515,46 @@ function pDSR(){
 function _dsrD(){var today=TODAY_BS;if(!BS.dsrState)BS.dsrState={};if(!BS.dsrState[today])BS.dsrState[today]={date:today,food:'',bev:'',misc:'',vat:'',vatAlfa:'',guests:'',mfCompany:'',discounts:[],payments:[{id:'p1',method:'Cash',amount:''},{id:'p2',method:'MADA',amount:''},{id:'p3',method:'VISA',amount:''},{id:'p4',method:'Qlub',amount:''}],delivery:[],servers:[],closedPetty:[],ongoingPetty:[],safeItems:[],denoms:{},tab:'overview'};return BS.dsrState[today];}
 function dsrNav(tab){var D=_dsrD();D.tab=tab;navTo('dsr');}
 function dsrUp(k,v){var D=_dsrD();D[k]=v;}
-function dsrRecalc(){navTo('dsr');}
+function dsrRecalc(si){
+  // If si provided, update just that server card; otherwise update all
+  var D=_dsrD();
+  var servers=D.servers||[];
+  var indices=(si!==undefined)?[si]:servers.map(function(_,i){return i;});
+  indices.forEach(function(i){
+    var s=servers[i];if(!s)return;
+    // Read live values from DOM (user may be mid-typing)
+    function fv(id){var el=document.getElementById(id);return el?parseFloat(el.value)||0:parseFloat(s[{
+      'srv_tot_':  'totalSales','srv_cash_': 'cashSales','srv_mada_': 'madaSales',
+      'srv_visa_': 'visaSales','srv_mc_':   'mcSales',  'srv_amex_': 'amexSales',
+      'srv_qlub_': 'qlubSales','srv_loy_':  'loyaltySales','srv_del_': 'deliverySales',
+      'srv_vatalfa_':'vatAlfaSales'
+    }[id.replace(String(i),'')]])||0;}
+    var total   =parseFloat((document.getElementById('srv_tot_'+i)||{}).value)||parseFloat(s.totalSales)||0;
+    var cash    =parseFloat((document.getElementById('srv_cash_'+i)||{}).value)||parseFloat(s.cashSales)||0;
+    var mada    =parseFloat((document.getElementById('srv_mada_'+i)||{}).value)||parseFloat(s.madaSales)||0;
+    var visa    =parseFloat((document.getElementById('srv_visa_'+i)||{}).value)||parseFloat(s.visaSales)||0;
+    var mc      =parseFloat((document.getElementById('srv_mc_'+i)||{}).value)||parseFloat(s.mcSales)||0;
+    var amex    =parseFloat((document.getElementById('srv_amex_'+i)||{}).value)||parseFloat(s.amexSales)||0;
+    var qlub    =parseFloat((document.getElementById('srv_qlub_'+i)||{}).value)||parseFloat(s.qlubSales)||0;
+    var loy     =parseFloat((document.getElementById('srv_loy_'+i)||{}).value)||parseFloat(s.loyaltySales)||0;
+    var delivery=parseFloat((document.getElementById('srv_del_'+i)||{}).value)||parseFloat(s.deliverySales)||0;
+    var vatAlfa =parseFloat((document.getElementById('srv_vatalfa_'+i)||{}).value)||parseFloat(s.vatAlfaSales)||0;
+    var approvedT=(s.tips||[]).filter(function(t){return t.status==='approved';}).reduce(function(a,t){return a+(parseFloat(t.amount)||0);},0);
+    var cashDrop=cash-approvedT;
+    var sumPayments=cash+mada+visa+mc+amex+qlub+loy+delivery+vatAlfa;
+    var diff=total-sumPayments;
+    var dc=Math.abs(diff)<0.01?'#34d399':diff>0?'#f87171':'#f59e0b';
+    var dl=Math.abs(diff)<0.01?'✓ Balanced':diff>0?'Short '+bfsar(Math.abs(diff)):'Over '+bfsar(Math.abs(diff));
+    // Update tally badge
+    var badge=document.getElementById('srv-tally-'+i);
+    if(badge){badge.textContent=dl;badge.style.color=dc;badge.style.background=dc+'18';}
+    // Update footer
+    var fc=document.getElementById('srv-fc-'+i);if(fc)fc.textContent=bfsar(cash);
+    var ft=document.getElementById('srv-ft-'+i);if(ft)ft.textContent=bfsar(approvedT);
+    var fd=document.getElementById('srv-fd-'+i);if(fd)fd.textContent=bfsar(cashDrop);
+    var fs=document.getElementById('srv-fs-'+i);if(fs){fs.textContent=dl;fs.style.color=dc;}
+  });
+}
 function dsrUpdArr(arr,idx,key,val){var D=_dsrD();if(D[arr]&&D[arr][idx])D[arr][idx][key]=val;}
 function dsrRmArr(arr,idx){var D=_dsrD();if(D[arr])D[arr].splice(idx,1);navTo('dsr');}
 function dsrAddArr(arr){var D=_dsrD();var defaults={closedPetty:{id:buid(),desc:'',amount:''},ongoingPetty:{id:buid(),desc:'',amount:''},safeItems:{id:buid(),item:'',remark:''}};D[arr].push(defaults[arr]||{id:buid()});navTo('dsr');}
