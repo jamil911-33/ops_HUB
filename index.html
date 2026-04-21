@@ -6262,11 +6262,11 @@ function pDSR(){
     body+='</div>';
     (D.servers||[]).forEach(function(s,si){
       var approvedT=(s.tips||[]).filter(function(t){return t.status==='approved';}).reduce(function(a,t){return a+(parseFloat(t.amount)||0);},0);
-      var cashDrop=parseFloat(s.cashSales)||0;
-      var totalDrop=cashDrop+approvedT;
-      var diff=totalDrop-(parseFloat(s.totalSales)||0);
-      var dc=Math.abs(diff)<0.01?'#34d399':diff<0?'#f87171':'#f59e0b';
-      var dl=Math.abs(diff)<0.01?'✓ Balanced':diff<0?'Short '+bfsar(Math.abs(diff)):'Over '+bfsar(diff);
+      var cashDrop=(parseFloat(s.cashSales)||0)-approvedT;
+      var sumPayments=(parseFloat(s.cashSales)||0)+(parseFloat(s.madaSales)||0)+(parseFloat(s.visaSales)||0)+(parseFloat(s.mcSales)||0)+(parseFloat(s.amexSales)||0)+(parseFloat(s.qlubSales)||0)+(parseFloat(s.loyaltySales)||0)+(parseFloat(s.deliverySales)||0)+(parseFloat(s.vatAlfaSales)||0);
+      var diff=(parseFloat(s.totalSales)||0)-sumPayments;
+      var dc=Math.abs(diff)<0.01?'#34d399':diff>0?'#f87171':'#f59e0b';
+      var dl=Math.abs(diff)<0.01?'✓ Balanced':diff>0?'Short '+bfsar(Math.abs(diff)):'Over '+bfsar(Math.abs(diff));
       var pend=(s.voids||[]).filter(function(v){return v.status==='pending';}).length+(s.returns||[]).filter(function(v){return v.status==='pending';}).length+(s.tips||[]).filter(function(t){return t.status==='pending';}).length;
       body+='<div style="'+card+'">';
       body+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">';
@@ -6286,6 +6286,8 @@ function pDSR(){
       body+=grp('AMEX (SAR)',fi_n('srv_amex_'+si,s.amexSales,'0.00','dsrUpdSrv('+si+',\'amexSales\',this.value);dsrRecalc()'));
       body+=grp('Qlub (SAR)',fi_n('srv_qlub_'+si,s.qlubSales,'0.00','dsrUpdSrv('+si+',\'qlubSales\',this.value);dsrRecalc()'));
       body+=grp('Loyalty Point (SAR)',fi_n('srv_loy_'+si,s.loyaltySales,'0.00','dsrUpdSrv('+si+',\'loyaltySales\',this.value);dsrRecalc()'));
+      body+=grp('Delivery (SAR)',fi_n('srv_del_'+si,s.deliverySales,'0.00','dsrUpdSrv('+si+',\'deliverySales\',this.value);dsrRecalc()'));
+      body+=grp('VAT on ALFA (SAR)',fi_n('srv_vatalfa_'+si,s.vatAlfaSales,'0.00','dsrUpdSrv('+si+',\'vatAlfaSales\',this.value);dsrRecalc()'));
       body+='</div>';
       // Tips
       body+='<div style="margin-bottom:12px;padding-top:10px;border-top:1px solid var(--border)">';
@@ -6359,9 +6361,9 @@ function pDSR(){
       });
       body+='</div>';
       body+='<div style="display:flex;gap:12px;padding-top:10px;border-top:1px solid var(--border);margin-top:8px">';
-      body+='<span style="font-size:11px;color:var(--text-secondary)">Cash: '+bfsar(cashDrop)+'</span>';
+      body+='<span style="font-size:11px;color:var(--text-secondary)">Cash: '+bfsar(parseFloat(s.cashSales)||0)+'</span>';
       body+='<span style="font-size:11px;color:var(--text-secondary)">Tips: '+bfsar(approvedT)+'</span>';
-      body+='<span style="font-size:11px;color:var(--text-secondary)">Drop: '+bfsar(totalDrop)+'</span>';
+      body+='<span style="font-size:11px;color:var(--text-secondary)">Drop: '+bfsar(cashDrop)+'</span>';
       body+='<span style="margin-left:auto;font-size:11px;font-weight:700;color:'+dc+'">'+dl+'</span>';
       body+='</div>';
       body+='</div>';
@@ -6416,9 +6418,9 @@ function pDSR(){
     if(Math.abs(variance3)>5)alerts.push({c:'#f87171',i:'⛔',t:'Deposit '+(variance3<0?'SHORT':'OVER')+' by '+bfsar(Math.abs(variance3)),d:'Expected: '+bfsar(toDeposit3)+' | Physical: '+bfsar(physTotal3)});
     (D.servers||[]).forEach(function(s){
       var approvedT2=(s.tips||[]).filter(function(t){return t.status==='approved';}).reduce(function(a,t){return a+(parseFloat(t.amount)||0);},0);
-      var drop=(parseFloat(s.cashSales)||0)+approvedT2;
-      var diff2=drop-(parseFloat(s.totalSales)||0);
-      if(Math.abs(diff2)>0.01)alerts.push({c:diff2<0?'#f87171':'#f59e0b',i:diff2<0?'⛔':'⚡',t:(s.name||'Server')+': '+(diff2<0?'SHORT':'OVER')+' '+bfsar(Math.abs(diff2)),d:'Reported: '+bfsar(s.totalSales)+' | Drop: '+bfsar(drop)});
+      var sumPay2=(parseFloat(s.cashSales)||0)+(parseFloat(s.madaSales)||0)+(parseFloat(s.visaSales)||0)+(parseFloat(s.mcSales)||0)+(parseFloat(s.amexSales)||0)+(parseFloat(s.qlubSales)||0)+(parseFloat(s.loyaltySales)||0)+(parseFloat(s.deliverySales)||0)+(parseFloat(s.vatAlfaSales)||0);
+      var diff2=(parseFloat(s.totalSales)||0)-sumPay2;
+      if(Math.abs(diff2)>0.01)alerts.push({c:diff2>0?'#f87171':'#f59e0b',i:diff2>0?'⛔':'⚡',t:(s.name||'Server')+': '+(diff2>0?'SHORT':'OVER')+' '+bfsar(Math.abs(diff2)),d:'Total Sales: '+bfsar(s.totalSales)+' | Sum of Payments: '+bfsar(sumPay2)});
       var pend2=(s.voids||[]).filter(function(v){return v.status==='pending';}).length+(s.returns||[]).filter(function(v){return v.status==='pending';}).length+(s.tips||[]).filter(function(t){return t.status==='pending';}).length;
       if(pend2>0)alerts.push({c:'#f59e0b',i:'⏳',t:(s.name||'Server')+': '+pend2+' pending approval',d:'Go to Server Drops tab'});
     });
@@ -6520,7 +6522,7 @@ function dsrAddArr(arr){var D=_dsrD();var defaults={closedPetty:{id:buid(),desc:
 function dsrAddDisc(){var D=_dsrD();D.discounts.push({id:buid(),type:'',amount:''});navTo('dsr');}
 function dsrAddPay(){var D=_dsrD();D.payments.push({id:buid(),method:'Cash',amount:''});navTo('dsr');}
 function dsrAddDeliv(){var D=_dsrD();D.delivery.push({id:buid(),platform:'',amount:'',orders:''});navTo('dsr');}
-function dsrAddServer(){var D=_dsrD();D.servers.push({id:buid(),name:'',sap:'',totalSales:'',cashSales:'',madaSales:'',visaSales:'',mcSales:'',amexSales:'',qlubSales:'',loyaltySales:'',tips:[],voids:[],returns:[]});navTo('dsr');}
+function dsrAddServer(){var D=_dsrD();D.servers.push({id:buid(),name:'',sap:'',totalSales:'',cashSales:'',madaSales:'',visaSales:'',mcSales:'',amexSales:'',qlubSales:'',loyaltySales:'',deliverySales:'',vatAlfaSales:'',tips:[],voids:[],returns:[]});navTo('dsr');}
 function dsrRmServer(si){var D=_dsrD();if(!confirm('Remove this server?'))return;D.servers.splice(si,1);navTo('dsr');}
 function dsrUpdSrv(si,k,v){var D=_dsrD();if(D.servers[si])D.servers[si][k]=v;}
 function dsrAddTip(si){var D=_dsrD();if(!D.servers[si])return;D.servers[si].tips.push({id:buid(),method:'MADA',amount:'',approval:'',guest:'',status:'pending'});navTo('dsr');}
