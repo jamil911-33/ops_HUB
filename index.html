@@ -1308,15 +1308,7 @@ function rand(min, max) {
 
 function navTo(pageId) {
   // Standalone portal links — open in new tab
-  var s = NX.session || {};
-  var branchParam = s.branchId ? '?branch=' + encodeURIComponent(s.branchId) : '';
-  var portalMap = {
-    '_staff-portal':     'staff.html',
-    '_leave-portal':     'leave.html',
-    '_checklist-portal': 'checklists.html',
-    '_server-drop':      'server-drop.html' + branchParam,
-    '_dsr-manager':      'dsr.html' + branchParam
-  };
+  var portalMap = { '_staff-portal':'staff.html', '_leave-portal':'leave.html', '_checklist-portal':'checklists.html' };
   if (portalMap[pageId]) { window.open(portalMap[pageId], '_blank'); return; }
 
   NX.page = pageId;
@@ -1381,7 +1373,6 @@ function updateTopBar(pageId) {
     'inv-report':'Monthly Report','wastage':'Wastage Log',
     'staff':'Staff','schedule':'Schedule','timesheet':'Timesheet',
     'health-cards':'Health Cards','sales':'Sales','petty-cash':'Petty Cash',
-    'dsr':'Server Drops',
     'checklists':'Checklists','qr-checkin':'QR Check-In'
   };
   if (pageId && labels[pageId]) parts.push(labels[pageId]);
@@ -1518,12 +1509,7 @@ var NAV_CONFIG = {
     { section:'PORTALS', items:[
       { id:'_staff-portal',     icon:'🏃', label:'Staff Portal' },
       { id:'_leave-portal',     icon:'📝', label:'Leave Request' },
-      { id:'_checklist-portal', icon:'📋', label:'Checklist App' },
-      { id:'_server-drop',      icon:'💵', label:'Server Drop Entry' },
-      { id:'_dsr-manager',      icon:'📋', label:'Daily Sales Report' }
-    ]},
-    { section:'DAILY SALES REPORT', items:[
-      { id:'dsr',              icon:'🧾', label:'Server Drops', badge:'pendingdrops' }
+      { id:'_checklist-portal', icon:'📋', label:'Checklist App' }
     ]},
     { section:'INVENTORY', items:[
       { id:'branch-dash', icon:'📊', label:'Dashboard' },
@@ -2412,7 +2398,6 @@ function renderPage(pageId) {
     'health-cards': pHealthCards,
     'sales': pSales,
     'petty-cash': pPettyCash,
-    'dsr': pDSR,
     'checklists': pChecklists,
     'qr-checkin': pQRCheckin
   };
@@ -4331,7 +4316,7 @@ function attachBranchListeners() {
       else BS[key]=Object.values(raw).filter(Boolean);
       bsyncTSFromStaff();
       NX.lastSync=Date.now();
-      if(['branch-dash','staff','timesheet','health-cards','sales','petty-cash','wastage','schedule','dsr'].indexOf(NX.page)>=0) {
+      if(['branch-dash','staff','timesheet','health-cards','sales','petty-cash','wastage','schedule'].indexOf(NX.page)>=0) {
         var area=document.getElementById('page-area'); if(area){area.innerHTML=renderPage_(NX.page);setTimeout(function(){initPageCharts(NX.page);},50);}
       }
     });
@@ -4382,7 +4367,7 @@ function renderPage_(pageId) {
       'branch-dash':pBranchDash,'inv-items':pInvItems,'inv-moves':pInvMoves,'inv-orders':pInvOrders,
       'low-stock':pLowStock,'inv-report':pInvReport,'wastage':pWastage,'staff':pStaff,
       'schedule':pSchedule,'timesheet':pTimesheet,'health-cards':pHealthCards,
-      'sales':pSales,'petty-cash':pPettyCash,'dsr':pDSR,'checklists':pChecklists,'qr-checkin':pQRCheckin
+      'sales':pSales,'petty-cash':pPettyCash,'checklists':pChecklists,'qr-checkin':pQRCheckin
     };
     return fns[pageId] ? fns[pageId]() : '';
   } catch(e) { return '<div class="empty-state"><div class="es-icon">⚠️</div><p>' + bxe(e.message) + '</p></div>'; }
@@ -4917,234 +4902,6 @@ function pPettyCash(){attachBranchListeners();var tot=0,mTot=0,tm=bmthKey(0);BS.
 function openBranchPCModal(){var html='<div class="modal-head"><h2>Add Petty Cash Entry</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div><div class="bfg"><label class="form-label">Date *</label><input class="form-input" type="date" id="bpc-date" value="'+TODAY_BS+'"></div><div class="bfg"><label class="form-label">Item Purchased *</label><input class="form-input" id="bpc-desc" maxlength="28" placeholder="max 28 chars"></div><div class="form-row"><div class="bfg"><label class="form-label">For Who / Dept *</label><input class="form-input" id="bpc-for"></div><div class="bfg"><label class="form-label">Cost Center</label><select class="form-input form-select" id="bpc-cat"><option value="">\u2014</option>'+PCC.map(function(c){return '<option>'+bxe(c)+'</option>';}).join('')+'</select></div></div><div class="form-row"><div class="bfg"><label class="form-label">Remarks</label><input class="form-input" id="bpc-rem"></div><div class="bfg"><label class="form-label">Amount (SAR) *</label><input class="form-input" type="number" step="0.01" id="bpc-amt" placeholder="0.00"></div></div><button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBranchPC()">Save Entry</button>';openModal(html);}
 function saveBranchPC(){var dt=bgv('bpc-date'),desc=bgv('bpc-desc'),forw=bgv('bpc-for'),amt=bgv('bpc-amt');if(!dt||!desc||!forw||!amt){showToast('Required fields missing','error');return;}BS.pc.push({id:buid(),date:dt,description:desc,forwhat:forw,category:bgv('bpc-cat'),remarks:bgv('bpc-rem'),amount:parseFloat(amt)||0});bSaveColl('pc',BS.pc);closeModalForce();showToast('Entry saved','success');navTo('petty-cash');}
 function delBranchPC(id){BS.pc=BS.pc.filter(function(x){return x.id!==id;});bSaveColl('pc',BS.pc);showToast('Deleted');navTo('petty-cash');}
-
-// ── DSR — Server Drops ────────────────────────────────
-var DSR = { date: TODAY_BS, drops: {}, loading: false };
-
-function dsrCalcTally(d) {
-  // Expected cash = Total Sales minus all non-cash channels
-  var total    = parseFloat(d.totalSales)    || 0;
-  var mada     = parseFloat(d.madaSales)     || 0;
-  var visa     = parseFloat(d.visaSales)     || 0;
-  var mc       = parseFloat(d.mcSales)       || 0;
-  var amex     = parseFloat(d.amexSales)     || 0;
-  var qlub     = parseFloat(d.qlubSales)     || 0;
-  var loy      = parseFloat(d.loyaltySales)  || 0;
-  var delivery = parseFloat(d.deliverySales) || 0;
-  var vatAlfa  = parseFloat(d.vatAlfa)       || 0;
-  var expectedCash = total - mada - visa - mc - amex - qlub - loy - delivery - vatAlfa;
-  // Actual drop = cash minus card tips
-  var cardTips = 0;
-  if (d.tips && Array.isArray(d.tips)) {
-    d.tips.forEach(function(t){ cardTips += parseFloat(t.amount)||0; });
-  }
-  var cash = parseFloat(d.cashSales) || 0;
-  var drop = cash - cardTips;
-  var diff = drop - expectedCash;
-  return { total:total, cash:cash, cardTips:cardTips, drop:drop, expectedCash:expectedCash, diff:diff };
-}
-
-function dsrLoadDrops(date) {
-  if (!db) return;
-  var s = NX.session || {};
-  var path = 'branches/' + s.branchId + '/dsr/' + date + '/server_drops';
-  DSR.loading = true;
-  db.ref(path).once('value', function(snap) {
-    DSR.drops = snap.val() || {};
-    DSR.loading = false;
-    if (NX.page === 'dsr') {
-      var area = document.getElementById('page-area');
-      if (area) area.innerHTML = pDSR();
-    }
-    // Update pending badge
-    var pending = Object.values(DSR.drops).filter(function(d){ return d && d.status === 'pending'; }).length;
-    var badge = document.getElementById('nb-pendingdrops');
-    if (badge) { badge.textContent = pending; badge.style.display = pending ? '' : 'none'; }
-  });
-}
-
-function dsrApprove(id) {
-  var s = NX.session || {};
-  var path = 'branches/' + s.branchId + '/dsr/' + DSR.date + '/server_drops/' + id;
-  if (db) db.ref(path + '/status').set('approved', function(err){
-    if (err) { showToast('Failed: ' + err.message, 'error'); return; }
-    if (DSR.drops[id]) DSR.drops[id].status = 'approved';
-    showToast('Drop approved', 'success');
-    if (NX.page === 'dsr') { var area = document.getElementById('page-area'); if (area) area.innerHTML = pDSR(); }
-  });
-}
-
-function dsrReject(id) {
-  var s = NX.session || {};
-  var path = 'branches/' + s.branchId + '/dsr/' + DSR.date + '/server_drops/' + id;
-  if (db) db.ref(path + '/status').set('rejected', function(err){
-    if (err) { showToast('Failed: ' + err.message, 'error'); return; }
-    if (DSR.drops[id]) DSR.drops[id].status = 'rejected';
-    showToast('Drop rejected', 'error');
-    if (NX.page === 'dsr') { var area = document.getElementById('page-area'); if (area) area.innerHTML = pDSR(); }
-  });
-}
-
-function dsrChangeDate(date) {
-  DSR.date = date;
-  DSR.drops = {};
-  dsrLoadDrops(date);
-  if (NX.page === 'dsr') { var area = document.getElementById('page-area'); if (area) area.innerHTML = pDSR(); }
-}
-
-function pDSR() {
-  attachBranchListeners();
-
-  // Trigger a fresh load if drops not yet fetched for this date
-  if (!DSR.loading && Object.keys(DSR.drops).length === 0) {
-    dsrLoadDrops(DSR.date);
-  }
-
-  var drops = Object.values(DSR.drops).filter(Boolean).sort(function(a,b){
-    return (a.name||'').localeCompare(b.name||'');
-  });
-
-  var pending  = drops.filter(function(d){ return d.status === 'pending';  }).length;
-  var approved = drops.filter(function(d){ return d.status === 'approved'; }).length;
-  var rejected = drops.filter(function(d){ return d.status === 'rejected'; }).length;
-
-  // Summary totals across all drops
-  var totalCash = 0, totalDrop = 0, totalShort = 0, totalOver = 0;
-  drops.forEach(function(d){
-    var t = dsrCalcTally(d);
-    totalCash += t.cash;
-    totalDrop += t.drop;
-    if (t.diff < -0.005) totalShort += Math.abs(t.diff);
-    else if (t.diff >  0.005) totalOver  += t.diff;
-  });
-
-  var h = '<div class="page-header"><h1>🧾 Server Drops</h1>';
-  h += '<p>' + bxe(DSR.date) + ' · ' + drops.length + ' drop' + (drops.length!==1?'s':'') + ' submitted</p></div>';
-
-  // Date picker + quick-load button
-  h += '<div class="bcard" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
-  h += '<label class="form-label" style="margin:0">Date</label>';
-  h += '<input class="form-input" type="date" id="dsr-date-pick" value="' + bxe(DSR.date) + '" style="width:auto">';
-  h += '<button class="btn btn-primary btn-sm" onclick="dsrChangeDate(document.getElementById(\'dsr-date-pick\').value)">Load</button>';
-  h += '<a href="server-drop.html" target="_blank" class="btn btn-sm" style="margin-left:auto">+ Server Drop Entry →</a>';
-  h += '</div>';
-
-  // KPI row
-  h += '<div class="bgrid-4" style="margin-bottom:16px">';
-  h += '<div class="bsc"><div class="bsc-lbl">PENDING</div><div class="bsc-val" style="color:#f59e0b;font-size:26px">' + pending + '</div></div>';
-  h += '<div class="bsc"><div class="bsc-lbl">APPROVED</div><div class="bsc-val" style="color:#34d399;font-size:26px">' + approved + '</div></div>';
-  h += '<div class="bsc"><div class="bsc-lbl">TOTAL DROP</div><div class="bsc-val bcgold" style="font-size:18px">' + bfsar(totalDrop) + '</div></div>';
-  h += '<div class="bsc"><div class="bsc-lbl">TOTAL SHORT</div><div class="bsc-val" style="color:#f87171;font-size:18px">' + (totalShort > 0.005 ? bfsar(totalShort) : '—') + '</div></div>';
-  h += '</div>';
-
-  if (DSR.loading) {
-    h += '<div class="empty-state"><div class="es-icon">⏳</div><p>Loading drops…</p></div>';
-    return h;
-  }
-
-  if (!drops.length) {
-    h += '<div class="empty-state"><div class="es-icon">📭</div><h3>No drops for ' + bxe(DSR.date) + '</h3>';
-    h += '<p style="color:var(--text-secondary)">Servers submit via the <a href="server-drop.html" target="_blank" style="color:var(--accent)">Server Drop Entry</a> page.</p></div>';
-    return h;
-  }
-
-  // Drop cards
-  drops.forEach(function(d) {
-    var t = dsrCalcTally(d);
-    var isShort = t.diff < -0.005, isOver = t.diff > 0.005, isBalanced = Math.abs(t.diff) <= 0.005;
-    var tallyColor = isShort ? '#f87171' : isOver ? '#f59e0b' : '#34d399';
-    var tallyLabel = isShort ? 'Short SAR ' + Math.abs(t.diff).toFixed(2)
-                  : isOver  ? 'Over SAR '  + t.diff.toFixed(2)
-                  :           '✓ Balanced';
-    var stColor = d.status==='approved' ? '#34d399' : d.status==='rejected' ? '#f87171' : '#f59e0b';
-    var stLabel = d.status==='approved' ? 'Approved'  : d.status==='rejected' ? 'Rejected' : 'Pending';
-
-    h += '<div class="bcard" style="margin-bottom:14px;border-left:3px solid ' + tallyColor + '">';
-
-    // Header row
-    h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">';
-    h += '<div><div style="font-size:14px;font-weight:700">' + bxe(d.name||'—') + '</div>';
-    h += '<div style="font-size:11px;color:var(--text-secondary)">' + (d.sap?'SAP '+bxe(d.sap)+' · ':'') + bxe(d.date||DSR.date) + '</div></div>';
-    h += bpl(stLabel, stColor);
-    h += '<div style="margin-left:auto;font-family:var(--font-mono,monospace);font-size:13px;font-weight:800;color:' + tallyColor + '">' + bxe(tallyLabel) + '</div>';
-    h += '</div>';
-
-    // Sales grid
-    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">';
-    var fields = [
-      ['Total Sales',   d.totalSales],
-      ['Cash Sales',    d.cashSales],
-      ['MADA',          d.madaSales],
-      ['VISA',          d.visaSales],
-      ['Master Card',   d.mcSales],
-      ['AMEX',          d.amexSales],
-      ['Qlub',          d.qlubSales],
-      ['Loyalty',       d.loyaltySales],
-      ['Delivery',      d.deliverySales],
-      ['VAT on Alfa',   d.vatAlfa]
-    ];
-    fields.forEach(function(f) {
-      var val = parseFloat(f[1]) || 0;
-      if (!val && f[0] !== 'Total Sales' && f[0] !== 'Cash Sales') return; // hide empty optional fields
-      h += '<div style="background:var(--surface-2);border-radius:7px;padding:8px 10px">';
-      h += '<div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">' + bxe(f[0]) + '</div>';
-      h += '<div style="font-family:var(--font-mono,monospace);font-size:13px;font-weight:700">' + val.toFixed(2) + '</div>';
-      h += '</div>';
-    });
-    h += '</div>';
-
-    // Tally breakdown
-    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;background:var(--surface-2);border-radius:7px;padding:9px 12px;margin-bottom:12px;font-size:11px">';
-    h += '<span>Expected Cash: <strong style="font-family:monospace">' + t.expectedCash.toFixed(2) + '</strong></span>';
-    h += '<span style="color:var(--text-tertiary)">·</span>';
-    h += '<span>Cash: <strong style="font-family:monospace">' + t.cash.toFixed(2) + '</strong></span>';
-    if (t.cardTips > 0) {
-      h += '<span style="color:var(--text-tertiary)">·</span>';
-      h += '<span>Tips: <strong style="font-family:monospace">−' + t.cardTips.toFixed(2) + '</strong></span>';
-    }
-    h += '<span style="color:var(--text-tertiary)">·</span>';
-    h += '<span>Drop: <strong style="font-family:monospace">' + t.drop.toFixed(2) + '</strong></span>';
-    h += '<span style="margin-left:auto;font-weight:700;color:' + tallyColor + '">' + bxe(tallyLabel) + '</span>';
-    h += '</div>';
-
-    // Tips section
-    if (d.tips && d.tips.length) {
-      h += '<div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Tips by Card</div>';
-      h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">';
-      d.tips.forEach(function(tip) {
-        h += '<span style="background:rgba(240,165,0,.12);color:#f0a500;border:1px solid rgba(240,165,0,.2);border-radius:8px;padding:3px 9px;font-size:11px">';
-        h += bxe(tip.method||'Card') + ' — SAR ' + parseFloat(tip.amount||0).toFixed(2);
-        if (tip.approval) h += ' · ' + bxe(tip.approval);
-        h += '</span>';
-      });
-      h += '</div>';
-    }
-
-    // Voids / Returns
-    if ((d.voids && d.voids.length) || (d.returns && d.returns.length)) {
-      h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
-      if (d.voids && d.voids.length) {
-        h += '<span style="font-size:11px;color:var(--danger)">⊗ ' + d.voids.length + ' void(s)</span>';
-      }
-      if (d.returns && d.returns.length) {
-        h += '<span style="font-size:11px;color:#f59e0b">↩ ' + d.returns.length + ' return(s)</span>';
-      }
-      h += '</div>';
-    }
-
-    // Action buttons
-    if (d.status === 'pending') {
-      h += '<div style="display:flex;gap:8px">';
-      h += '<button class="btn btn-sm" style="color:#34d399;border-color:rgba(52,211,153,.3)" onclick="dsrApprove(\'' + bxe(d.id) + '\')">✓ Approve</button>';
-      h += '<button class="btn btn-sm" style="color:#f87171;border-color:rgba(248,113,113,.3)" onclick="dsrReject(\'' + bxe(d.id) + '\')">✕ Reject</button>';
-      h += '</div>';
-    }
-
-    h += '</div>'; // end bcard
-  });
-
-  return h;
-}
 
 // ── Checklists ────────────────────────────────────────
 var CL_DATA_NX={mod:[{id:'mod_salad',name:'Salad & Gelato',groups:[{name:'Opening',items:[{id:'sg1',label:'Prep station clean',yellow:true},{id:'sg2',label:'Temperature logged'},{id:'sg3',label:'Mise en place ready'},{id:'sg4',label:'Equipment sanitized'}]},{name:'Closing',items:[{id:'sg5',label:'Station cleaned & stored'},{id:'sg6',label:'Closing temp logged'}]}]},{id:'mod_pastry',name:'Pastry & Receiving',groups:[{name:'Morning',items:[{id:'ps1',label:'Proofing checked'},{id:'ps2',label:'Deliveries received & logged',yellow:true},{id:'ps3',label:'Temperature verified'},{id:'ps4',label:'Labeling complete'}]},{name:'Evening',items:[{id:'ps5',label:'Dough prepared for tomorrow'},{id:'ps6',label:'Station cleaned'}]}]},{id:'mod_fryer',name:'Fryer & Pizza',groups:[{name:'Opening',items:[{id:'fp1',label:'Oil level checked',yellow:true},{id:'fp2',label:'Oil temperature correct'},{id:'fp3',label:'Filters cleaned'},{id:'fp4',label:'Toppings stocked'}]},{name:'Closing',items:[{id:'fp5',label:'Oil filtered & covered'},{id:'fp6',label:'Station deep cleaned'}]}]}],foh:[{id:'foh_waiter',name:"Waiter's Checklist",groups:[{name:'Pre-Shift',items:[{id:'w1',label:'Uniform & grooming check'},{id:'w2',label:'Table setup complete',yellow:true},{id:'w3',label:'Menu knowledge briefed'},{id:'w4',label:'Section assigned'}]},{name:'Post-Shift',items:[{id:'w5',label:'Tables reset'},{id:'w6',label:'Handover complete'}]}]},{id:'foh_hygiene',name:'Daily Hygiene FOH',groups:[{name:'Tasks',items:[{id:'fh1',label:'Surfaces wiped'},{id:'fh2',label:'Floors cleaned'},{id:'fh3',label:'Restrooms checked',yellow:true},{id:'fh4',label:'Waste removed'}]}]},{id:'foh_barista',name:'Barista Opening/Closing',groups:[{name:'Opening',items:[{id:'ba1',label:'Machine warmed & calibrated',yellow:true},{id:'ba2',label:'Beans restocked'},{id:'ba3',label:'Milk fridge checked'}]},{name:'Closing',items:[{id:'ba4',label:'Machine backflushed'},{id:'ba5',label:'Grinders cleaned'},{id:'ba6',label:'Fridge stocked for AM'}]}]}],boh:[{id:'boh_pizza',name:'Pizza Station',groups:[{name:'Opening',items:[{id:'bz1',label:'Dough temped & ready',yellow:true},{id:'bz2',label:'Oven pre-heated & calibrated'},{id:'bz3',label:'Toppings stocked & labeled'},{id:'bz4',label:'Stone cleaned'}]},{name:'Closing',items:[{id:'bz5',label:'Oven cleaned'},{id:'bz6',label:'Dough covered & refrigerated'}]}]},{id:'boh_grill',name:'Grill Section',groups:[{name:'Opening',items:[{id:'gr1',label:'Grill heated & cleaned',yellow:true},{id:'gr2',label:'Meats checked & portioned'},{id:'gr3',label:'Sauces prepped'}]},{name:'Closing',items:[{id:'gr4',label:'Grill scrubbed down'},{id:'gr5',label:'Leftovers labeled & stored'}]}]},{id:'boh_dishwash',name:'Dishwasher',groups:[{name:'Tasks',items:[{id:'dw1',label:'Machine sanitized & running',yellow:true},{id:'dw2',label:'Chemical levels checked'},{id:'dw3',label:'Racks organized'},{id:'dw4',label:'Machine emptied & dried at close'}]}]}]};
