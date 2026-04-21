@@ -110,7 +110,7 @@ input[type=number]{font-family:'JetBrains Mono',monospace;font-weight:500}
     <div class="login-card">
       <div class="login-logo">Server Drop</div>
       <div class="login-sub">Enter your details to begin your drop</div>
-      <div class="fg"><label>Branch</label>
+      <div class="fg" id="branch-row"><label>Branch</label>
         <select id="branchSel">
           <option value="">Loading branches…</option>
         </select>
@@ -155,6 +155,8 @@ input[type=number]{font-family:'JetBrains Mono',monospace;font-weight:500}
         <div class="fg"><label>AMEX</label><input type="number" id="fAmex" step="0.01" placeholder="0.00" oninput="calcBal()"></div>
         <div class="fg"><label>Qlub</label><input type="number" id="fQlub" step="0.01" placeholder="0.00" oninput="calcBal()"></div>
         <div class="fg"><label>Loyalty Point</label><input type="number" id="fLoy" step="0.01" placeholder="0.00" oninput="calcBal()"></div>
+        <div class="fg"><label>Delivery Sales</label><input type="number" id="fDelivery" step="0.01" placeholder="0.00" oninput="calcBal()"></div>
+        <div class="fg"><label>VAT on Alfa</label><input type="number" id="fVatAlfa" step="0.01" placeholder="0.00" oninput="calcBal()"></div>
       </div>
       <div class="bal-bar" id="balBar">
         <span>Cash: <span id="balCash" style="font-family:'JetBrains Mono',monospace;font-weight:700">0.00</span></span>
@@ -233,17 +235,30 @@ function showPage(id){document.querySelectorAll('.page').forEach(function(p){p.c
 window.onload=function(){
   var td=new Date();S.date=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
   document.getElementById('loginDate').value=S.date;
-  loadBranches();
+  // Read ?branch= param from URL
+  var urlBranch=new URLSearchParams(window.location.search).get('branch')||'';
+  loadBranches(urlBranch);
 };
 
-function loadBranches(){
+function loadBranches(preselect){
   var sel=document.getElementById('branchSel');
   if(!db){sel.innerHTML='<option value="">Firebase unavailable</option>';return;}
   db.ref('admin/branches').once('value',function(snap){
     var raw=snap.val()||{};
     var branches=Object.values(raw).filter(Boolean).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
     sel.innerHTML='<option value="">— Select branch —</option>';
-    branches.forEach(function(b){sel.innerHTML+='<option value="'+xe(b.id)+'">'+xe(b.name)+(b.location?' — '+xe(b.location):'')+'</option>';});
+    branches.forEach(function(b){
+      var opt=document.createElement('option');
+      opt.value=b.id;
+      opt.textContent=b.name+(b.location?' — '+b.location:'');
+      if(preselect&&b.id===preselect)opt.selected=true;
+      sel.appendChild(opt);
+    });
+    // If branch was preselected, hide the branch selector row for cleaner UX
+    if(preselect&&sel.value){
+      var row=document.getElementById('branch-row');
+      if(row)row.style.display='none';
+    }
   });
 }
 
@@ -263,7 +278,7 @@ function doLogin(){
   S.tips=[];S.voids=[];S.returns=[];
   document.getElementById('hdName').textContent=name;
   document.getElementById('hdMeta').textContent=S.branchName+' · '+date+(sap?' · '+sap:'');
-  ['fTotal','fCash','fMada','fVisa','fMc','fAmex','fQlub','fLoy'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['fTotal','fCash','fMada','fVisa','fMc','fAmex','fQlub','fLoy','fDelivery','fVatAlfa'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   renderTips();renderVoids();renderReturns();calcBal();
   showPage('entry');
 }
@@ -271,19 +286,32 @@ function goLogin(){showPage('login');}
 
 // ══ CALC BALANCE ══
 function calcBal(){
-  var cash=n('fCash');
-  var approvedTips=S.tips.reduce(function(a,t){return a+(parseFloat(t.amount)||0);},0);
-  var drop=cash+approvedTips;
-  var total=n('fTotal');
-  var diff=drop-total;
-  document.getElementById('balCash').textContent=cash.toFixed(2);
-  document.getElementById('balTips').textContent=approvedTips.toFixed(2);
-  document.getElementById('balDrop').textContent=drop.toFixed(2);
-  var el=document.getElementById('balStatus');
+  var total    = n('fTotal');
+  var cash     = n('fCash');
+  var mada     = n('fMada');
+  var visa     = n('fVisa');
+  var mc       = n('fMc');
+  var amex     = n('fAmex');
+  var qlub     = n('fQlub');
+  var loy      = n('fLoy');
+  var delivery = n('fDelivery');
+  var vatAlfa  = n('fVatAlfa');
+  // Card tips reduce the cash the server physically drops
+  var cardTips = S.tips.reduce(function(a,t){return a+(parseFloat(t.amount)||0);},0);
+  // Expected cash = Total Sales minus all card/non-cash payment methods
+  var expectedCash = total - mada - visa - mc - amex - qlub - loy - delivery - vatAlfa;
+  // Actual drop = cash sales minus card tips (tips collected via card are excluded from cash drop)
+  var drop = cash - cardTips;
+  // diff: positive = over, negative = short
+  var diff = drop - expectedCash;
+  document.getElementById('balCash').textContent = cash.toFixed(2);
+  document.getElementById('balTips').textContent = cardTips.toFixed(2);
+  document.getElementById('balDrop').textContent = drop.toFixed(2);
+  var el = document.getElementById('balStatus');
   if(total===0){el.textContent='—';el.style.color='var(--text3)';}
   else if(Math.abs(diff)<0.01){el.textContent='✓ Balanced';el.style.color='#34d399';}
-  else if(diff<0){el.textContent='Short '+Math.abs(diff).toFixed(2);el.style.color='#f87171';}
-  else{el.textContent='Over '+diff.toFixed(2);el.style.color='#f59e0b';}
+  else if(diff<0){el.textContent='Short SAR '+Math.abs(diff).toFixed(2);el.style.color='#f87171';}
+  else{el.textContent='Over SAR '+diff.toFixed(2);el.style.color='#f59e0b';}
 }
 
 // ══ TIPS ══
@@ -355,6 +383,8 @@ function submitDrop(){
     amexSales:document.getElementById('fAmex').value||'',
     qlubSales:document.getElementById('fQlub').value||'',
     loyaltySales:document.getElementById('fLoy').value||'',
+    deliverySales:document.getElementById('fDelivery').value||'',
+    vatAlfa:document.getElementById('fVatAlfa').value||'',
     tips:S.tips.map(function(t){return Object.assign({},t,{status:'pending'});}),
     voids:S.voids.map(function(v){return Object.assign({},v,{status:'pending'});}),
     returns:S.returns.map(function(v){return Object.assign({},v,{status:'pending'});}),
