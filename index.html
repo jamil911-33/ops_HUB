@@ -2404,7 +2404,8 @@ function selectRole(roleId) {
   // super_admin, ceo, brand_dir, regional — go straight to PIN
   // Their branch/brand assignments are looked up from Firebase AFTER PIN verification
   if (roleId === 'super_admin' || roleId === 'ceo' ||
-      roleId === 'brand_dir'   || roleId === 'regional') {
+      roleId === 'brand_dir'   || roleId === 'regional' ||
+      roleId === 'hr_manager'  || roleId === 'finance_dir') {
     renderLogin(2);
   } else if (roleId === 'branch_mgr') {
     renderLoginEntitySelect('branch');
