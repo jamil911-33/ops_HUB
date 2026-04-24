@@ -2394,7 +2394,7 @@ function lumKeyDel() {
 }
 
 function _lumCheckPin() {
-  var correct = (typeof ACCESS !== 'undefined' && ACCESS.superAdmin) ? String(ACCESS.superAdmin.pin) : '0000';
+  var correct = (typeof ACCESS !== 'undefined' && ACCESS.superAdmin) ? String(ACCESS.superAdmin.pin) : '0989';
   if (_lumPin === correct) {
     _lumAuthed = true;
     document.getElementById('lum-gate').style.display = 'none';
@@ -2794,8 +2794,8 @@ function updatePinDots() {
 
 // System-level PINs (branch manager PINs come from admin/branches in Firebase)
 var ACCESS = {
-  superAdmin: { pin: '0000' },
-  ceo:        { pin: '1111' },
+  superAdmin: { pin: '0989' },
+  ceo:        { pin: '0090' },
   brandDir:   { pin: '2222' },
   regional:   { pin: '3333' }
 };
@@ -4397,7 +4397,7 @@ function pAccessCtrl() {
   // ── System PINs ──────────────────────────────────────────────────────────
   h += '<div class="card section"><div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">System Access</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">';
-  [['🔑','Super Admin','1422','var(--super-admin)'],['👑','CEO','0911','var(--ceo)']].forEach(function(r){
+  [['🔑','Super Admin','0000','var(--super-admin)'],['👑','CEO','1111','var(--ceo)']].forEach(function(r){
     h += '<div style="background:var(--surface-3);border-radius:10px;padding:12px;border-left:3px solid '+r[3]+'">';
     h += '<div style="font-size:10px;color:'+r[3]+';font-weight:700;margin-bottom:4px">'+r[0]+' '+r[1]+'</div>';
     h += '<div style="font-family:var(--mono);font-size:20px;letter-spacing:4px;font-weight:600">'+r[2]+'</div></div>';
