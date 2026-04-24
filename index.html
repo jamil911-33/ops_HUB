@@ -4220,7 +4220,7 @@ function pAccessCtrl() {
   // ── HR Managers ───────────────────────────────────────────────────────────
   h += '<div class="card section"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
   h += '<div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em">&#x1F9D1;&#x200D;&#x1F4BC; HR Managers</div>';
-  h += '<button class="btn btn-sm" onclick="openAddUserModal('hr_manager')">+ Add</button></div>';
+  h += '<button class="btn btn-sm" onclick="openAddUserModal(\'hr_manager\')">+ Add</button></div>';
   if (!hrMgrs.length) {
     h += '<div style="text-align:center;padding:20px;color:var(--text-tertiary);font-size:12px">No HR managers yet — click "+ Add" to create one</div>';
   } else {
@@ -4232,8 +4232,8 @@ function pAccessCtrl() {
       h += '<div style="font-size:10px;color:var(--text-secondary);margin-top:2px">HR Manager · All branches access</div></div>';
       h += '<div style="font-family:var(--mono);font-size:11px;color:#94a3b8;background:#94a3b812;padding:4px 10px;border-radius:6px">PIN: ' + xe(String(u.pin||'—')) + '</div>';
       h += '<div style="display:flex;gap:6px">';
-      h += '<button class="btn btn-sm" onclick="openEditUserModal('' + xe(u.id) + '')">Edit</button>';
-      h += '<button class="btn btn-sm" style="color:var(--danger);border-color:rgba(248,113,113,.3)" onclick="confirmDeleteUser('' + xe(u.id) + '','' + xe(u.name||'') + '')">Delete</button>';
+      h += '<button class="btn btn-sm" onclick="openEditUserModal(\'' + xe(u.id) + '\')">Edit</button>';
+      h += '<button class="btn btn-sm" style="color:var(--danger);border-color:rgba(248,113,113,.3)" onclick="confirmDeleteUser(\'' + xe(u.id) + '\',\'' + xe(u.name||'') + '\')">Delete</button>';
       h += '</div></div>';
     });
     h += '</div>';
@@ -4243,7 +4243,7 @@ function pAccessCtrl() {
   // ── Finance Directors ─────────────────────────────────────────────────────
   h += '<div class="card section"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
   h += '<div style="font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em">&#x1F4B0; Finance Directors</div>';
-  h += '<button class="btn btn-sm" onclick="openAddUserModal('finance_dir')">+ Add</button></div>';
+  h += '<button class="btn btn-sm" onclick="openAddUserModal(\'finance_dir\')">+ Add</button></div>';
   if (!finDirs.length) {
     h += '<div style="text-align:center;padding:20px;color:var(--text-tertiary);font-size:12px">No finance directors yet — click "+ Add" to create one</div>';
   } else {
@@ -4255,8 +4255,8 @@ function pAccessCtrl() {
       h += '<div style="font-size:10px;color:var(--text-secondary);margin-top:2px">Finance Director · All branches access</div></div>';
       h += '<div style="font-family:var(--mono);font-size:11px;color:#f59e0b;background:#f59e0b12;padding:4px 10px;border-radius:6px">PIN: ' + xe(String(u.pin||'—')) + '</div>';
       h += '<div style="display:flex;gap:6px">';
-      h += '<button class="btn btn-sm" onclick="openEditUserModal('' + xe(u.id) + '')">Edit</button>';
-      h += '<button class="btn btn-sm" style="color:var(--danger);border-color:rgba(248,113,113,.3)" onclick="confirmDeleteUser('' + xe(u.id) + '','' + xe(u.name||'') + '')">Delete</button>';
+      h += '<button class="btn btn-sm" onclick="openEditUserModal(\'' + xe(u.id) + '\')">Edit</button>';
+      h += '<button class="btn btn-sm" style="color:var(--danger);border-color:rgba(248,113,113,.3)" onclick="confirmDeleteUser(\'' + xe(u.id) + '\',\'' + xe(u.name||'') + '\')">Delete</button>';
       h += '</div></div>';
     });
     h += '</div>';
