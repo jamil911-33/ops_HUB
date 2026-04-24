@@ -2376,7 +2376,9 @@ function renderLoginStep0(card) {
     { id:'brand_dir',   label:'Brand Director',   sub:'Enter PIN → auto-login',        icon:'🎯', color:'#a78bfa' },
     { id:'regional',    label:'Area Manager',     sub:'Enter PIN → auto-login',        icon:'🗺️', color:'#60a5fa' },
     { id:'branch_mgr',  label:'Branch Manager',   sub:'Select branch + enter PIN',     icon:'🏪', color:'#34d399' },
-    { id:'staff',       label:'Staff',            sub:'Check-in & checklists only',    icon:'👤', color:'#94a3b8' }
+    { id:'hr_manager',  label:'HR Manager',        sub:'Enter PIN → auto-login',        icon:'🧑‍💼', color:'#94a3b8' },
+    { id:'finance_dir', label:'Finance Director',  sub:'Enter PIN → auto-login',        icon:'💰', color:'#f59e0b' },
+    { id:'staff',       label:'Staff',            sub:'Check-in & checklists only',    icon:'👤', color:'#64748b' }
   ];
   card.innerHTML =
     '<div class="login-step-title">Select Your Role</div>' +
@@ -2511,6 +2513,8 @@ function renderLoginPIN(card) {
     brand_dir:   { icon:'🎯', title:'Brand Director', hint:'Enter your personal Director PIN (set by Admin/CEO)', color:'var(--brand-dir)' },
     regional:    { icon:'🗺️', title:'Area Manager',   hint:'Enter your personal Area Manager PIN (set by Director)', color:'var(--regional)' },
     branch_mgr:  { icon:'🏪', title:branch ? xe(branch.name||'Branch') : 'Branch Manager', hint:'Enter branch PIN', color:'var(--branch-mgr)' },
+    hr_manager:  { icon:'🧑‍💼', title:'HR Manager',       hint:'Enter your personal HR PIN (set by Admin)', color:'#94a3b8' },
+    finance_dir: { icon:'💰', title:'Finance Director', hint:'Enter your personal Finance PIN (set by Admin)', color:'#f59e0b' },
     staff:       { icon:'👤', title:'Staff',        hint:'No PIN required — tap Login', color:'var(--staff)' }
   };
   var rh = roleHints[role] || roleHints.branch_mgr;
@@ -2608,7 +2612,7 @@ function verifyPIN() {
 
   // ── Brand Director / Area Manager: PIN from admin/users ──────────────────
   // admin/users/{id} = {id, name, role, pin, branchIds:[...], ...}
-  } else if (role === 'brand_dir' || role === 'regional') {
+  } else if (role === 'brand_dir' || role === 'regional' || role === 'hr_manager' || role === 'finance_dir') {
     // Search admin/users for a user with matching role + PIN
     var matchedUser = null;
     Object.values(NX_USERS).forEach(function(u) {
@@ -2621,15 +2625,13 @@ function verifyPIN() {
       valid = true;
       loginState.userId     = matchedUser.id;
       loginState.userName   = matchedUser.name || '';
-      loginState.branchIds  = matchedUser.branchIds || [];
+      loginState.branchIds  = matchedUser.branchIds || Object.keys(NX_BRANCHES);
       loginState.brandName  = matchedUser.brandName  || '';
       loginState.regionName = matchedUser.regionName || '';
-      // For single-branch compatibility, set branchId to first branch
       if (loginState.branchIds.length === 1) {
         loginState.branchId = loginState.branchIds[0];
       }
     } else if (!Object.keys(NX_USERS).length) {
-      // NX_USERS not loaded yet — show retry message
       var errEl2 = document.getElementById('pin-error');
       if (errEl2) errEl2.textContent = 'User data loading… please wait and try again.';
       loginState.pin = ''; updatePinDots(); return;
@@ -2657,6 +2659,12 @@ function verifyPIN() {
     var firstBranch = NX_BRANCHES[sess.branchId] || {};
     sess.branchName = firstBranch.name || '';
     sess.entityName = loginState.userName || (role === 'brand_dir' ? 'Brand Director' : 'Area Manager');
+
+  } else if (role === 'hr_manager' || role === 'finance_dir') {
+    sess.userId     = loginState.userId   || '';
+    sess.userName   = loginState.userName || (role === 'hr_manager' ? 'HR Manager' : 'Finance Director');
+    sess.entityName = sess.userName;
+    sess.branchIds  = loginState.branchIds || Object.keys(NX_BRANCHES);
 
   } else if (role === 'branch_mgr' || role === 'staff') {
     var branchId4 = loginState.branchId;
@@ -2693,7 +2701,8 @@ function launchApp() {
   var role = NX.session.role;
   var defaultPages = {
     'super_admin':'exec-dash','ceo':'exec-dash','brand_dir':'brand-dash',
-    'regional':'region-dash','branch_mgr':'branch-dash','staff':'branch-dash'
+    'regional':'region-dash','branch_mgr':'branch-dash','staff':'branch-dash',
+    'hr_manager':'headcount','finance_dir':'food-cost'
   };
   navTo(defaultPages[role] || 'exec-dash');
   NX.lastSync = Date.now();
