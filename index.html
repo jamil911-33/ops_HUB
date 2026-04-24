@@ -8478,20 +8478,36 @@ window.onload = function() {
   // Init Firebase — bundled inline so always sync
   tryInitFB();
 
-  // Load branches + users, then render login (so branch list is ready)
-  if (db) {
-    loadBranchRegistry(function() {
-      loadUserRegistry();
-    });
+  // ── Critical: load branches + users FIRST, then restore session or render login ──
+  // This prevents the race condition where PIN check runs before NX_USERS is populated.
+  function _startApp() {
+    var sess = loadSession();
+    if (sess) {
+      NX.session = sess;
+      launchApp();
+    } else {
+      requestAnimationFrame(function() {
+        try {
+          renderLogin(0);
+        } catch(err) {
+          console.error('renderLogin failed:', err);
+          var c = document.getElementById('login-card');
+          if (c) c.innerHTML = '<div style="color:#f87171;padding:20px;font-size:13px;text-align:center">Login render error: '+ (err.message||err) +'<br><button onclick="location.reload()" style="margin-top:14px;padding:8px 18px;background:#f0a500;border:none;color:#000;border-radius:7px;font-weight:700;cursor:pointer">Reload</button></div>';
+        }
+      });
+    }
   }
 
-  // Check session
-  var sess = loadSession();
-  if (sess) {
-    NX.session = sess;
-    launchApp();
+  if (db) {
+    loadBranchRegistry(function() {
+      loadUserRegistry(function() {
+        // Both registries loaded — now safe to check session or render login
+        _startApp();
+      });
+    });
   } else {
-    requestAnimationFrame(function() { try { renderLogin(0); } catch(err) { console.error("renderLogin failed:", err); var c = document.getElementById("login-card"); if (c) c.innerHTML = '<div style="color:#f87171;padding:20px;font-size:13px;text-align:center">Login render error: '+ (err.message||err) +'<br><button onclick="location.reload()" style="margin-top:14px;padding:8px 18px;background:#f0a500;border:none;color:#000;border-radius:7px;font-weight:700;cursor:pointer">Reload</button></div>'; } });
+    // No Firebase — render login immediately
+    _startApp();
   }
 };
 
