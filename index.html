@@ -2794,8 +2794,12 @@ function launchApp() {
   // Nav to default page
   var role = NX.session && NX.session.role;
   if (!role) {
-    // No valid session — return to login
-    showLogin();
+    // No valid session — return to login screen
+    var _appEl = document.getElementById('app');
+    var _loginEl = document.getElementById('login-screen');
+    if (_appEl) { _appEl.classList.remove('visible'); _appEl.style.display = 'none'; }
+    if (_loginEl) { _loginEl.style.display = ''; }
+    renderLogin(0);
     return;
   }
   var defaultPages = {
@@ -8494,17 +8498,25 @@ window.onload = function() {
 // Override launchApp to also init extra features
 var _origLaunchApp = launchApp;
 launchApp = function() {
+  // Clear HRF data cache on every login so fresh Firebase data is fetched
+  if (typeof HRF !== 'undefined') {
+    HRF.staff = {}; HRF.att = {}; HRF.leaves = {}; HRF.sch = {};
+    HRF.health = {}; HRF.pc = {}; HRF.sales = {}; HRF.invoices = {}; HRF.waste = {};
+  }
   _origLaunchApp();
-  // Branch registry is already loading (started at window.onload)
-  // But re-trigger to ensure it's running and set a callback to re-render
+  var role = NX.session && NX.session.role;
+  // For HR/Finance roles, the HRF page functions load their own data via Firebase.
+  // Just ensure branches registry is loaded, then re-render the current page.
   loadBranchRegistry(function() {
-    loadAllBranchesSales(function() {
-      refreshDemoMetrics();
-      // Re-render current page with fresh data
-      if (NX.page) {
-        renderPage(NX.page);
-      }
-    });
+    if (role === 'hr_manager' || role === 'finance_dir') {
+      // HRF pages self-load from Firebase — just re-render to trigger fresh load
+      if (NX.page) { setTimeout(function(){ renderPage(NX.page); }, 100); }
+    } else {
+      loadAllBranchesSales(function() {
+        refreshDemoMetrics();
+        if (NX.page) { renderPage(NX.page); }
+      });
+    }
   });
   setTimeout(function() {
     initGlobalSearch();
@@ -8655,7 +8667,7 @@ function pHrfHrDash() {
       var res=st.filter(function(m){return m.status==='Resigned';}).length;
       rows+='<tr style="cursor:pointer" onclick="NX._hrfBranch=\''+hxe(b.id)+'\';navTo(\'hrf-employees\')">'+
         '<td><strong>'+(b.icon||'\u{1F37D}\uFE0F')+' '+hxe(b.name)+'</strong></td>'+
-        '<td style="font-size:11px;color:var(--text-secondary)">'+hxe(b.brand||'&mdash;')+'</td>'+
+        '<td style="font-size:11px;color:var(--text-secondary)">'+hxe(b.brand||'—')+'</td>'+
         '<td style="text-align:center;font-family:var(--mono);color:var(--hr-color);font-weight:700">'+st.length+'</td>'+
         '<td style="text-align:center;font-family:var(--mono);color:#34d399">'+act+'</td>'+
         '<td style="text-align:center;font-family:var(--mono);color:#ffd166">'+lv+'</td>'+
@@ -8743,7 +8755,7 @@ function pHrfFinDash() {
         '<td style="font-family:var(--mono);color:var(--fin-color)">'+hfsar(rev)+'</td>'+
         '<td style="width:160px"><div style="height:6px;background:var(--surface-3);border-radius:3px"><div style="height:100%;width:'+pct+'%;background:var(--fin-color);border-radius:3px"></div></div></td></tr>';
     });
-    h+='<div class="hrf-section"><div style="font-size:14px;font-weight:700;margin-bottom:14px">Revenue by Branch &mdash; '+curMonth+'</div>';
+    h+='<div class="hrf-section"><div style="font-size:14px;font-weight:700;margin-bottom:14px">Revenue by Branch — '+curMonth+'</div>';
     h+=hrfTable(['Branch','MTD Revenue','Relative'],rows2)+'</div>';
     h+='<div class="hrf-grid-2">'+
       '<div class="hrf-chart-card"><div style="font-size:14px;font-weight:700;margin-bottom:16px">Revenue vs Costs (6 Months)</div><div style="height:240px"><canvas id="hrf-chart-rev-cost"></canvas></div></div>'+
@@ -8755,9 +8767,9 @@ function pHrfFinDash() {
       var invRows='';
       overdue.forEach(function(inv){
         var sc=inv.status==='Overdue'?'#f87171':'#ffd166';
-        invRows+='<tr><td>'+hxe(inv.supplier||inv.vendor||'&mdash;')+'</td><td>'+hxe(inv._branchName)+'</td>'+
+        invRows+='<tr><td>'+hxe(inv.supplier||inv.vendor||'—')+'</td><td>'+hxe(inv._branchName)+'</td>'+
           '<td style="font-family:var(--mono)">'+hfsar(inv.amount||inv.total||0)+'</td>'+
-          '<td>'+hxe(inv.date||'&mdash;')+'</td><td>'+hrfBadge(inv.status,sc)+'</td></tr>';
+          '<td>'+hxe(inv.date||'—')+'</td><td>'+hrfBadge(inv.status,sc)+'</td></tr>';
       });
       h+='<div class="hrf-section"><div style="font-size:14px;font-weight:700;margin-bottom:14px">&#x26A0;&#xFE0F; Pending/Overdue Invoices</div>';
       h+=hrfTable(['Supplier','Branch','Amount','Date','Status'],invRows)+'</div>';
@@ -8809,12 +8821,12 @@ function pHrfEmployees(){
       var stCol=(m.status||'Active')==='Active'?'#34d399':m.status==='On Leave'?'#ffd166':'#f87171';
       rows+='<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="hrf-emp-avatar" style="width:32px;height:32px;font-size:11px">'+hini(m.name)+'</div>'+
         '<div><div style="font-weight:600;color:var(--text-primary)">'+hxe(m.name)+'</div>'+
-        '<div style="font-size:11px;color:var(--text-tertiary)">'+hxe(m.sap||m.id||'&mdash;')+'</div></div></div></td>'+
-        '<td>'+hxe(m.dept||'&mdash;')+'</td><td>'+hxe(m.role||'&mdash;')+'</td>'+
+        '<div style="font-size:11px;color:var(--text-tertiary)">'+hxe(m.sap||m.id||'—')+'</div></div></div></td>'+
+        '<td>'+hxe(m.dept||'—')+'</td><td>'+hxe(m.role||'—')+'</td>'+
         '<td><strong>'+hxe(m._branchName)+'</strong></td>'+
         '<td>'+hrfBadge(m.status||'Active',stCol)+'</td>'+
-        '<td>'+hxe(m.phone||'&mdash;')+'</td>'+
-        '<td>'+hxe(m.nationality||'&mdash;')+'</td></tr>';
+        '<td>'+hxe(m.phone||'—')+'</td>'+
+        '<td>'+hxe(m.nationality||'—')+'</td></tr>';
     });
     if(!filtered.length)h+='<div class="empty-state"><div class="es-icon">&#x1F465;</div><h3>No staff found</h3><p>Try adjusting filters</p></div>';
     else h+=hrfTable(['Name','Dept','Role','Branch','Status','Phone','Nationality'],rows);
@@ -8842,10 +8854,10 @@ function pHrfAttendance(){
         var st=rec.status||'absent';
         var col=SC[st]||'#94a3b8';
         if(st==='present')totP++;else if(st==='late')totL++;else if(st==='dayoff'||st==='holiday')totOff++;else totA++;
-        rows+='<tr><td><strong>'+hxe(m.name)+'</strong></td><td>'+hxe(m.dept||'&mdash;')+'</td>'+
+        rows+='<tr><td><strong>'+hxe(m.name)+'</strong></td><td>'+hxe(m.dept||'—')+'</td>'+
           '<td>'+hxe(bname)+'</td><td>'+hrfBadge(st.charAt(0).toUpperCase()+st.slice(1),col)+'</td>'+
-          '<td style="font-family:var(--mono);font-size:12px">'+hxe(rec.in||'&mdash;')+'</td>'+
-          '<td style="font-family:var(--mono);font-size:12px">'+hxe(rec.out||'&mdash;')+'</td></tr>';
+          '<td style="font-family:var(--mono);font-size:12px">'+hxe(rec.in||'—')+'</td>'+
+          '<td style="font-family:var(--mono);font-size:12px">'+hxe(rec.out||'—')+'</td></tr>';
       });
     });
     var INP='padding:7px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:var(--font);font-size:13px;outline:none';
@@ -8903,15 +8915,15 @@ function pHrfLeave(){
     filtered.sort(function(a,b){return (b.from||'').localeCompare(a.from||'');}).forEach(function(l){
       var st=l.status||'pending';
       var sc=st==='approved'?'#34d399':st==='rejected'?'#f87171':'#ffd166';
-      rows+='<tr><td><strong>'+hxe(l.empName||l.name||'&mdash;')+'</strong></td>'+
+      rows+='<tr><td><strong>'+hxe(l.empName||l.name||'—')+'</strong></td>'+
         '<td>'+hxe(l._branchName)+'</td><td>'+hxe(l.type||'Leave')+'</td>'+
-        '<td>'+hxe(l.from||'&mdash;')+'</td><td>'+hxe(l.to||'&mdash;')+'</td>'+
-        '<td style="text-align:center">'+hxe(l.days||'&mdash;')+'</td>'+
+        '<td>'+hxe(l.from||'—')+'</td><td>'+hxe(l.to||'—')+'</td>'+
+        '<td style="text-align:center">'+hxe(l.days||'—')+'</td>'+
         '<td>'+hrfBadge(st.charAt(0).toUpperCase()+st.slice(1),sc)+'</td>'+
         '<td>'+(st==='pending'?
           '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:#34d399;margin-right:4px" onclick="hrfApproveLeave(\''+hxe(l._branchId)+'\',\''+hxe(l._key||l.id||'')+'\')">&#x2713;</button>'+
           '<button class="btn btn-sm" style="background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.25);color:#f87171" onclick="hrfRejectLeave(\''+hxe(l._branchId)+'\',\''+hxe(l._key||l.id||'')+'\')">&#x2715;</button>'
-          :'&mdash;')+'</td></tr>';
+          :'—')+'</td></tr>';
     });
     if(!rows)h+='<div class="empty-state"><div class="es-icon">&#x1F3D6;&#xFE0F;</div><h3>No leave requests</h3></div>';
     else h+=hrfTable(['Name','Branch','Type','From','To','Days','Status','Actions'],rows);
@@ -8956,7 +8968,7 @@ function pHrfSchedule(){
     staff.forEach(function(m){
       var ms=weekSch[String(m.id)]||{};
       h+='<tr><td style="padding:8px 12px;border-bottom:1px solid var(--border)"><strong style="color:var(--text-primary)">'+hxe(m.name)+'</strong><div style="font-size:10px;color:var(--text-tertiary)">'+hxe(m.dept||'')+'</div></td>';
-      DAYS.forEach(function(d){var v=ms[d]||'&mdash;';var col=v&&v!=='&mdash;'?'var(--fin-color)':'var(--text-tertiary)';
+      DAYS.forEach(function(d){var v=ms[d]||'—';var col=v&&v!=='—'?'var(--fin-color)':'var(--text-tertiary)';
         h+='<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;color:'+col+'">'+hxe(v)+'</td>';});
       h+='</tr>';
     });
@@ -8994,14 +9006,14 @@ function pHrfHealth(){
     var rows='';
     all.forEach(function(card){
       var exp=card.expiry||card.expiryDate||card.exp||'';
-      var badge='&mdash;';
+      var badge='—';
       if(exp){var ms=new Date(exp+'T00:00:00').getTime();var days=Math.ceil((ms-Date.now())/86400000);
         var col=days<0?'#f87171':days<=30?'#f59e0b':days<=60?'#ffd166':'#34d399';
         badge=hrfBadge(days<0?'Expired':days+'d left',col);}
-      rows+='<tr><td><strong>'+hxe(card.name||card.empName||'&mdash;')+'</strong></td>'+
-        '<td>'+hxe(card._branchName)+'</td><td>'+hxe(card.dept||'&mdash;')+'</td>'+
-        '<td style="font-family:var(--mono)">'+hxe(card.cardNo||card.id||'&mdash;')+'</td>'+
-        '<td>'+hxe(exp||'&mdash;')+'</td><td>'+badge+'</td></tr>';
+      rows+='<tr><td><strong>'+hxe(card.name||card.empName||'—')+'</strong></td>'+
+        '<td>'+hxe(card._branchName)+'</td><td>'+hxe(card.dept||'—')+'</td>'+
+        '<td style="font-family:var(--mono)">'+hxe(card.cardNo||card.id||'—')+'</td>'+
+        '<td>'+hxe(exp||'—')+'</td><td>'+badge+'</td></tr>';
     });
     if(!rows)h+='<div class="empty-state"><div class="es-icon">&#x1F4B3;</div><h3>No health cards</h3></div>';
     else h+=hrfTable(['Name','Branch','Dept','Card No.','Expiry','Status'],rows);
@@ -9059,8 +9071,8 @@ function pHrfPayroll(){
     allStaff.filter(function(m){return parseFloat(m.salary||m.basicSalary||0)>0;})
       .sort(function(a,b){return parseFloat(b.salary||0)-parseFloat(a.salary||0);}).slice(0,30)
       .forEach(function(m){
-        rows+='<tr><td><strong>'+hxe(m.name)+'</strong></td><td>'+hxe(m.dept||'&mdash;')+'</td>'+
-          '<td>'+hxe(m.role||'&mdash;')+'</td><td>'+hxe(m._branchName)+'</td>'+
+        rows+='<tr><td><strong>'+hxe(m.name)+'</strong></td><td>'+hxe(m.dept||'—')+'</td>'+
+          '<td>'+hxe(m.role||'—')+'</td><td>'+hxe(m._branchName)+'</td>'+
           '<td style="font-family:var(--mono);color:var(--payroll-color)">'+hfsar(m.salary||m.basicSalary||0)+'</td></tr>';
       });
     h+='<div class="hrf-section" style="margin-top:20px"><div style="font-size:13px;font-weight:700;margin-bottom:12px">Staff Salaries</div>';
@@ -9098,10 +9110,10 @@ function pHrfPettyCash(){
     filtered.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).slice(0,60).forEach(function(p){
       var st=p.status||(p.approved?'approved':'pending');
       var sc=st==='approved'?'#34d399':st==='rejected'?'#f87171':'#ffd166';
-      rows+='<tr><td>'+hxe(p.date||'&mdash;')+'</td><td>'+hxe(p._branchName)+'</td>'+
-        '<td>'+hxe(p.category||p.cat||'&mdash;')+'</td><td>'+hxe(p.description||p.desc||p.note||'&mdash;')+'</td>'+
+      rows+='<tr><td>'+hxe(p.date||'—')+'</td><td>'+hxe(p._branchName)+'</td>'+
+        '<td>'+hxe(p.category||p.cat||'—')+'</td><td>'+hxe(p.description||p.desc||p.note||'—')+'</td>'+
         '<td style="font-family:var(--mono);color:var(--fin-color)">'+hfsar(p.amount||0)+'</td>'+
-        '<td>'+hxe(p.requestedBy||p.by||'&mdash;')+'</td><td>'+hrfBadge(st.charAt(0).toUpperCase()+st.slice(1),sc)+'</td></tr>';
+        '<td>'+hxe(p.requestedBy||p.by||'—')+'</td><td>'+hrfBadge(st.charAt(0).toUpperCase()+st.slice(1),sc)+'</td></tr>';
     });
     if(!rows)h+='<div class="empty-state"><div class="es-icon">&#x1F9FE;</div><h3>No petty cash entries</h3></div>';
     else h+=hrfTable(['Date','Branch','Category','Description','Amount','By','Status'],rows);
@@ -9139,7 +9151,7 @@ function pHrfRevenue(){
     for(var mo=0;mo<=d.getMonth();mo++){
       rows+='<tr><td><strong>'+HRF_MONTHS[mo]+' '+curYear+'</strong></td>'+
         '<td style="font-family:var(--mono);color:var(--fin-color)">'+hfsar(monthlyTotals[mo])+'</td>'+
-        '<td style="font-family:var(--mono);color:var(--text-secondary)">'+(ytd?(monthlyTotals[mo]/ytd*100).toFixed(1)+'%':'&mdash;')+'</td></tr>';
+        '<td style="font-family:var(--mono);color:var(--text-secondary)">'+(ytd?(monthlyTotals[mo]/ytd*100).toFixed(1)+'%':'—')+'</td></tr>';
     }
     h+='<div class="hrf-section" style="margin-top:20px"><div style="font-size:13px;font-weight:700;margin-bottom:12px">Monthly Breakdown</div>';
     h+=hrfTable(['Month','Revenue','% of YTD'],rows)+'</div>';
@@ -9182,7 +9194,7 @@ function pHrfPnL(){
         '<td style="font-family:var(--mono);color:var(--fin-color)">'+hfsar(rev)+'</td>'+
         '<td style="font-family:var(--mono);color:var(--danger)">'+hfsar(costs)+'</td>'+
         '<td style="font-family:var(--mono);color:'+nc+';font-weight:700">'+hfsar(net)+'</td>'+
-        '<td style="font-family:var(--mono);color:var(--text-secondary)">'+(rev?(net/rev*100).toFixed(1)+'%':'&mdash;')+'</td></tr>';
+        '<td style="font-family:var(--mono);color:var(--text-secondary)">'+(rev?(net/rev*100).toFixed(1)+'%':'—')+'</td></tr>';
     }
     h+='<div class="hrf-section" style="margin-top:20px"><div style="font-size:13px;font-weight:700;margin-bottom:12px">Monthly P&amp;L</div>';
     h+=hrfTable(['Month','Revenue','Costs','Net','Margin'],rows)+'</div>';
@@ -9260,11 +9272,11 @@ function pHrfExpenses(){
       '<select style="'+INP+'" onchange="NX._hrfExpBranch=this.value;navTo(\'hrf-expenses\')">'+brOpts+'</select>');
     var rows='';
     filtered.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).slice(0,60).forEach(function(w){
-      rows+='<tr><td>'+hxe(w.date||'&mdash;')+'</td><td>'+hxe(w._branchName)+'</td>'+
-        '<td>'+hxe(w.item||w.name||'&mdash;')+'</td><td>'+hxe(w.qty||'&mdash;')+' '+hxe(w.unit||'')+'</td>'+
-        '<td>'+hxe(w.reason||w.category||'&mdash;')+'</td>'+
+      rows+='<tr><td>'+hxe(w.date||'—')+'</td><td>'+hxe(w._branchName)+'</td>'+
+        '<td>'+hxe(w.item||w.name||'—')+'</td><td>'+hxe(w.qty||'—')+' '+hxe(w.unit||'')+'</td>'+
+        '<td>'+hxe(w.reason||w.category||'—')+'</td>'+
         '<td style="font-family:var(--mono);color:var(--danger)">'+hfsar(w.value||w.cost||w.amount||0)+'</td>'+
-        '<td>'+hxe(w.by||w.reportedBy||'&mdash;')+'</td></tr>';
+        '<td>'+hxe(w.by||w.reportedBy||'—')+'</td></tr>';
     });
     if(!rows)h+='<div class="empty-state"><div class="es-icon">&#x1F5D1;&#xFE0F;</div><h3>No expense records</h3></div>';
     else h+=hrfTable(['Date','Branch','Item','Qty','Reason','Value','By'],rows);
@@ -9301,10 +9313,10 @@ function pHrfInvoices(){
     var rows='';
     filtered.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).slice(0,50).forEach(function(inv){
       var st=inv.status||'Pending';var col=SC[st]||'#94a3b8';
-      rows+='<tr><td><strong>'+hxe(inv.supplier||inv.vendor||'&mdash;')+'</strong></td><td>'+hxe(inv._branchName)+'</td>'+
-        '<td>'+hxe(inv.category||inv.cat||'&mdash;')+'</td><td>'+hxe(inv.date||'&mdash;')+'</td>'+
+      rows+='<tr><td><strong>'+hxe(inv.supplier||inv.vendor||'—')+'</strong></td><td>'+hxe(inv._branchName)+'</td>'+
+        '<td>'+hxe(inv.category||inv.cat||'—')+'</td><td>'+hxe(inv.date||'—')+'</td>'+
         '<td style="font-family:var(--mono);color:var(--fin-color)">'+hfsar(inv.amount||inv.total||0)+'</td>'+
-        '<td>'+hrfBadge(st,col)+'</td><td>'+hxe(inv.ref||inv.poNo||'&mdash;')+'</td></tr>';
+        '<td>'+hrfBadge(st,col)+'</td><td>'+hxe(inv.ref||inv.poNo||'—')+'</td></tr>';
     });
     if(!rows)h+='<div class="empty-state"><div class="es-icon">&#x1F4CB;</div><h3>No invoices found</h3></div>';
     else h+=hrfTable(['Supplier','Branch','Category','Date','Amount','Status','Ref'],rows);
@@ -9345,7 +9357,7 @@ function pHrfDsr(){
       '<td style="font-family:var(--mono);color:var(--fin-color)">'+hfsar(totTotal)+'</td>'+
       '<td style="font-family:var(--mono)">'+hfsar(totCash)+'</td>'+
       '<td style="font-family:var(--mono)">'+hfsar(totCard)+'</td>'+
-      '<td style="font-family:var(--mono)">'+hfsar(totDel)+'</td><td>&mdash;</td></tr>';
+      '<td style="font-family:var(--mono)">'+hfsar(totDel)+'</td><td>—</td></tr>';
     var INP='padding:7px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:var(--font);font-size:13px;outline:none';
     var h=hrfHeader('DSR Summary','Daily Sales Report \u00b7 '+viewDate,
       '<input type="date" value="'+hxe(viewDate)+'" style="'+INP+'" onchange="NX._hrfDsrDate=this.value;navTo(\'hrf-dsr\')">');
@@ -9385,7 +9397,7 @@ function pHrfApprovals(){
       pendLeaves.forEach(function(lv){
         h+='<div class="hrf-approval-card">'+
           '<div style="width:40px;height:40px;border-radius:10px;background:rgba(96,165,250,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">&#x1F3D6;&#xFE0F;</div>'+
-          '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text-primary)">'+hxe(lv.empName||lv.name||'&mdash;')+'</div>'+
+          '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text-primary)">'+hxe(lv.empName||lv.name||'—')+'</div>'+
           '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">'+hxe(lv._branchName)+' \u00b7 '+hxe(lv.type||'Leave')+' \u00b7 '+hxe(lv.from||'')+' &rarr; '+hxe(lv.to||'')+'</div>'+
           '<div style="display:flex;gap:6px">'+
           '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:#34d399" onclick="hrfApproveLeave(\''+hxe(lv._branchId)+'\',\''+hxe(lv._key||lv.id||'')+'\')">&#x2713; Approve</button>'+
@@ -9452,7 +9464,7 @@ function pHrfHrReport(){
     Object.keys(deptCounts).sort().forEach(function(dept){
       deptRows+='<tr><td><strong>'+hxe(dept)+'</strong></td>'+
         '<td style="font-family:var(--mono);color:var(--hr-color)">'+deptCounts[dept]+'</td>'+
-        '<td style="font-family:var(--mono);color:var(--text-secondary)">'+(allStaff.length?(deptCounts[dept]/allStaff.length*100).toFixed(1)+'%':'&mdash;')+'</td></tr>';
+        '<td style="font-family:var(--mono);color:var(--text-secondary)">'+(allStaff.length?(deptCounts[dept]/allStaff.length*100).toFixed(1)+'%':'—')+'</td></tr>';
     });
     h+='<div class="hrf-section"><div style="font-size:14px;font-weight:700;margin-bottom:14px">By Department</div>';
     h+=hrfTable(['Department','Count','% of Total'],deptRows)+'</div>';
@@ -9460,7 +9472,7 @@ function pHrfHrReport(){
     Object.keys(natCounts).sort(function(a,b){return natCounts[b]-natCounts[a];}).forEach(function(nat){
       natRows+='<tr><td>'+hxe(nat)+'</td>'+
         '<td style="font-family:var(--mono)">'+natCounts[nat]+'</td>'+
-        '<td style="font-family:var(--mono);color:var(--text-secondary)">'+(allStaff.length?(natCounts[nat]/allStaff.length*100).toFixed(1)+'%':'&mdash;')+'</td></tr>';
+        '<td style="font-family:var(--mono);color:var(--text-secondary)">'+(allStaff.length?(natCounts[nat]/allStaff.length*100).toFixed(1)+'%':'—')+'</td></tr>';
     });
     h+='<div class="hrf-section"><div style="font-size:14px;font-weight:700;margin-bottom:14px">Nationality Breakdown</div>';
     h+=hrfTable(['Nationality','Count','%'],natRows)+'</div>';
@@ -9544,7 +9556,7 @@ function pHrfApprovals(){
       pendLeaves.forEach(function(lv){
         h+='<div class="hrf-approval-card">'+
           '<div style="width:40px;height:40px;border-radius:10px;background:rgba(96,165,250,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">&#x1F3D6;&#xFE0F;</div>'+
-          '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text-primary)">'+hxe(lv.empName||lv.name||'&mdash;')+'</div>'+
+          '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text-primary)">'+hxe(lv.empName||lv.name||'—')+'</div>'+
           '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">'+hxe(lv._branchName)+' \u00b7 '+hxe(lv.type||'Leave')+' \u00b7 '+hxe(lv.from||'')+' &rarr; '+hxe(lv.to||'')+'</div>'+
           '<div style="display:flex;gap:6px">'+
           '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:#34d399" onclick="hrfApproveLeave(\''+hxe(lv._branchId)+'\',\''+hxe(lv._key||lv.id||'')+'\')">&#x2713; Approve</button>'+
@@ -9606,11 +9618,11 @@ function pHrfHrReport(){
     h+=hrfKpi('&#x23F3;','Leaves Pending',pending.length,'Awaiting','var(--warning)');
     h+='</div>';
     var dRows='';
-    Object.keys(deptCounts).sort().forEach(function(dept){dRows+='<tr><td><strong>'+hxe(dept)+'</strong></td><td style="font-family:var(--mono);color:var(--hr-color)">'+deptCounts[dept]+'</td><td style="font-family:var(--mono);color:var(--text-secondary)">'+(allStaff.length?(deptCounts[dept]/allStaff.length*100).toFixed(1)+'%':'&mdash;')+'</td></tr>';});
+    Object.keys(deptCounts).sort().forEach(function(dept){dRows+='<tr><td><strong>'+hxe(dept)+'</strong></td><td style="font-family:var(--mono);color:var(--hr-color)">'+deptCounts[dept]+'</td><td style="font-family:var(--mono);color:var(--text-secondary)">'+(allStaff.length?(deptCounts[dept]/allStaff.length*100).toFixed(1)+'%':'—')+'</td></tr>';});
     h+='<div class="hrf-section"><div style="font-size:14px;font-weight:700;margin-bottom:14px">By Department</div>';
     h+=hrfTable(['Department','Count','%'],dRows)+'</div>';
     var nRows='';
-    Object.keys(natCounts).sort(function(a,b){return natCounts[b]-natCounts[a];}).forEach(function(nat){nRows+='<tr><td>'+hxe(nat)+'</td><td style="font-family:var(--mono)">'+natCounts[nat]+'</td><td style="font-family:var(--mono);color:var(--text-secondary)">'+(allStaff.length?(natCounts[nat]/allStaff.length*100).toFixed(1)+'%':'&mdash;')+'</td></tr>';});
+    Object.keys(natCounts).sort(function(a,b){return natCounts[b]-natCounts[a];}).forEach(function(nat){nRows+='<tr><td>'+hxe(nat)+'</td><td style="font-family:var(--mono)">'+natCounts[nat]+'</td><td style="font-family:var(--mono);color:var(--text-secondary)">'+(allStaff.length?(natCounts[nat]/allStaff.length*100).toFixed(1)+'%':'—')+'</td></tr>';});
     h+='<div class="hrf-section"><div style="font-size:14px;font-weight:700;margin-bottom:14px">By Nationality</div>';
     h+=hrfTable(['Nationality','Count','%'],nRows)+'</div>';
     return h;
