@@ -4131,23 +4131,28 @@ function deleteBranch(branchId) {
 
 function pAccessCtrl() {
   var branches = Object.values(NX_BRANCHES);
-  var users    = Object.values(NX_USERS);
+  var branches  = Object.values(NX_BRANCHES);
+  var users     = Object.values(NX_USERS);
   var directors = users.filter(function(u){ return u.role === 'brand_dir'; });
   var areaMgrs  = users.filter(function(u){ return u.role === 'regional'; });
+  var hrMgrs    = users.filter(function(u){ return u.role === 'hr_manager'; });
+  var finDirs   = users.filter(function(u){ return u.role === 'finance_dir'; });
 
   var h = '<div class="page-header"><h1>Access Control</h1>';
-  h += '<p>Manage Directors, Area Managers and Branch Managers · ' + branches.length + ' branch(es) registered</p></div>';
+  h += '<p>Manage all system users and branch access · ' + branches.length + ' branch(es) registered</p></div>';
 
   h += '<div class="header-actions"><div></div>';
-  h += '<button class="btn" style="margin-right:8px" onclick="openAddUserModal(\'brand_dir\')">+ Add Director</button>';
-  h += '<button class="btn" style="margin-right:8px" onclick="openAddUserModal(\'regional\')">+ Add Area Manager</button>';
-  h += '<button class="btn btn-primary" onclick="openAddBranchModal()">+ Add Branch</button>';
+  h += '<button class="btn" style="margin-right:6px" onclick="openAddUserModal(\'brand_dir\')">+ Director</button>';
+  h += '<button class="btn" style="margin-right:6px" onclick="openAddUserModal(\'regional\')">+ Area Mgr</button>';
+  h += '<button class="btn" style="margin-right:6px" onclick="openAddUserModal(\'hr_manager\')">+ HR</button>';
+  h += '<button class="btn" style="margin-right:6px" onclick="openAddUserModal(\'finance_dir\')">+ Finance</button>';
+  h += '<button class="btn btn-primary" onclick="openAddBranchModal()">+ Branch</button>';
   h += '</div>';
 
   // ── System PINs ──────────────────────────────────────────────────────────
   h += '<div class="card section"><div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">System Access</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">';
-  [['🔑','Super Admin','0000','var(--super-admin)'],['👑','CEO','1111','var(--ceo)']].forEach(function(r){
+  [['🔑','Super Admin', ACCESS.superAdmin.pin, 'var(--super-admin)'],['👑','CEO', ACCESS.ceo.pin, 'var(--ceo)']].forEach(function(r){
     h += '<div style="background:var(--surface-3);border-radius:10px;padding:12px;border-left:3px solid '+r[3]+'">';
     h += '<div style="font-size:10px;color:'+r[3]+';font-weight:700;margin-bottom:4px">'+r[0]+' '+r[1]+'</div>';
     h += '<div style="font-family:var(--mono);font-size:20px;letter-spacing:4px;font-weight:600">'+r[2]+'</div></div>';
@@ -4206,6 +4211,52 @@ function pAccessCtrl() {
       h += '<div style="display:flex;gap:6px">';
       h += '<button class="btn btn-sm" onclick="openEditUserModal(\'' + xe(u.id) + '\')">Edit</button>';
       h += '<button class="btn btn-sm" style="color:var(--danger);border-color:rgba(248,113,113,.3)" onclick="confirmDeleteUser(\'' + xe(u.id) + '\',\'' + xe(u.name||'') + '\')">Delete</button>';
+      h += '</div></div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+
+  // ── HR Managers ───────────────────────────────────────────────────────────
+  h += '<div class="card section"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h += '<div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em">&#x1F9D1;&#x200D;&#x1F4BC; HR Managers</div>';
+  h += '<button class="btn btn-sm" onclick="openAddUserModal('hr_manager')">+ Add</button></div>';
+  if (!hrMgrs.length) {
+    h += '<div style="text-align:center;padding:20px;color:var(--text-tertiary);font-size:12px">No HR managers yet — click "+ Add" to create one</div>';
+  } else {
+    h += '<div style="display:flex;flex-direction:column;gap:8px">';
+    hrMgrs.forEach(function(u) {
+      h += '<div style="background:var(--surface-3);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
+      h += '<div style="width:36px;height:36px;border-radius:9px;background:#94a3b818;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">&#x1F9D1;&#x200D;&#x1F4BC;</div>';
+      h += '<div style="flex:1;min-width:120px"><div style="font-size:13px;font-weight:700;color:var(--text-primary)">' + xe(u.name||u.id) + '</div>';
+      h += '<div style="font-size:10px;color:var(--text-secondary);margin-top:2px">HR Manager · All branches access</div></div>';
+      h += '<div style="font-family:var(--mono);font-size:11px;color:#94a3b8;background:#94a3b812;padding:4px 10px;border-radius:6px">PIN: ' + xe(String(u.pin||'—')) + '</div>';
+      h += '<div style="display:flex;gap:6px">';
+      h += '<button class="btn btn-sm" onclick="openEditUserModal('' + xe(u.id) + '')">Edit</button>';
+      h += '<button class="btn btn-sm" style="color:var(--danger);border-color:rgba(248,113,113,.3)" onclick="confirmDeleteUser('' + xe(u.id) + '','' + xe(u.name||'') + '')">Delete</button>';
+      h += '</div></div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+
+  // ── Finance Directors ─────────────────────────────────────────────────────
+  h += '<div class="card section"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  h += '<div style="font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em">&#x1F4B0; Finance Directors</div>';
+  h += '<button class="btn btn-sm" onclick="openAddUserModal('finance_dir')">+ Add</button></div>';
+  if (!finDirs.length) {
+    h += '<div style="text-align:center;padding:20px;color:var(--text-tertiary);font-size:12px">No finance directors yet — click "+ Add" to create one</div>';
+  } else {
+    h += '<div style="display:flex;flex-direction:column;gap:8px">';
+    finDirs.forEach(function(u) {
+      h += '<div style="background:var(--surface-3);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
+      h += '<div style="width:36px;height:36px;border-radius:9px;background:#f59e0b18;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">&#x1F4B0;</div>';
+      h += '<div style="flex:1;min-width:120px"><div style="font-size:13px;font-weight:700;color:var(--text-primary)">' + xe(u.name||u.id) + '</div>';
+      h += '<div style="font-size:10px;color:var(--text-secondary);margin-top:2px">Finance Director · All branches access</div></div>';
+      h += '<div style="font-family:var(--mono);font-size:11px;color:#f59e0b;background:#f59e0b12;padding:4px 10px;border-radius:6px">PIN: ' + xe(String(u.pin||'—')) + '</div>';
+      h += '<div style="display:flex;gap:6px">';
+      h += '<button class="btn btn-sm" onclick="openEditUserModal('' + xe(u.id) + '')">Edit</button>';
+      h += '<button class="btn btn-sm" style="color:var(--danger);border-color:rgba(248,113,113,.3)" onclick="confirmDeleteUser('' + xe(u.id) + '','' + xe(u.name||'') + '')">Delete</button>';
       h += '</div></div>';
     });
     h += '</div>';
@@ -4364,9 +4415,16 @@ function saveManageBranch(branchId) {
 
 function openAddUserModal(presetRole) {
   var branches = Object.values(NX_BRANCHES);
-  var roleLabel = presetRole === 'brand_dir' ? 'Brand Director' : 'Area Manager';
-  var roleColor = presetRole === 'brand_dir' ? 'var(--brand-dir)' : 'var(--regional)';
-  var roleIcon  = presetRole === 'brand_dir' ? '🎯' : '🗺️';
+  var _ROLE_META = {
+    brand_dir:   { label:'Brand Director',   color:'var(--brand-dir)',  icon:'🎯' },
+    regional:    { label:'Area Manager',     color:'var(--regional)',   icon:'🗺️' },
+    hr_manager:  { label:'HR Manager',       color:'#94a3b8',           icon:'🧑‍💼' },
+    finance_dir: { label:'Finance Director', color:'#f59e0b',           icon:'💰' }
+  };
+  var _rm = _ROLE_META[presetRole] || _ROLE_META['brand_dir'];
+  var roleLabel = _rm.label;
+  var roleColor = _rm.color;
+  var roleIcon  = _rm.icon;
 
   // Build branch checkboxes
   var branchList = '';
@@ -4396,8 +4454,10 @@ function openAddUserModal(presetRole) {
     '<input class="form-input" id="nxu-pin" type="text" placeholder="e.g. 2201" maxlength="8" style="font-family:var(--mono);letter-spacing:3px;font-size:16px"></div>' +
     '<div class="form-group"><label class="form-label">Role</label>' +
     '<select class="form-input" id="nxu-role">' +
-    '<option value="brand_dir"' + (presetRole==='brand_dir'?' selected':'') + '>🎯 Brand Director</option>' +
-    '<option value="regional"' + (presetRole==='regional'?' selected':'') + '>🗺️ Area Manager</option>' +
+    '<option value="brand_dir"'   + (presetRole==='brand_dir'  ?' selected':'') + '>🎯 Brand Director</option>' +
+    '<option value="regional"'    + (presetRole==='regional'   ?' selected':'') + '>🗺️ Area Manager</option>' +
+    '<option value="hr_manager"'  + (presetRole==='hr_manager' ?' selected':'') + '>🧑‍💼 HR Manager</option>' +
+    '<option value="finance_dir"' + (presetRole==='finance_dir'?' selected':'') + '>💰 Finance Director</option>' +
     '</select></div></div>' +
 
     '<div class="form-group"><label class="form-label">Assign Branches</label>' +
