@@ -20,39 +20,33 @@
     ]
   ];
   var cdnIdx = 0;
-
   function loadPair(urls, done) {
     var app = document.createElement('script');
-    app.src = urls[0];
-    app.crossOrigin = 'anonymous';
-    app.onerror = done; // signal failure
+    app.src = urls[0]; app.crossOrigin = 'anonymous';
+    app.onerror = done;
     app.onload = function() {
       var db = document.createElement('script');
-      db.src = urls[1];
-      db.crossOrigin = 'anonymous';
+      db.src = urls[1]; db.crossOrigin = 'anonymous';
       db.onerror = done;
       db.onload = function() { done(null); };
       document.head.appendChild(db);
     };
     document.head.appendChild(app);
   }
-
   function tryNext(err) {
-    if (!err && typeof firebase !== 'undefined') return; // success
+    if (!err && typeof firebase !== 'undefined') return;
     cdnIdx++;
     if (cdnIdx >= SRCS.length) {
-      // All CDNs failed — show visible error banner
       window.addEventListener('DOMContentLoaded', function() {
         var b = document.createElement('div');
-        b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#7f1d1d;color:#fca5a5;text-align:center;padding:14px 20px;font-family:monospace;font-size:13px;font-weight:600';
-        b.textContent = 'Firebase SDK failed to load — check your internet connection or browser extensions blocking scripts, then refresh.';
+        b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#7f1d1d;color:#fca5a5;text-align:center;padding:14px;font-family:monospace;font-size:13px;font-weight:600';
+        b.textContent = 'Firebase SDK failed to load — check your internet connection or browser extensions, then refresh.';
         document.body.appendChild(b);
       });
       return;
     }
     loadPair(SRCS[cdnIdx], tryNext);
   }
-
   loadPair(SRCS[0], tryNext);
 })();
 </script>
@@ -1060,82 +1054,6 @@ body{
 .date-pill:hover{border-color:var(--border-strong);color:var(--text-primary)}
 .date-pill.active{background:var(--text-primary);color:var(--body-bg);border-color:var(--text-primary)}
 
-/* ══════════════════════════════════════
-   HR & FINANCE + CHAT + FLOW CSS
-══════════════════════════════════════ */
-/* Chat Panel */
-.chat-panel,.flow-panel{
-  position:fixed;right:0;top:0;bottom:0;
-  width:380px;
-  background:rgba(3,5,8,.97);
-  border-left:1px solid var(--border);
-  backdrop-filter:blur(40px);
-  z-index:201;
-  display:flex;flex-direction:column;
-  transform:translateX(100%);
-  transition:transform .3s cubic-bezier(.4,0,.2,1);
-  box-shadow:-20px 0 60px rgba(0,0,0,.5);
-}
-[data-theme="light"] .chat-panel,[data-theme="light"] .flow-panel{background:rgba(255,255,255,.97)}
-.chat-panel.open,.flow-panel.open{transform:translateX(0)}
-.chat-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.chat-messages{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
-.chat-msg{display:flex;gap:8px;align-items:flex-start}
-.chat-msg.mine{flex-direction:row-reverse}
-.chat-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;background:var(--surface-3)}
-.chat-bubble{max-width:260px;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.45;background:var(--surface-2);border:1px solid var(--border)}
-.chat-msg.mine .chat-bubble{background:rgba(240,165,0,.15);border-color:rgba(240,165,0,.25)}
-.chat-meta{font-size:10px;color:var(--text-tertiary);margin-top:3px}
-.chat-input-wrap{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--border);flex-shrink:0}
-.chat-input{flex:1;padding:9px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:var(--font);font-size:13px;outline:none;transition:border .2s}
-.chat-input:focus{border-color:var(--accent)}
-.chat-send{width:34px;height:34px;border-radius:8px;border:none;background:var(--accent);color:#000;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
-.chat-send:hover{opacity:.85}
-.chat-day-label{text-align:center;font-size:10px;color:var(--text-tertiary);padding:4px 10px;background:var(--surface-1);border-radius:10px;align-self:center}
-.chat-reaction{font-size:14px;cursor:pointer;margin-top:4px;display:inline-block}
-/* Flow */
-.flow-card{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all .15s}
-.flow-card:hover{border-color:var(--border-strong);background:var(--surface-3)}
-.flow-card-title{font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:4px}
-.flow-card-meta{font-size:11px;color:var(--text-secondary)}
-.flow-step-bar{display:flex;gap:4px;margin-top:10px;align-items:center}
-.flow-step-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
-.flow-step-line{flex:1;height:2px;background:var(--border)}
-.flow-step-line.done{background:var(--success)}
-/* HR badges */
-.badge-purple{background:rgba(167,139,250,.15);color:#a78bfa}
-.badge-teal{background:rgba(45,212,191,.15);color:#2dd4bf}
-.badge-gold{background:rgba(240,192,64,.15);color:#f0c040}
-/* Approval flow steps */
-.appr-track{display:flex;flex-direction:column;gap:0;position:relative;padding-left:28px}
-.appr-track::before{content:'';position:absolute;left:10px;top:16px;bottom:16px;width:2px;background:var(--border)}
-.appr-node{display:flex;gap:12px;padding-bottom:16px;position:relative}
-.appr-node:last-child{padding-bottom:0}
-.appr-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;position:absolute;left:-28px;top:2px;border:2px solid var(--border);background:var(--body-bg)}
-.appr-dot.done{background:var(--success);border-color:var(--success);color:#000}
-.appr-dot.active{background:var(--warning);border-color:var(--warning);color:#000;animation:pulse 2s infinite}
-.appr-dot.pending{background:var(--surface-3)}
-.appr-content{flex:1}
-.appr-title{font-size:12px;font-weight:700;color:var(--text-primary)}
-.appr-meta{font-size:11px;color:var(--text-tertiary);margin-top:2px}
-/* HR Table extras */
-.emp-avatar-sm{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#7c6ff0);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
-/* Finance */
-.fin-stat-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
-.fin-stat-row:last-child{border-bottom:none}
-/* Notification live dot */
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(--success);animation:pulse 2s infinite;flex-shrink:0}
-/* Page header with actions */
-.ph-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
-.ph-row h1{font-size:22px;font-weight:700;letter-spacing:-.03em}
-.ph-row p{font-size:13px;color:var(--text-secondary);margin-top:3px}
-/* Slip */
-.pay-slip{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.pay-slip-head{background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(52,211,153,.08));padding:20px 24px;border-bottom:1px solid var(--border)}
-.slip-line{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
-.slip-line:last-child{border-bottom:none}
-.slip-total-line{display:flex;justify-content:space-between;padding:12px 0;font-size:15px;font-weight:700;border-top:2px solid var(--border-strong);margin-top:4px}
-
 /* ── Login User Manager ── */
 .lum-key{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.11);color:#fff;border-radius:9px;padding:12px 0;font-size:17px;font-weight:600;cursor:pointer;transition:background .12s;width:100%}
 .lum-key:hover{background:rgba(255,255,255,.15)}
@@ -1150,13 +1068,12 @@ body{
   <div class="login-bg"></div>
   <div class="login-grid"></div>
 
-  <!-- Gear button - opens user manager -->
+  <!-- Gear button -->
   <button onclick="openLoginUserMgr()" title="Manage Users" style="position:fixed;bottom:22px;right:22px;z-index:300;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:rgba(255,255,255,.4);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);transition:all .18s" onmouseover="this.style.background='rgba(255,255,255,.15)';this.style.color='rgba(255,255,255,.9)'" onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.color='rgba(255,255,255,.4)'">&#x2699;&#xFE0F;</button>
 
   <!-- User Manager Overlay -->
   <div id="lum-overlay" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.78);backdrop-filter:blur(8px);overflow-y:auto;padding:20px 16px 40px">
     <div style="max-width:660px;margin:0 auto">
-
       <!-- PIN GATE -->
       <div id="lum-gate" style="background:rgba(8,12,26,.98);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:36px 32px;text-align:center;max-width:320px;margin:56px auto 0">
         <div style="font-size:34px;margin-bottom:10px">&#x1F511;</div>
@@ -1170,23 +1087,14 @@ body{
         </div>
         <div id="lum-gate-err" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:10px"></div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:220px;margin:0 auto 18px">
-          <button class="lum-key" onclick="lumKey(1)">1</button>
-          <button class="lum-key" onclick="lumKey(2)">2</button>
-          <button class="lum-key" onclick="lumKey(3)">3</button>
-          <button class="lum-key" onclick="lumKey(4)">4</button>
-          <button class="lum-key" onclick="lumKey(5)">5</button>
-          <button class="lum-key" onclick="lumKey(6)">6</button>
-          <button class="lum-key" onclick="lumKey(7)">7</button>
-          <button class="lum-key" onclick="lumKey(8)">8</button>
-          <button class="lum-key" onclick="lumKey(9)">9</button>
-          <button class="lum-key" style="visibility:hidden"></button>
-          <button class="lum-key" onclick="lumKey(0)">0</button>
-          <button class="lum-key" onclick="lumKeyDel()">&#x232B;</button>
+          <button class="lum-key" onclick="lumKey(1)">1</button><button class="lum-key" onclick="lumKey(2)">2</button><button class="lum-key" onclick="lumKey(3)">3</button>
+          <button class="lum-key" onclick="lumKey(4)">4</button><button class="lum-key" onclick="lumKey(5)">5</button><button class="lum-key" onclick="lumKey(6)">6</button>
+          <button class="lum-key" onclick="lumKey(7)">7</button><button class="lum-key" onclick="lumKey(8)">8</button><button class="lum-key" onclick="lumKey(9)">9</button>
+          <button class="lum-key" style="visibility:hidden"></button><button class="lum-key" onclick="lumKey(0)">0</button><button class="lum-key" onclick="lumKeyDel()">&#x232B;</button>
         </div>
         <button onclick="closeLoginUserMgr()" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;text-decoration:underline">Cancel</button>
       </div>
-
-      <!-- MANAGER PANEL (shown after PIN) -->
+      <!-- MANAGER PANEL -->
       <div id="lum-panel" style="display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px">
           <div>
@@ -1195,7 +1103,6 @@ body{
           </div>
           <button onclick="closeLoginUserMgr()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.11);color:rgba(255,255,255,.65);border-radius:9px;padding:8px 18px;cursor:pointer;font-size:13px;font-weight:600">&times; Close</button>
         </div>
-
         <!-- ADD FORM -->
         <div style="background:rgba(8,12,26,.98);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:20px;margin-bottom:14px">
           <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.32);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">&#x2795; Add New User</div>
@@ -1222,14 +1129,13 @@ body{
               </select>
             </div>
             <div>
-              <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px">Branch ID <span style="opacity:.5">(optional, comma-separated)</span></div>
+              <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px">Branch IDs <span style="opacity:.5">(optional, comma-sep)</span></div>
               <input id="lum-bid" placeholder="e.g. hybrid_moa,sh_redsea" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;padding:9px 12px;font-size:12px;outline:none;font-family:monospace">
             </div>
           </div>
           <div id="lum-add-err" style="color:#f87171;font-size:11px;min-height:15px;margin-bottom:8px"></div>
           <button onclick="lumAddUser()" style="width:100%;background:linear-gradient(135deg,#f0a500,#f5be45);border:none;color:#000;font-size:13px;font-weight:700;padding:11px;border-radius:9px;cursor:pointer">&#x2795; Create User &rarr; Firebase</button>
         </div>
-
         <!-- USERS LIST -->
         <div style="background:rgba(8,12,26,.98);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:20px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -1239,7 +1145,6 @@ body{
           <div id="lum-list"><div style="text-align:center;padding:22px;color:rgba(255,255,255,.22);font-size:12px">Loading&#x2026;</div></div>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -1271,8 +1176,6 @@ body{
       <input type="text" placeholder="Search..." id="global-search">
     </div>
     <div class="topbar-actions">
-      <button class="icon-btn" onclick="toggleChat()" title="Team Chat" id="chat-btn">💬<span class="notif-badge" id="chat-badge" style="display:none">0</span></button>
-      <button class="icon-btn" onclick="toggleFlow()" title="Workflow" id="flow-btn">🔀</button>
       <button class="icon-btn" onclick="toggleNotifPanel()" title="Notifications">
         🔔
         <span class="notif-badge" id="notif-count" style="display:none">0</span>
@@ -1337,56 +1240,6 @@ body{
     </div>
   </div>
   <div class="notif-list" id="notif-list"></div>
-</div>
-
-
-<!-- CHAT PANEL -->
-<div class="chat-panel" id="chat-panel">
-  <div class="chat-head">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:18px">💬</span>
-      <div>
-        <div style="font-size:14px;font-weight:700">Team Chat</div>
-        <div style="font-size:11px;color:var(--text-tertiary)" id="chat-channel-label">General</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <select id="chat-channel-select" onchange="switchChatChannel(this.value)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:11px;padding:4px 8px;font-family:var(--font)">
-        <option value="general">🌐 General</option>
-        <option value="ops">⚙️ Operations</option>
-        <option value="finance">💰 Finance</option>
-        <option value="hr">👥 HR</option>
-        <option value="alerts">🚨 Alerts</option>
-      </select>
-      <button class="notif-close" onclick="toggleChat()">✕</button>
-    </div>
-  </div>
-  <div class="chat-messages" id="chat-messages"></div>
-  <div class="chat-input-wrap">
-    <input class="chat-input" id="chat-input" placeholder="Message team…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg()}" maxlength="500">
-    <button class="chat-send" onclick="sendChatMsg()">↑</button>
-  </div>
-</div>
-
-<!-- FLOW BUILDER PANEL -->
-<div class="flow-panel" id="flow-panel">
-  <div class="chat-head">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:18px">🔀</span>
-      <div>
-        <div style="font-size:14px;font-weight:700">Workflow Center</div>
-        <div style="font-size:11px;color:var(--text-tertiary)">Approvals & flows</div>
-      </div>
-    </div>
-    <button class="notif-close" onclick="toggleFlow()">✕</button>
-  </div>
-  <div style="padding:16px;flex:1;overflow-y:auto" id="flow-panel-body">
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button class="btn btn-sm btn-primary" onclick="openNewFlowModal()">+ New Flow</button>
-      <button class="btn btn-sm" onclick="renderFlowPanel()">↺ Refresh</button>
-    </div>
-    <div id="flow-list"></div>
-  </div>
 </div>
 
 <!-- MODAL OVERLAY -->
@@ -1611,7 +1464,7 @@ function navTo(pageId) {
     var _retries = 0;
     var _wait = setInterval(function() {
       _retries++;
-      if (Object.keys(NX_BRANCHES).length || _retries > 30) {
+      if (Object.keys(NX_BRANCHES).length || _retries > 8) {
         clearInterval(_wait);
         if (NX.page === pageId) renderPage(pageId);
       }
@@ -1819,65 +1672,6 @@ var NAV_CONFIG = {
       { id:'_checklist-portal',  icon:'📋', label:'Checklist App' }
     ]}
   ]
-,
-  hr_manager: [
-    { section:'HR OVERVIEW', items:[
-      { id:'hr-dash',      icon:'📊', label:'HR Dashboard' },
-      { id:'hr-approvals', icon:'✅', label:'Approvals', badge:'hr-pend' },
-      { id:'hr-flows',     icon:'🔀', label:'Workflow Center' }
-    ]},
-    { section:'WORKFORCE', items:[
-      { id:'employees',    icon:'👥', label:'Employees' },
-      { id:'org-chart',    icon:'🏢', label:'Org Chart' },
-      { id:'recruitment',  icon:'🎯', label:'Recruitment', badge:'hr-jobs' }
-    ]},
-    { section:'TIME & LEAVE', items:[
-      { id:'attendance',   icon:'⏱️', label:'Attendance' },
-      { id:'leave-mgmt',   icon:'🏖️', label:'Leave Management', badge:'hr-leaves' },
-      { id:'hr-schedule',  icon:'📅', label:'Work Schedule' }
-    ]},
-    { section:'PAYROLL', items:[
-      { id:'payroll',      icon:'💸', label:'Payroll' },
-      { id:'salary-slip',  icon:'🧾', label:'Salary Slips' }
-    ]},
-    { section:'CULTURE & COMMS', items:[
-      { id:'performance',  icon:'⭐', label:'Performance' },
-      { id:'training',     icon:'📚', label:'Training' },
-      { id:'announcements',icon:'📢', label:'Announcements' }
-    ]},
-    { section:'SYSTEM', items:[
-      { id:'chat-page',    icon:'💬', label:'Team Chat' }
-    ]}
-  ],
-  finance_dir: [
-    { section:'FINANCE', items:[
-      { id:'fin-dash',     icon:'📊', label:'Finance Dashboard' },
-      { id:'fin-approvals',icon:'✅', label:'Approvals', badge:'fin-pend' },
-      { id:'fin-flows',    icon:'🔀', label:'Workflow Center' }
-    ]},
-    { section:'REVENUE & P&L', items:[
-      { id:'fin-revenue',  icon:'💰', label:'Revenue' },
-      { id:'pnl',          icon:'📈', label:'P&L Statement' }
-    ]},
-    { section:'COSTS', items:[
-      { id:'fin-expenses', icon:'🧾', label:'Expenses' },
-      { id:'fin-invoices', icon:'📋', label:'Supplier Invoices' },
-      { id:'fin-petty',    icon:'💵', label:'Petty Cash' }
-    ]},
-    { section:'PLANNING', items:[
-      { id:'budget',       icon:'🎯', label:'Budget vs Actual' },
-      { id:'forecast',     icon:'🔮', label:'Cash Flow Forecast' }
-    ]},
-    { section:'ACCOUNTING', items:[
-      { id:'journal',      icon:'📒', label:'Journal Entries' },
-      { id:'coa',          icon:'📂', label:'Chart of Accounts' },
-      { id:'fin-reports',  icon:'📄', label:'Reports' }
-    ]},
-    { section:'SYSTEM', items:[
-      { id:'chat-page',    icon:'💬', label:'Team Chat' }
-    ]}
-  ]
-
 };
 
 
@@ -2428,7 +2222,6 @@ function lumLoadUsers() {
     var users = [];
     var raw = snap.val() || {};
     Object.values(raw).forEach(function(u) { if (u && u.id) users.push(u); });
-    // Sync to NX_USERS cache
     if (typeof NX_USERS !== 'undefined') {
       NX_USERS = {};
       users.forEach(function(u) { NX_USERS[u.id] = u; });
@@ -2439,139 +2232,130 @@ function lumLoadUsers() {
     }
     var h = '<div style="display:flex;flex-direction:column;gap:8px">';
     users.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); }).forEach(function(u) {
-      var rm = LUM_ROLES[u.role] || { label: u.role || 'User', icon:'👤', color:'#94a3b8' };
-      var safeId = _lxe(u.id);
-      var safeName = _lxe(u.name || '');
+      var rm = LUM_ROLES[u.role] || { label: u.role||'User', icon:'👤', color:'#94a3b8' };
+      var sid = _lxe(u.id), sname = _lxe(u.name||'');
       h += '<div style="background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
-      h += '<div style="width:33px;height:33px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;background:' + rm.color + '1a">' + rm.icon + '</div>';
-      h += '<div style="flex:1;min-width:100px">';
-      h += '<div style="font-size:13px;font-weight:700;color:#fff">' + safeName + '</div>';
-      h += '<div style="font-size:10px;color:rgba(255,255,255,.38);margin-top:2px">' + rm.label;
-      if (u.branchIds && u.branchIds.length) h += ' &middot; ' + u.branchIds.length + ' branch(es)';
-      h += '</div></div>';
-      h += '<div style="font-family:monospace;font-size:12px;color:' + rm.color + ';background:' + rm.color + '18;padding:3px 9px;border-radius:6px;letter-spacing:2px">PIN\u00a0' + _lxe(String(u.pin || '\u2014')) + '</div>';
+      h += '<div style="width:33px;height:33px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;background:'+rm.color+'1a">'+rm.icon+'</div>';
+      h += '<div style="flex:1;min-width:100px"><div style="font-size:13px;font-weight:700;color:#fff">'+sname+'</div>';
+      h += '<div style="font-size:10px;color:rgba(255,255,255,.38);margin-top:2px">'+rm.label+(u.branchIds&&u.branchIds.length?' &middot; '+u.branchIds.length+' branch(es)':'')+'</div></div>';
+      h += '<div style="font-family:monospace;font-size:12px;color:'+rm.color+';background:'+rm.color+'18;padding:3px 9px;border-radius:6px;letter-spacing:2px">PIN\u00a0'+_lxe(String(u.pin||'\u2014'))+'</div>';
       h += '<div style="display:flex;gap:6px">';
-      h += '<button onclick="lumOpenEdit(\'' + safeId + '\')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.7);border-radius:7px;padding:5px 12px;cursor:pointer;font-size:11px;font-weight:600">Edit</button>';
-      h += '<button onclick="lumDelUser(\'' + safeId + '\',\'' + safeName + '\')" style="background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.25);color:#f87171;border-radius:7px;padding:5px 12px;cursor:pointer;font-size:11px;font-weight:600">Delete</button>';
+      h += '<button onclick="lumOpenEdit(\''+sid+'\')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.7);border-radius:7px;padding:5px 12px;cursor:pointer;font-size:11px;font-weight:600">Edit</button>';
+      h += '<button onclick="lumDelUser(\''+sid+'\',\''+sname+'\')" style="background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.25);color:#f87171;border-radius:7px;padding:5px 12px;cursor:pointer;font-size:11px;font-weight:600">Delete</button>';
       h += '</div></div>';
     });
     h += '</div>';
     el.innerHTML = h;
   }, function(err) {
-    el.innerHTML = '<div style="padding:16px;color:#f87171;font-size:12px;text-align:center">Permission denied \u2014 set Firebase rules to allow read/write. See console for details.</div>';
-    console.error('lumLoadUsers error:', err);
+    el.innerHTML = '<div style="padding:16px;color:#f87171;font-size:12px;text-align:center">Permission denied \u2014 set Firebase rules to allow read/write.</div>';
+    console.error('lumLoadUsers:', err);
   });
 }
 
 function lumAddUser() {
-  var name = (_gv('lum-name') || '').trim();
-  var pin  = (_gv('lum-pin')  || '').trim();
+  var name = (_gv('lum-name')||'').trim();
+  var pin  = (_gv('lum-pin') ||'').trim();
   var role = _gv('lum-role') || 'brand_dir';
-  var bid  = (_gv('lum-bid')  || '').trim();
+  var bid  = (_gv('lum-bid') ||'').trim();
   var errEl = document.getElementById('lum-add-err');
-  function setErr(msg) { if (errEl) errEl.textContent = msg; }
-
-  if (!name)              { setErr('Name is required'); return; }
-  if (!pin || pin.length < 4 || !/^\d+$/.test(pin)) { setErr('PIN must be 4\u20138 digits'); return; }
-  var conflict = typeof NX_USERS !== 'undefined' && Object.values(NX_USERS).find(function(u){ return String(u.pin||'') === pin; });
-  if (conflict)           { setErr('PIN already in use by ' + (conflict.name || conflict.id)); return; }
-  if (!db)                { setErr('Firebase not connected'); return; }
-
+  function setErr(m){ if(errEl) errEl.textContent=m; }
+  if (!name)                                          { setErr('Name is required'); return; }
+  if (!pin||pin.length<4||!/^\d+$/.test(pin))         { setErr('PIN must be 4\u20138 digits'); return; }
+  var conflict = typeof NX_USERS!=='undefined' && Object.values(NX_USERS).find(function(u){ return String(u.pin||'')===pin; });
+  if (conflict)                                       { setErr('PIN already used by '+(conflict.name||conflict.id)); return; }
+  if (!db)                                            { setErr('Firebase not connected'); return; }
   setErr('Saving\u2026');
-  var uid  = 'usr_' + Date.now();
-  var user = { id: uid, name: name, pin: pin, role: role, active: true,
-               createdAt: new Date().toISOString(),
-               branchIds: bid ? bid.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [] };
-
-  db.ref('admin/users/' + uid).set(user, function(err) {
-    if (err) { setErr('Firebase error: ' + err.message + ' \u2014 check rules'); return; }
-    if (typeof NX_USERS !== 'undefined') NX_USERS[uid] = user;
+  var uid = 'usr_'+Date.now();
+  var user = { id:uid, name:name, pin:pin, role:role, active:true,
+               createdAt:new Date().toISOString(),
+               branchIds: bid ? bid.split(',').map(function(s){return s.trim();}).filter(Boolean) : [] };
+  db.ref('admin/users/'+uid).set(user, function(err) {
+    if (err) { setErr('Firebase error: '+err.message+' \u2014 check rules'); return; }
+    if (typeof NX_USERS!=='undefined') NX_USERS[uid]=user;
     setErr('');
-    ['lum-name','lum-pin','lum-bid'].forEach(function(id) { var e=document.getElementById(id); if(e) e.value=''; });
+    ['lum-name','lum-pin','lum-bid'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
     lumLoadUsers();
-    _lumToast('\u2705 User "' + name + '" created');
+    _lumToast('\u2705 User "'+name+'" created');
   });
 }
 
 function lumOpenEdit(uid) {
   if (!db) return;
-  db.ref('admin/users/' + uid).once('value', function(snap) {
-    var u = snap.val();
-    if (!u) { _lumToast('User not found', true); return; }
-    var roleOpts = Object.keys(LUM_ROLES).map(function(k) {
-      return '<option value="' + k + '"' + (u.role===k?' selected':'') + '>' + LUM_ROLES[k].icon + ' ' + LUM_ROLES[k].label + '</option>';
+  db.ref('admin/users/'+uid).once('value', function(snap) {
+    var u = snap.val(); if (!u) { _lumToast('User not found',true); return; }
+    var opts = Object.keys(LUM_ROLES).map(function(k){
+      return '<option value="'+k+'"'+(u.role===k?' selected':'')+'>'+LUM_ROLES[k].icon+' '+LUM_ROLES[k].label+'</option>';
     }).join('');
-    var editHtml =
-      '<div style="background:rgba(240,165,0,.06);border:1px solid rgba(240,165,0,.22);border-radius:11px;padding:16px;margin-bottom:10px">' +
-      '<div style="font-size:10px;font-weight:700;color:#f0a500;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px">&#x270F;&#xFE0F; Editing: ' + _lxe(u.name||uid) + '</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">' +
-        '<div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">Name</div>' +
-        '<input id="lume-name" value="' + _lxe(u.name||'') + '" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:#fff;padding:8px 10px;font-size:13px;outline:none;font-family:inherit"></div>' +
-        '<div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">PIN</div>' +
-        '<input id="lume-pin" value="' + _lxe(String(u.pin||'')) + '" maxlength="8" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:#fff;padding:8px 10px;font-size:15px;font-family:monospace;letter-spacing:3px;outline:none"></div>' +
-      '</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px">' +
-        '<div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">Role</div>' +
-        '<select id="lume-role" style="width:100%;box-sizing:border-box;background:rgba(20,26,48,1);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:#fff;padding:8px 10px;font-size:13px;outline:none">' + roleOpts + '</select></div>' +
-        '<div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">Branch IDs (comma-sep)</div>' +
-        '<input id="lume-bid" value="' + _lxe((u.branchIds||[]).join(',')) + '" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:#fff;padding:8px 10px;font-size:12px;font-family:monospace;outline:none"></div>' +
-      '</div>' +
-      '<div id="lume-err" style="color:#f87171;font-size:11px;min-height:14px;margin-bottom:8px"></div>' +
-      '<div style="display:flex;gap:8px">' +
-        '<button onclick="lumSaveEdit(\'' + _lxe(uid) + '\')" style="flex:1;background:linear-gradient(135deg,#f0a500,#f5be45);border:none;color:#000;font-size:12px;font-weight:700;padding:9px;border-radius:8px;cursor:pointer">&#x1F4BE; Save Changes</button>' +
-        '<button onclick="lumLoadUsers()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);border-radius:8px;padding:9px 14px;cursor:pointer;font-size:12px">Cancel</button>' +
+    var INP = 'width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:#fff;padding:8px 10px;outline:none;';
+    var form =
+      '<div style="background:rgba(240,165,0,.06);border:1px solid rgba(240,165,0,.22);border-radius:11px;padding:16px;margin-bottom:10px">'+
+      '<div style="font-size:10px;font-weight:700;color:#f0a500;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px">&#x270F;&#xFE0F; Editing: '+_lxe(u.name||uid)+'</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">'+
+        '<div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">Name</div>'+
+        '<input id="lume-name" value="'+_lxe(u.name||'')+'" style="'+INP+'font-size:13px;font-family:inherit"></div>'+
+        '<div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">PIN</div>'+
+        '<input id="lume-pin" value="'+_lxe(String(u.pin||''))+'" maxlength="8" style="'+INP+'font-size:15px;font-family:monospace;letter-spacing:3px"></div>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px">'+
+        '<div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">Role</div>'+
+        '<select id="lume-role" style="'+INP+'background:rgba(20,26,48,1);font-size:13px">'+opts+'</select></div>'+
+        '<div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">Branch IDs</div>'+
+        '<input id="lume-bid" value="'+_lxe((u.branchIds||[]).join(','))+'" style="'+INP+'font-size:12px;font-family:monospace"></div>'+
+      '</div>'+
+      '<div id="lume-err" style="color:#f87171;font-size:11px;min-height:14px;margin-bottom:8px"></div>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button onclick="lumSaveEdit(\''+_lxe(uid)+'\')" style="flex:1;background:linear-gradient(135deg,#f0a500,#f5be45);border:none;color:#000;font-size:12px;font-weight:700;padding:9px;border-radius:8px;cursor:pointer">&#x1F4BE; Save</button>'+
+        '<button onclick="lumLoadUsers()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);border-radius:8px;padding:9px 14px;cursor:pointer;font-size:12px">Cancel</button>'+
       '</div></div>';
     var el = document.getElementById('lum-list');
-    if (el) el.innerHTML = editHtml + el.innerHTML;
+    if (el) el.innerHTML = form + el.innerHTML;
   });
 }
 
 function lumSaveEdit(uid) {
   var name = (_gv('lume-name')||'').trim();
   var pin  = (_gv('lume-pin') ||'').trim();
-  var role = _gv('lume-role') || 'brand_dir';
+  var role = _gv('lume-role')||'brand_dir';
   var bid  = (_gv('lume-bid') ||'').trim();
   var errEl = document.getElementById('lume-err');
-  function setErr(m){ if(errEl) errEl.textContent = m; }
-
-  if (!name)            { setErr('Name required'); return; }
-  if (!pin || pin.length < 4 || !/^\d+$/.test(pin)) { setErr('PIN must be 4-8 digits'); return; }
-  var conflict = typeof NX_USERS !== 'undefined' && Object.values(NX_USERS).find(function(u){ return u.id !== uid && String(u.pin||'') === pin; });
-  if (conflict)         { setErr('PIN used by ' + (conflict.name||conflict.id)); return; }
-  if (!db)              { setErr('Firebase not connected'); return; }
-
+  function setErr(m){ if(errEl) errEl.textContent=m; }
+  if (!name)                                         { setErr('Name required'); return; }
+  if (!pin||pin.length<4||!/^\d+$/.test(pin))        { setErr('PIN must be 4-8 digits'); return; }
+  var conflict = typeof NX_USERS!=='undefined' && Object.values(NX_USERS).find(function(u){ return u.id!==uid && String(u.pin||'')===pin; });
+  if (conflict)                                      { setErr('PIN used by '+(conflict.name||conflict.id)); return; }
+  if (!db)                                           { setErr('Firebase not connected'); return; }
   setErr('Saving\u2026');
-  var branchIds = bid ? bid.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
+  var branchIds = bid ? bid.split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
   var updates = { name:name, pin:pin, role:role, branchIds:branchIds, updatedAt:new Date().toISOString() };
-  db.ref('admin/users/' + uid).update(updates, function(err) {
-    if (err) { setErr('Error: ' + err.message); return; }
-    if (typeof NX_USERS !== 'undefined' && NX_USERS[uid]) Object.assign(NX_USERS[uid], updates);
+  db.ref('admin/users/'+uid).update(updates, function(err) {
+    if (err) { setErr('Error: '+err.message); return; }
+    if (typeof NX_USERS!=='undefined' && NX_USERS[uid]) Object.assign(NX_USERS[uid], updates);
     lumLoadUsers();
     _lumToast('\u2705 User updated');
   });
 }
 
 function lumDelUser(uid, name) {
-  if (!confirm('Delete user "' + (name||uid) + '"? This cannot be undone.')) return;
-  if (!db) { _lumToast('Firebase not connected', true); return; }
-  db.ref('admin/users/' + uid).remove(function(err) {
-    if (err) { _lumToast('Error: ' + err.message, true); return; }
-    if (typeof NX_USERS !== 'undefined') delete NX_USERS[uid];
+  if (!confirm('Delete user "'+(name||uid)+'"? This cannot be undone.')) return;
+  if (!db) { _lumToast('Firebase not connected',true); return; }
+  db.ref('admin/users/'+uid).remove(function(err) {
+    if (err) { _lumToast('Error: '+err.message,true); return; }
+    if (typeof NX_USERS!=='undefined') delete NX_USERS[uid];
     lumLoadUsers();
     _lumToast('\u{1F5D1} User deleted');
   });
 }
 
-function _gv(id) { var e=document.getElementById(id); return e ? e.value : ''; }
-function _lxe(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function _gv(id){ var e=document.getElementById(id); return e?e.value:''; }
+function _lxe(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function _lumToast(msg, isErr) {
-  var t = document.createElement('div');
-  t.textContent = msg;
-  t.style.cssText = 'position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:9999;pointer-events:none;' +
-    'background:' + (isErr?'rgba(127,29,29,.97)':'rgba(20,83,45,.97)') + ';color:#fff;padding:10px 22px;border-radius:11px;' +
+  var t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:9999;pointer-events:none;'+
+    'background:'+(isErr?'rgba(127,29,29,.97)':'rgba(20,83,45,.97)')+';color:#fff;padding:10px 22px;border-radius:11px;'+
     'font-size:13px;font-weight:600;box-shadow:0 4px 24px rgba(0,0,0,.5);white-space:nowrap';
   document.body.appendChild(t);
-  setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 2800);
+  setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); },2800);
 }
 // ── END LOGIN USER MANAGER ──────────────────────────────────────────────────
 
@@ -2594,9 +2378,7 @@ function renderLoginStep0(card) {
     { id:'brand_dir',   label:'Brand Director',   sub:'Enter PIN → auto-login',        icon:'🎯', color:'#a78bfa' },
     { id:'regional',    label:'Area Manager',     sub:'Enter PIN → auto-login',        icon:'🗺️', color:'#60a5fa' },
     { id:'branch_mgr',  label:'Branch Manager',   sub:'Select branch + enter PIN',     icon:'🏪', color:'#34d399' },
-    { id:'staff',       label:'Staff',            sub:'Check-in & checklists only',    icon:'👤', color:'#94a3b8' },
-    { id:'hr_manager',  label:'HR Manager',       sub:'HR, payroll & people ops',      icon:'👥', color:'#a78bfa' },
-    { id:'finance_dir', label:'Finance Director', sub:'Finance, P&L & accounting',     icon:'💰', color:'#2dd4bf' }
+    { id:'staff',       label:'Staff',            sub:'Check-in & checklists only',    icon:'👤', color:'#94a3b8' }
   ];
   card.innerHTML =
     '<div class="login-step-title">Select Your Role</div>' +
@@ -2828,16 +2610,6 @@ function verifyPIN() {
 
   // ── Brand Director / Area Manager: PIN from admin/users ──────────────────
   // admin/users/{id} = {id, name, role, pin, branchIds:[...], ...}
-  } else if (role === 'hr_manager') {
-    valid = pin === '4444';
-    if (valid) {
-      loginState.userName = 'HR Manager';
-    }
-  } else if (role === 'finance_dir') {
-    valid = pin === '5555';
-    if (valid) {
-      loginState.userName = 'Finance Director';
-    }
   } else if (role === 'brand_dir' || role === 'regional') {
     // Search admin/users for a user with matching role + PIN
     var matchedUser = null;
@@ -2877,16 +2649,6 @@ function verifyPIN() {
   if (role === 'super_admin' || role === 'ceo') {
     sess.entityName = 'ALFA.CO';
 
-  } else if (role === 'hr_manager') {
-    valid = pin === '4444';
-    if (valid) {
-      loginState.userName = 'HR Manager';
-    }
-  } else if (role === 'finance_dir') {
-    valid = pin === '5555';
-    if (valid) {
-      loginState.userName = 'Finance Director';
-    }
   } else if (role === 'brand_dir' || role === 'regional') {
     sess.userId     = loginState.userId    || '';
     sess.userName   = loginState.userName  || '';
@@ -2898,9 +2660,6 @@ function verifyPIN() {
     sess.branchName = firstBranch.name || '';
     sess.entityName = loginState.userName || (role === 'brand_dir' ? 'Brand Director' : 'Area Manager');
 
-  } else if (role === 'hr_manager' || role === 'finance_dir') {
-    sess.entityName = loginState.userName || (role === 'hr_manager' ? 'HR Manager' : 'Finance Director');
-    sess.branchIds = Object.keys(NX_BRANCHES);
   } else if (role === 'branch_mgr' || role === 'staff') {
     var branchId4 = loginState.branchId;
     var bObj4     = NX_BRANCHES[branchId4] || {};
@@ -2984,35 +2743,7 @@ function renderPage(pageId) {
     'petty-cash': pPettyCash,
     'dsr': pDSR,
     'checklists': pChecklists,
-    'qr-checkin': pQRCheckin,
-    'hr-dash': pHRDash,
-    'hr-approvals': pHRApprovals,
-    'hr-flows': pHRFlows,
-    'employees': pEmployees,
-    'org-chart': pOrgChart,
-    'recruitment': pRecruitment,
-    'attendance': pAttendance,
-    'leave-mgmt': pLeaveMgmt,
-    'hr-schedule': pHRSchedule,
-    'payroll': pPayroll,
-    'salary-slip': pSalarySlip,
-    'performance': pPerformance,
-    'training': pTraining,
-    'announcements': pAnnouncements,
-    'fin-dash': pFinDash,
-    'fin-approvals': pFinApprovals,
-    'fin-flows': pFinFlows,
-    'fin-revenue': pFinRevenue,
-    'pnl': pPnL,
-    'fin-expenses': pFinExpenses,
-    'fin-invoices': pFinInvoices,
-    'fin-petty': pFinPetty,
-    'budget': pBudget,
-    'forecast': pForecast,
-    'journal': pJournal,
-    'coa': pCOA,
-    'fin-reports': pFinReports,
-    'chat-page': pChatPage,
+    'qr-checkin': pQRCheckin
   };
 
   var fn = fns[pageId];
@@ -3040,6 +2771,20 @@ function pExecDash() {
   // Use live data from Firebase
   refreshDemoMetrics();
   var branches = getAccessibleBranches();
+  if (!branches.length) {
+    return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:40px">' +
+      '<div style="font-size:54px;margin-bottom:18px">&#x1F3D7;&#xFE0F;</div>' +
+      '<div style="font-size:21px;font-weight:800;color:var(--text-primary);margin-bottom:8px">No Branches Found</div>' +
+      '<div style="font-size:13px;color:var(--text-secondary);max-width:420px;line-height:1.7;margin-bottom:28px">' +
+        'Firebase is connected but no branches loaded. Most likely the Firebase Rules need to allow read access.<br><br>' +
+        '<strong style="color:var(--warning)">Firebase Console &rarr; Realtime Database &rarr; Rules &rarr; Publish</strong>' +
+      '</div>' +
+      '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">' +
+        '<button class="btn btn-primary" style="padding:12px 28px;font-size:14px" onclick="navTo('access-ctrl')">&#x2795; Add Branch</button>' +
+        '<button class="btn" style="padding:12px 28px;font-size:14px" onclick="location.reload()">&#x21BB; Refresh Page</button>' +
+      '</div>' +
+    '</div>';
+  }
   var totalToday = 0, totalMTD = 0;
   branches.forEach(function(b) {
     totalToday += branchSalesToday(b.id);
@@ -8220,19 +7965,7 @@ var SEARCH_INDEX = [
   { label:'Sales', page:'sales', keywords:'sales revenue daily covers check average' },
   { label:'Petty Cash', page:'petty-cash', keywords:'petty cash expenses float finance' },
   { label:'Checklists', page:'checklists', keywords:'checklists tasks compliance operations' },
-  { label:'QR Check-In', page:'qr-checkin', keywords:'qr checkin attendance mobile scan' },
-  { label:'HR Dashboard', page:'hr-dash', keywords:'hr human resources overview' },
-  { label:'Employees', page:'employees', keywords:'employees staff directory people roster' },
-  { label:'Payroll', page:'payroll', keywords:'payroll salary wages payment monthly' },
-  { label:'Leave Management', page:'leave-mgmt', keywords:'leave vacation annual sick absence' },
-  { label:'Performance', page:'performance', keywords:'performance review kpi rating score' },
-  { label:'Recruitment', page:'recruitment', keywords:'recruitment hiring jobs open positions' },
-  { label:'Finance Dashboard', page:'fin-dash', keywords:'finance financial overview dashboard' },
-  { label:'P&L Statement', page:'pnl', keywords:'pnl profit loss income statement' },
-  { label:'Budget', page:'budget', keywords:'budget actual variance planning annual' },
-  { label:'Expenses', page:'fin-expenses', keywords:'expenses claims reimbursement spending' },
-  { label:'Journal Entries', page:'journal', keywords:'journal ledger accounting debit credit' },
-  { label:'Team Chat', page:'chat-page', keywords:'chat message team communication' }
+  { label:'QR Check-In', page:'qr-checkin', keywords:'qr checkin attendance mobile scan' }
 ];
 
 var searchTimeout = null;
@@ -8605,671 +8338,5 @@ launchApp = function() {
   }, 200);
 };
 </script>
-function pHRFlows_dup(){return pFlowsPage('hr');}
-function pFinFlows(){return pFlowsPage('fin');}
-function pFlowsPage(mod){
-  var list=NX_FLOWS.filter(function(f){return mod==='hr'?f.type==='hr':f.type==='finance';});
-  var h=phRow(mod==='hr'?'HR Workflow Center':'Finance Workflow Center','KissFlow-style approvals and process automation',
-    '<button class="btn btn-primary" onclick="openNewFlowModal()">+ New Flow</button><button class="btn" onclick="toggleFlow()">🔀 Panel</button>');
-  h+='<div class="kpi-grid section">';
-  h+=kpiH('🔀','Active',list.filter(function(f){return f.status==='active';}).length,'In progress','#a78bfa');
-  h+=kpiH('✅','Approved',list.filter(function(f){return f.status==='approved';}).length,'Completed','#34d399');
-  h+=kpiH('⏳','Pending',list.filter(function(f){return f.status==='pending';}).length,'Not started','#f59e0b');
-  h+=kpiH('📋','Total',list.length,'All flows','#60a5fa');
-  h+='</div>';
-  h+='<div style="display:flex;flex-direction:column;gap:14px">';
-  list.forEach(function(flow){
-    var sc={active:'var(--warning)',approved:'var(--success)',pending:'var(--info)',rejected:'var(--danger)'}[flow.status]||'var(--text-tertiary)';
-    var pb=flow.priority==='high'?'<span class="badge badge-red">High</span>':flow.priority==='medium'?'<span class="badge badge-amber">Medium</span>':'<span class="badge badge-blue">Low</span>';
-    h+='<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:18px;border-left:4px solid '+sc+'">';
-    h+='<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">';
-    h+='<div><div style="font-size:14px;font-weight:700;color:var(--text-primary)">'+xe(flow.title)+'</div>';
-    h+='<div style="font-size:12px;color:var(--text-secondary);margin-top:3px">By '+xe(flow.requester)+' · '+xe(flow.date)+'</div></div>';
-    h+='<div style="display:flex;gap:6px;align-items:center">'+pb+'<span class="badge" style="background:'+sc+'18;color:'+sc+'">'+xe(flow.status)+'</span>';
-    h+='<button class="btn btn-sm" onclick="openFlowDetailModal(\''+flow.id+'\')">View</button>';
-    if(flow.status==='active'||flow.status==='pending')h+='<button class="btn btn-sm btn-primary" onclick="advanceFlow(\''+flow.id+'\')">Advance →</button>';
-    h+='<button class="btn btn-sm" style="color:var(--danger)" onclick="deleteFlow(\''+flow.id+'\')">Del</button></div></div>';
-    h+=stepBar(flow.steps,flow.currentStep);
-    h+='</div>';
-  });
-  if(!list.length)h+='<div class="empty-state"><div class="es-icon">🔀</div><h3>No flows yet</h3><p>Create a workflow to track approvals</p></div>';
-  return h+'</div>';
-}
-
-// ═════════════════════════════
-// FINANCE PAGES
-// ═════════════════════════════
-function pFinDash(){
-  var m=TODAY_D.getMonth();
-  var ytdR=REV_MONTHLY.slice(0,m+1).reduce(function(s,v){return s+v;},0);
-  var ytdC=COST_MONTHLY.slice(0,m+1).reduce(function(s,v){return s+v;},0);
-  var prof=ytdR-ytdC,mgn=ytdR>0?(prof/ytdR*100):0;
-  var h=phRow('Finance Dashboard',new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'}),
-    '<button class="btn" onclick="toggleChat()">💬 Chat</button><button class="btn" onclick="toggleFlow()">🔀 Flows</button><button class="btn btn-primary" onclick="openNewJournalModal()">+ Journal Entry</button>');
-  h+='<div class="kpi-grid section">';
-  h+=kpiH('💰','YTD Revenue',fsar(ytdR),'Jan–'+MONTH_NAMES[m]+' 2025','#34d399');
-  h+=kpiH('💸','YTD Cost',fsar(ytdC),'All categories','#f87171');
-  h+=kpiH('📈','YTD Profit',fsar(prof),'Net income','#f0c040');
-  h+=kpiH('📊','Net Margin',fpct(mgn),'Profitability','#60a5fa');
-  h+=kpiH('🧾','Pending Invoices',fsar(FIN_INVOICES.filter(function(i){return i.status!=='paid';}).reduce(function(s,i){return s+i.amount;},0)),'Unpaid','#f59e0b');
-  h+=kpiH('🔀','Active Flows',NX_FLOWS.filter(function(f){return f.type==='finance'&&f.status==='active';}).length,'Approvals','#a78bfa');
-  h+='</div>';
-  h+='<div class="grid-2 section"><div class="chart-card"><div class="chart-header"><div class="chart-title">Revenue vs Cost — 2025</div></div><div style="height:240px"><canvas id="chart-fin-pnl"></canvas></div></div>';
-  h+='<div class="chart-card"><div class="chart-header"><div class="chart-title">Cost Breakdown</div></div><div style="height:240px"><canvas id="chart-fin-pie"></canvas></div></div></div>';
-  h+='<div class="grid-2 section"><div class="card"><div class="chart-title" style="margin-bottom:14px">Budget vs Actual — Top 5</div>';
-  FIN_BUDGET.slice(0,5).forEach(function(c){
-    var pct=Math.min(100,Math.round(c.actual/c.budget*100));var over=c.actual>c.budget;
-    var col=over?'var(--danger)':pct>90?'var(--warning)':'var(--success)';
-    h+='<div style="padding:9px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12px;font-weight:600">'+xe(c.name)+'</span><span style="font-size:11px;color:var(--text-secondary)">'+fsar(c.actual)+'/'+fsar(c.budget)+'</span></div><div class="progress-bar" style="height:4px"><div class="progress-fill" style="width:'+pct+'%;background:'+col+'"></div></div></div>';
-  });
-  h+='<div style="margin-top:12px"><button class="btn btn-sm" onclick="navTo(\'budget\')">Full Budget →</button></div></div>';
-  h+='<div class="card"><div class="chart-title" style="margin-bottom:12px">Quick Stats</div>';
-  [['Cash at Bank','SAR 2,840,000','#34d399'],['Accounts Payable','SAR 428,000','#f87171'],['AR Outstanding','SAR 612,000','#f59e0b'],['Monthly Payroll','SAR 143,700','#f0c040'],['Petty Cash (All)','SAR 24,800','#60a5fa']].forEach(function(r){
-    h+='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text-secondary)">'+r[0]+'</span><span style="font-family:var(--mono);font-weight:700;color:'+r[2]+'">'+r[1]+'</span></div>';
-  });
-  return h+'</div></div>';
-}
-
-function pFinRevenue(){
-  var m=TODAY_D.getMonth();
-  var ytd=REV_MONTHLY.slice(0,m+1).reduce(function(s,v){return s+v;},0);
-  var h=phRow('Revenue','Sales performance — 2025','<button class="btn btn-primary" onclick="exportCSV()">⬇ Export</button>');
-  h+='<div class="kpi-grid section">';
-  h+=kpiH('💰','YTD',fsar(ytd),'Jan–'+MONTH_NAMES[m],'#34d399');
-  h+=kpiH('📅','This Month',fsar(REV_MONTHLY[m]),'Apr 2025','#f0c040');
-  h+=kpiH('📈','vs Last Month','+SAR 440k','9.2% growth','#34d399');
-  h+=kpiH('🏢','Branches',5,'Reporting','#60a5fa');
-  h+='</div>';
-  h+='<div class="chart-card section"><div class="chart-title" style="margin-bottom:14px">Monthly Revenue — 2025</div><div style="height:260px"><canvas id="chart-rev-monthly"></canvas></div></div>';
-  h+='<div class="table-wrap"><table class="data-table"><thead><tr><th>Branch</th><th style="text-align:right">Jan</th><th style="text-align:right">Feb</th><th style="text-align:right">Mar</th><th style="text-align:right">Apr</th><th style="text-align:right">YTD</th><th>vs Target</th></tr></thead><tbody>';
-  ['Piatto Riyadh','Piatto Jeddah','The Grill','Alma','Concept X'].forEach(function(b,i){
-    var ms=[820000+i*40000,890000+i*35000,910000+i*45000,980000+i*38000];
-    var tot=ms.reduce(function(s,v){return s+v;},0);
-    h+='<tr><td style="font-weight:600;color:var(--text-primary)">'+xe(b)+'</td>';
-    ms.forEach(function(v){h+='<td style="text-align:right;font-family:var(--mono);font-size:12px">'+fsar(v)+'</td>';});
-    h+='<td style="text-align:right;font-family:var(--mono);font-weight:700;color:#34d399">'+fsar(tot)+'</td><td><span class="badge badge-green">+6.2%</span></td></tr>';
-  });
-  return h+'</tbody></table></div>';
-}
-
-function pPnL(){
-  var m=TODAY_D.getMonth();
-  var ytdR=REV_MONTHLY.slice(0,m+1).reduce(function(s,v){return s+v;},0);
-  var ytdC=COST_MONTHLY.slice(0,m+1).reduce(function(s,v){return s+v;},0);
-  var gross=ytdR-ytdC,opex=FIN_BUDGET.slice(2).reduce(function(s,c){return s+c.actual;},0);
-  var ebitda=gross-opex,interest=94500,tax=Math.max(0,ebitda-interest)*.15,net=ebitda-interest-tax;
-  var h=phRow('P&L Statement','Profit & Loss — Year to Date 2025','<button class="btn btn-primary" onclick="showToast(\'Generating P&L PDF…\',\'info\')">⬇ Export</button>');
-  function sl(label,amount,bold,col){return '<div style="display:flex;justify-content:space-between;padding:'+(bold?'12':'8')+'px 0;border-bottom:1px solid var(--border);'+(bold?'font-weight:700;font-size:15px;border-top:2px solid var(--border-strong);':'font-size:13px;')+'"><span style="color:'+(bold?'var(--text-primary)':'var(--text-secondary)')+'">'+xe(label)+'</span><span style="font-family:var(--mono);color:'+(col||'var(--text-primary)')+'">'+fsar(amount)+'</span></div>';}
-  h+='<div class="card">';
-  h+='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--success);margin-bottom:12px">Revenue</div>';
-  h+=sl('Total Revenue',ytdR)+sl('Cost of Sales',ytdC,false,'var(--danger)')+sl('Gross Profit',gross,true,gross>0?'var(--success)':'var(--danger)');
-  h+='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary);margin:16px 0 8px">Operating Expenses</div>';
-  FIN_BUDGET.slice(2).forEach(function(c){h+=sl(c.name,c.actual,false,'var(--text-secondary)');});
-  h+=sl('Total OPEX',opex,false,'var(--danger)')+sl('EBITDA',ebitda,true,ebitda>0?'#f0c040':'var(--danger)')+sl('Interest Expense',interest,false,'var(--danger)')+sl('Tax (15%)',Math.round(tax),false,'var(--danger)')+sl('Net Profit',Math.round(net),true,net>0?'var(--success)':'var(--danger)');
-  h+='</div>';
-  h+='<div class="kpi-grid" style="margin-top:16px">';
-  h+=kpiH('📊','Gross Margin',fpct(gross/ytdR*100),'Gross/Revenue','#34d399');
-  h+=kpiH('📈','Net Margin',fpct(net/ytdR*100),'Net/Revenue','#f0c040');
-  h+=kpiH('💰','EBITDA Margin',fpct(ebitda/ytdR*100),'EBITDA/Revenue','#60a5fa');
-  h+=kpiH('🎯','Break-Even',fsar(Math.round(opex/.44)),'Monthly needed','#f59e0b');
-  return h+'</div>';
-}
-
-function pFinExpenses(){
-  var h=phRow('Expenses','Expense reports and approvals','<button class="btn btn-primary" onclick="openNewExpenseModal()">+ Submit Expense</button>');
-  h+='<div class="kpi-grid section">';
-  h+=kpiH('🧾','Total',fsar(FIN_EXPENSES.reduce(function(s,e){return s+e.amount;},0)),'This month','#34d399');
-  h+=kpiH('⏳','Pending',FIN_EXPENSES.filter(function(e){return e.status==='pending';}).length,'Awaiting','#f59e0b');
-  h+=kpiH('✅','Approved',FIN_EXPENSES.filter(function(e){return e.status==='approved';}).length,'Cleared','#34d399');
-  h+=kpiH('❌','Rejected',FIN_EXPENSES.filter(function(e){return e.status==='rejected';}).length,'Declined','#f87171');
-  h+='</div>';
-  h+='<div class="table-wrap"><table class="data-table"><thead><tr><th>Ref</th><th>Date</th><th>Category</th><th>Description</th><th>Branch</th><th>By</th><th style="text-align:right">Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
-  FIN_EXPENSES.forEach(function(e){
-    h+='<tr><td style="font-family:var(--mono);font-size:11px;color:var(--text-tertiary)">'+xe(e.id)+'</td><td style="font-size:12px">'+xe(e.date)+'</td><td><span class="badge badge-blue">'+xe(e.category)+'</span></td><td style="font-weight:500;color:var(--text-primary)">'+xe(e.desc)+'</td><td style="font-size:12px;color:var(--text-secondary)">'+xe(e.branch)+'</td><td style="font-size:12px;color:var(--text-secondary)">'+xe(e.by)+'</td>';
-    h+='<td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--success)">'+fsar(e.amount)+'</td><td>'+lBadge(e.status)+'</td>';
-    h+='<td><div style="display:flex;gap:3px">'+(e.status==='pending'?'<button class="btn btn-sm" style="color:var(--success)" onclick="finApproveExp(\''+e.id+'\')">✓</button><button class="btn btn-sm" style="color:var(--danger)" onclick="finRejectExp(\''+e.id+'\')">✗</button>':'')+'<button class="btn btn-sm" onclick="openEditExpenseModal(\''+e.id+'\')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="deleteExpense(\''+e.id+'\')">Del</button></div></td></tr>';
-  });
-  return h+'</tbody></table></div>';
-}
-
-function pFinInvoices(){
-  var h=phRow('Supplier Invoices','Invoice tracking and payment','<button class="btn btn-primary" onclick="openNewInvoiceModal()">+ Add Invoice</button>');
-  var unpaid=FIN_INVOICES.filter(function(i){return i.status!=='paid';});
-  h+='<div class="kpi-grid section">';
-  h+=kpiH('📋','Total',FIN_INVOICES.length,'This month','#60a5fa');
-  h+=kpiH('⏳','Unpaid',fsar(unpaid.reduce(function(s,i){return s+i.amount;},0)),'Outstanding','#f59e0b');
-  h+=kpiH('🚨','Overdue',FIN_INVOICES.filter(function(i){return i.status==='overdue';}).length,'Past due','#f87171');
-  h+=kpiH('✅','Paid',fsar(FIN_INVOICES.filter(function(i){return i.status==='paid';}).reduce(function(s,i){return s+i.amount;},0)),'Settled','#34d399');
-  h+='</div>';
-  h+='<div class="table-wrap"><table class="data-table"><thead><tr><th>Invoice #</th><th>Supplier</th><th>Branch</th><th>Date</th><th>Due</th><th style="text-align:right">Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
-  FIN_INVOICES.forEach(function(i){
-    var sb={paid:'<span class="badge badge-green">Paid</span>',unpaid:'<span class="badge badge-amber">Unpaid</span>',overdue:'<span class="badge badge-red">Overdue</span>'}[i.status]||'';
-    h+='<tr><td style="font-family:var(--mono);font-weight:700;color:var(--text-primary)">'+xe(i.id)+'</td><td style="font-weight:600">'+xe(i.supplier)+'</td><td style="font-size:12px;color:var(--text-secondary)">'+xe(i.branch)+'</td><td style="font-family:var(--mono);font-size:12px">'+xe(i.date)+'</td>';
-    h+='<td style="font-family:var(--mono);font-size:12px;color:'+(i.status==='overdue'?'var(--danger)':'var(--text-secondary)')+'">'+xe(i.due)+'</td>';
-    h+='<td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--success)">'+fsar(i.amount)+'</td><td>'+sb+'</td>';
-    h+='<td><div style="display:flex;gap:3px">'+(i.status!=='paid'?'<button class="btn btn-sm" style="color:var(--success)" onclick="markInvoicePaid(\''+i.id+'\')">Mark Paid</button>':'')+'<button class="btn btn-sm" onclick="openEditInvoiceModal(\''+i.id+'\')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="deleteInvoice(\''+i.id+'\')">Del</button></div></td></tr>';
-  });
-  return h+'</tbody></table></div>';
-}
-
-function pFinPetty(){
-  var entries=[
-    {date:'2025-04-20',desc:'Kitchen supplies',  branch:'Piatto Riyadh',amount:340, type:'out',cat:'Supplies', by:'Ahmed'},
-    {date:'2025-04-19',desc:'Office stationery', branch:'HQ',           amount:180, type:'out',cat:'Office',   by:'Sara'},
-    {date:'2025-04-18',desc:'Cleaning materials',branch:'The Grill',    amount:420, type:'out',cat:'Supplies', by:'Khalid'},
-    {date:'2025-04-17',desc:'Petty cash top-up', branch:'Piatto Riyadh',amount:5000,type:'in', cat:'Top-up',   by:'Finance'},
-    {date:'2025-04-16',desc:'Delivery tip',       branch:'Piatto Jeddah',amount:80, type:'out',cat:'Misc',    by:'Fatima'},
-    {date:'2025-04-15',desc:'Taxi reimbursement',branch:'HQ',           amount:95,  type:'out',cat:'Transport',by:'Omar'},
-  ];
-  var bal=entries.reduce(function(s,e){return e.type==='in'?s+e.amount:s-e.amount;},0);
-  var h=phRow('Petty Cash','Entries and reconciliation — all branches','<button class="btn btn-primary" onclick="openNewPettyModal()">+ New Entry</button>');
-  h+='<div class="kpi-grid section">';
-  h+=kpiH('💵','Balance',fsar(bal),'All branches','#34d399');
-  h+=kpiH('⬆','Top-ups',fsar(5000),'This month','#34d399');
-  h+=kpiH('⬇','Disbursed',fsar(entries.filter(function(e){return e.type==='out';}).reduce(function(s,e){return s+e.amount;},0)),'This month','#f59e0b');
-  h+=kpiH('📊','Entries',entries.length,'This month','#60a5fa');
-  h+='</div>';
-  h+='<div class="table-wrap"><table class="data-table"><thead><tr><th>Date</th><th>Description</th><th>Branch</th><th>Category</th><th>By</th><th style="text-align:right">Amount</th><th>Type</th><th>Actions</th></tr></thead><tbody>';
-  entries.forEach(function(e,idx){
-    var isIn=e.type==='in';
-    h+='<tr><td style="font-family:var(--mono);font-size:12px">'+xe(e.date)+'</td><td style="font-weight:500;color:var(--text-primary)">'+xe(e.desc)+'</td><td style="font-size:12px;color:var(--text-secondary)">'+xe(e.branch)+'</td><td><span class="badge badge-blue">'+xe(e.cat)+'</span></td><td style="font-size:12px;color:var(--text-secondary)">'+xe(e.by)+'</td>';
-    h+='<td style="text-align:right;font-family:var(--mono);font-weight:700;color:'+(isIn?'var(--success)':'var(--danger)')+'">'+( isIn?'+':'-')+fsar(e.amount)+'</td>';
-    h+='<td><span class="badge '+(isIn?'badge-green':'badge-red')+'">'+(isIn?'In':'Out')+'</span></td>';
-    h+='<td><div style="display:flex;gap:3px"><button class="btn btn-sm" onclick="openEditPettyModal('+idx+')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="showToast(\'Entry deleted\',\'success\')">Del</button></div></td></tr>';
-  });
-  return h+'</tbody></table></div>';
-}
-
-function pBudget(){
-  var tb=FIN_BUDGET.reduce(function(s,c){return s+c.budget;},0),ta=FIN_BUDGET.reduce(function(s,c){return s+c.actual;},0);
-  var h=phRow('Budget vs Actual','Annual budget tracking — 2025','<button class="btn btn-primary" onclick="openEditBudgetModal()">Edit Budget</button>');
-  h+='<div class="kpi-grid section">';
-  h+=kpiH('🎯','Budget',fsar(tb),'Annual allocation','#60a5fa');
-  h+=kpiH('💸','Actual',fsar(ta),'YTD spend','#34d399');
-  h+=kpiH('✅','Saved',fsar(tb-ta),'Under budget','#34d399');
-  h+=kpiH('📊','Used',fpct(ta/tb*100),'Of annual','#f59e0b');
-  h+='</div>';
-  h+='<div class="chart-card section"><div class="chart-title" style="margin-bottom:14px">Budget vs Actual by Category</div><div style="height:280px"><canvas id="chart-budget"></canvas></div></div>';
-  h+='<div class="card"><div class="chart-title" style="margin-bottom:16px">Detailed Breakdown</div>';
-  FIN_BUDGET.forEach(function(c){
-    var pct=Math.min(100,Math.round(c.actual/c.budget*100)),over=c.actual>c.budget;
-    var col=over?'var(--danger)':pct>90?'var(--warning)':'var(--success)';
-    h+='<div style="padding:11px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:4px"><span style="font-size:13px;font-weight:600">'+xe(c.name)+'</span><div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text-secondary)">'+fsar(c.actual)+' / '+fsar(c.budget)+'</span>'+(over?'<span style="font-size:11px;font-weight:700;color:var(--danger)">Over '+fsar(c.actual-c.budget)+'</span>':'<span style="font-size:11px;font-weight:700;color:var(--success)">Saved '+fsar(c.budget-c.actual)+'</span>')+'<span class="badge '+(over?'badge-red':pct>90?'badge-amber':'badge-green')+'">'+pct+'%</span><button class="btn btn-sm" onclick="openEditBudgetCat(\''+xe(c.name)+'\')">Edit</button></div></div><div class="progress-bar" style="height:5px"><div class="progress-fill" style="width:'+pct+'%;background:'+col+'"></div></div></div>';
-  });
-  return h+'</div>';
-}
-
-function pForecast(){
-  var months=[],opening=2840000;
-  for(var i=0;i<12;i++){
-    var mn=MONTH_NAMES[(TODAY_D.getMonth()+i)%12],yr=2025+Math.floor((TODAY_D.getMonth()+i)/12);
-    var rev=4800000+(i*80000)+(Math.random()*200000-100000),exp=3200000+(i*50000)+(Math.random()*100000-50000);
-    var net=rev-exp,closing=opening+net;
-    months.push({label:mn+' '+yr,opening:opening,rev:rev,exp:exp,net:net,closing:closing});opening=closing;
-  }
-  window._forecastData=months;
-  var h=phRow('Cash Flow Forecast','12-month projection');
-  h+='<div class="chart-card section"><div class="chart-title" style="margin-bottom:14px">Cash Flow — Next 12 Months</div><div style="height:280px"><canvas id="chart-cashflow"></canvas></div></div>';
-  h+='<div class="table-wrap"><table class="data-table"><thead><tr><th>Month</th><th style="text-align:right">Opening</th><th style="text-align:right">Revenue</th><th style="text-align:right">Expenses</th><th style="text-align:right">Net</th><th style="text-align:right">Closing</th></tr></thead><tbody>';
-  months.forEach(function(m){
-    h+='<tr><td style="font-weight:600">'+xe(m.label)+'</td><td style="text-align:right;font-family:var(--mono);font-size:12px">'+fsar(Math.round(m.opening))+'</td><td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--success)">'+fsar(Math.round(m.rev))+'</td><td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--danger)">('+fsar(Math.round(m.exp))+')</td><td style="text-align:right;font-family:var(--mono);font-weight:700;color:'+(m.net>0?'var(--success)':'var(--danger)')+'">'+fsar(Math.round(m.net))+'</td><td style="text-align:right;font-family:var(--mono);font-weight:700;color:#f0c040">'+fsar(Math.round(m.closing))+'</td></tr>';
-  });
-  return h+'</tbody></table></div>';
-}
-
-function pJournal(){
-  var h=phRow('Journal Entries','General ledger','<button class="btn btn-primary" onclick="openNewJournalModal()">+ New Entry</button>');
-  h+='<div class="table-wrap"><table class="data-table"><thead><tr><th>Ref</th><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th><th style="text-align:right">Amount</th><th>Actions</th></tr></thead><tbody>';
-  FIN_JOURNAL.forEach(function(j){
-    h+='<tr><td style="font-family:var(--mono);font-weight:700;font-size:11px;color:var(--success)">'+xe(j.ref)+'</td><td style="font-family:var(--mono);font-size:12px">'+xe(j.date)+'</td><td style="font-weight:500;color:var(--text-primary)">'+xe(j.desc)+'</td><td style="font-size:12px;color:var(--success)">'+xe(j.debit)+'</td><td style="font-size:12px;color:var(--danger)">'+xe(j.credit)+'</td><td style="text-align:right;font-family:var(--mono);font-weight:700;color:#f0c040">'+fsar(j.amount)+'</td>';
-    h+='<td><div style="display:flex;gap:3px"><button class="btn btn-sm" onclick="openEditJournalModal(\''+j.id+'\')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="deleteJournal(\''+j.id+'\')">Del</button></div></td></tr>';
-  });
-  return h+'</tbody></table></div>';
-}
-
-function pCOA(){
-  var types=['Asset','Liability','Equity','Revenue','Expense'];
-  var tab=window._coaType||'Asset';
-  var filtered=FIN_COA.filter(function(a){return a.type===tab;});
-  var h=phRow('Chart of Accounts',FIN_COA.length+' accounts','<button class="btn btn-primary" onclick="openNewAccountModal()">+ Add Account</button>');
-  h+='<div class="tab-row">';
-  types.forEach(function(t){h+='<button class="tab-btn '+(tab===t?'active':'')+'" onclick="window._coaType=\''+t+'\';navTo(\'coa\')">'+t+' ('+FIN_COA.filter(function(a){return a.type===t;}).length+')</button>';});
-  h+='</div>';
-  h+='<div class="table-wrap"><table class="data-table"><thead><tr><th>Code</th><th>Account Name</th><th>Type</th><th style="text-align:right">Balance</th><th>Actions</th></tr></thead><tbody>';
-  filtered.forEach(function(a){
-    var col={Revenue:'var(--success)',Expense:'var(--danger)',Asset:'var(--info)',Equity:'#f0c040',Liability:'var(--warning)'}[a.type]||'var(--text-secondary)';
-    h+='<tr><td style="font-family:var(--mono);font-weight:700;color:var(--text-tertiary)">'+xe(a.code)+'</td><td style="font-weight:600;color:var(--text-primary)">'+xe(a.name)+'</td><td><span class="badge" style="background:'+col+'18;color:'+col+'">'+xe(a.type)+'</span></td><td style="text-align:right;font-family:var(--mono);font-weight:700;color:'+col+'">'+fsar(a.balance)+'</td>';
-    h+='<td><div style="display:flex;gap:3px"><button class="btn btn-sm" onclick="openEditAccountModal(\''+a.code+'\')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="deleteAccount(\''+a.code+'\')">Del</button></div></td></tr>';
-  });
-  return h+'</tbody></table></div>';
-}
-
-function pFinReports(){
-  var reports=[
-    {name:'P&L Statement',     desc:'Monthly & YTD profit and loss',  icon:'📈',cat:'Financial', action:"navTo('pnl')"},
-    {name:'Balance Sheet',     desc:'Assets, liabilities & equity',   icon:'⚖️',cat:'Financial', action:"showToast('Generating…','info')"},
-    {name:'Cash Flow',         desc:'Operating, investing, financing', icon:'💵',cat:'Financial', action:"navTo('forecast')"},
-    {name:'Budget vs Actual',  desc:'Variance analysis by category',  icon:'🎯',cat:'Management',action:"navTo('budget')"},
-    {name:'Payroll Summary',   desc:'Monthly payroll breakdown',       icon:'💸',cat:'HR',        action:"navTo('payroll')"},
-    {name:'Expense Report',    desc:'By category and branch',          icon:'🧾',cat:'Financial', action:"navTo('fin-expenses')"},
-    {name:'Invoice Aging',     desc:'Outstanding invoices by age',     icon:'📋',cat:'Financial', action:"navTo('fin-invoices')"},
-    {name:'Revenue by Branch', desc:'Branch performance comparison',   icon:'🏢',cat:'Operations',action:"navTo('fin-revenue')"},
-  ];
-  var h=phRow('Financial Reports','Generate and export reports');
-  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px">';
-  reports.forEach(function(r){
-    var cc=r.cat==='Financial'?'var(--success)':r.cat==='HR'?'#a78bfa':r.cat==='Management'?'#f0c040':'var(--info)';
-    h+='<div class="card" style="cursor:pointer" onclick="'+r.action+'"><div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><div style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:'+cc+'12">'+r.icon+'</div><div><div style="font-weight:700;font-size:14px">'+xe(r.name)+'</div><span class="badge" style="background:'+cc+'15;color:'+cc+'">'+xe(r.cat)+'</span></div></div><div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">'+xe(r.desc)+'</div><div style="display:flex;gap:6px" onclick="event.stopPropagation()"><button class="btn btn-sm" onclick="showToast(\'Generating PDF…\',\'info\')">⬇ PDF</button><button class="btn btn-sm" onclick="showToast(\'Exporting Excel…\',\'info\')">📊 Excel</button></div></div>';
-  });
-  return h+'</div>';
-}
-
-function pChatPage(){
-  var channels={general:'🌐 General',ops:'⚙️ Operations',finance:'💰 Finance',hr:'👥 HR',alerts:'🚨 Alerts'};
-  var ch=CHAT_STATE.channel,msgs=CHAT_STATE.messages[ch]||[];
-  var h=phRow('Team Chat','Internal comms — all branches');
-  h+='<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">';
-  Object.keys(channels).forEach(function(key){h+='<button class="btn '+(ch===key?'btn-primary':'')+'" onclick="CHAT_STATE.channel=\''+key+'\';navTo(\'chat-page\')">'+channels[key]+'</button>';});
-  h+='</div>';
-  h+='<div style="background:var(--surface-1);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;height:500px">';
-  h+='<div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px" id="chat-page-msgs">';
-  if(!msgs.length)h+='<div class="empty-state" style="padding:40px"><div class="es-icon">💬</div><p>No messages in #'+xe(ch)+'</p></div>';
-  msgs.forEach(function(m){h+=msgHtml(m);});
-  h+='</div><div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px"><input id="chat-page-input" placeholder="Message #'+xe(ch)+'…" style="flex:1;padding:9px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:var(--font);font-size:13px;outline:none" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendPageChat()}"><button class="chat-send" onclick="sendPageChat()">↑</button></div></div>';
-  return h;
-}
-
-// ═════════════════════════════
-// CHAT FLOATING PANEL
-// ═════════════════════════════
-function toggleChat(){
-  var p=document.getElementById('chat-panel');if(!p)return;
-  var fp=document.getElementById('flow-panel');if(fp)fp.classList.remove('open');
-  p.classList.toggle('open');
-  if(p.classList.contains('open')){renderChatPanel();document.getElementById('chat-badge').style.display='none';}
-}
-function toggleFlow(){
-  var p=document.getElementById('flow-panel');if(!p)return;
-  var cp=document.getElementById('chat-panel');if(cp)cp.classList.remove('open');
-  p.classList.toggle('open');
-  if(p.classList.contains('open'))renderFlowPanel();
-}
-function switchChatChannel(ch){
-  CHAT_STATE.channel=ch;
-  var l=document.getElementById('chat-channel-label');if(l)l.textContent=ch.charAt(0).toUpperCase()+ch.slice(1);
-  renderChatPanel();
-  if(db){db.ref('nexus/chat/'+ch).limitToLast(50).once('value',function(snap){var raw=snap.val()||{},msgs=Object.values(raw).sort(function(a,b){return a.ts-b.ts;});if(msgs.length){CHAT_STATE.messages[ch]=msgs;renderChatPanel();}});}
-}
-function renderChatPanel(){
-  var box=document.getElementById('chat-messages');if(!box)return;
-  var msgs=CHAT_STATE.messages[CHAT_STATE.channel]||[];
-  if(!msgs.length){box.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-tertiary);font-size:12px">No messages yet 👋</div>';return;}
-  box.innerHTML=msgs.map(msgHtml).join('');box.scrollTop=box.scrollHeight;
-}
-function sendChatMsg(){
-  var inp=document.getElementById('chat-input');if(!inp||!inp.value.trim())return;
-  var myName=(NX.session||{}).entityName||'You';
-  var msg={id:Date.now(),from:myName,role:(NX.session||{}).role||'staff',msg:inp.value.trim(),ts:Date.now()};
-  if(!CHAT_STATE.messages[CHAT_STATE.channel])CHAT_STATE.messages[CHAT_STATE.channel]=[];
-  CHAT_STATE.messages[CHAT_STATE.channel].push(msg);
-  if(db)db.ref('nexus/chat/'+CHAT_STATE.channel).push(msg);
-  inp.value='';renderChatPanel();
-}
-function sendPageChat(){
-  var inp=document.getElementById('chat-page-input');if(!inp||!inp.value.trim())return;
-  var myName=(NX.session||{}).entityName||'You';
-  var msg={id:Date.now(),from:myName,role:(NX.session||{}).role||'staff',msg:inp.value.trim(),ts:Date.now()};
-  if(!CHAT_STATE.messages[CHAT_STATE.channel])CHAT_STATE.messages[CHAT_STATE.channel]=[];
-  CHAT_STATE.messages[CHAT_STATE.channel].push(msg);
-  if(db)db.ref('nexus/chat/'+CHAT_STATE.channel).push(msg);
-  inp.value='';navTo('chat-page');
-  pushNotif({type:'info',icon:'💬',title:'New message in #'+CHAT_STATE.channel,msg:msg.msg.substring(0,60),branch:myName});
-}
-
-// ═════════════════════════════
-// FLOW FLOATING PANEL
-// ═════════════════════════════
-function renderFlowPanel(){
-  var list=document.getElementById('flow-list');if(!list)return;
-  var active=NX_FLOWS.filter(function(f){return f.status==='active';});
-  if(!active.length){list.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-tertiary);font-size:12px">No active flows</div>';return;}
-  list.innerHTML=active.map(function(flow){
-    var sc={active:'var(--warning)',approved:'var(--success)',pending:'var(--info)'}[flow.status]||'var(--text-tertiary)';
-    var dots=flow.steps.map(function(s,i){var done=i<flow.currentStep,act=i===flow.currentStep;return '<div style="width:18px;height:18px;border-radius:50%;background:'+(done?'var(--success)':act?'var(--warning)':'var(--surface-3)')+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:'+(done||act?'#000':'var(--text-tertiary)')+'">'+(done?'✓':String(i+1))+'</div>';}).join('<div style="flex:1;height:2px;background:var(--border);margin-top:-1px"></div>');
-    return '<div class="flow-card" style="border-left:3px solid '+sc+'" onclick="openFlowDetailModal(\''+flow.id+'\')"><div class="flow-card-title">'+xe(flow.title)+'</div><div class="flow-card-meta">'+xe(flow.requester)+' · Step '+(flow.currentStep+1)+'/'+flow.steps.length+'</div><div style="display:flex;align-items:center;gap:3px;margin-top:8px">'+dots+'</div><div style="display:flex;gap:6px;margin-top:10px"><button class="btn btn-sm btn-primary" onclick="advanceFlow(\''+flow.id+'\');event.stopPropagation()">Advance →</button><button class="btn btn-sm" style="color:var(--danger)" onclick="deleteFlow(\''+flow.id+'\');renderFlowPanel();event.stopPropagation()">Remove</button></div></div>';
-  }).join('');
-}
-
-// ═════════════════════════════
-// LIVE NOTIFICATIONS ENGINE
-// ═════════════════════════════
-function pushNotif(n){
-  n.id=n.id||Date.now();n.ts=n.ts||Date.now();n.read=false;
-  if(!NX.notifications)NX.notifications=[];
-  NX.notifications.unshift(n);if(NX.notifications.length>60)NX.notifications.pop();
-  _updateBadge();if(db)db.ref('nexus/notifications').push(n);
-}
-function startChatListener(){
-  if(!db)return;
-  ['general','ops','finance','hr','alerts'].forEach(function(ch){
-    db.ref('nexus/chat/'+ch).limitToLast(30).on('value',function(snap){
-      var raw=snap.val()||{},msgs=Object.values(raw).sort(function(a,b){return a.ts-b.ts;});
-      CHAT_STATE.messages[ch]=msgs;
-      if(CHAT_STATE.channel===ch){var panel=document.getElementById('chat-panel');if(panel&&panel.classList.contains('open'))renderChatPanel();if(NX.page==='chat-page')navTo('chat-page');}
-      var b=document.getElementById('chat-badge');if(b){b.textContent='1';b.style.display='flex';}
-    });
-  });
-  db.ref('nexus/notifications').limitToLast(15).on('child_added',function(snap){
-    var n=snap.val();if(!n)return;if(!NX.notifications)NX.notifications=[];
-    var exists=NX.notifications.find(function(x){return x.id===n.id;});
-    if(!exists){NX.notifications.unshift(n);_updateBadge();}
-  });
-  db.ref('nexus/flows').once('value',function(snap){
-    var raw=snap.val()||{};Object.values(raw).filter(Boolean).forEach(function(f){if(!NX_FLOWS.find(function(x){return x.id===f.id;}))NX_FLOWS.push(f);});
-  });
-}
-
-// ═════════════════════════════
-// CHART INITS FOR NEW PAGES
-// ═════════════════════════════
-var _extIC=initPageCharts;
-initPageCharts=function(pageId){
-  _extIC(pageId);
-  var dark=document.documentElement.getAttribute('data-theme')!=='light';
-  var grid=dark?'rgba(255,255,255,.04)':'rgba(0,0,0,.05)';
-  var tick=dark?'rgba(255,255,255,.35)':'rgba(0,0,0,.4)';
-  var tbg=dark?'rgba(10,12,20,.95)':'rgba(255,255,255,.95)';
-  function mk(id,cfg){var el=document.getElementById(id);if(!el)return;try{NX.charts[id]=new Chart(el.getContext('2d'),cfg);}catch(e){}}
-  function base(ex){return Object.assign({responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tick,font:{family:'Plus Jakarta Sans',size:11},boxWidth:10,boxHeight:10}},tooltip:{backgroundColor:tbg,borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:dark?'rgba(255,255,255,.9)':'rgba(0,0,0,.8)',bodyColor:tick,padding:10}},scales:{x:{grid:{color:grid},ticks:{color:tick,font:{family:'Plus Jakarta Sans',size:10}}},y:{grid:{color:grid},ticks:{color:tick,font:{family:'Plus Jakarta Sans',size:10}}}}},ex||{});}
-  if(pageId==='hr-dash'){var d={};HR_EMPLOYEES.forEach(function(e){d[e.dept]=(d[e.dept]||0)+1;});mk('chart-hr-dept',{type:'doughnut',data:{labels:Object.keys(d),datasets:[{data:Object.values(d),backgroundColor:['rgba(167,139,250,.75)','rgba(52,211,153,.75)','rgba(96,165,250,.75)','rgba(240,192,64,.75)','rgba(248,113,113,.75)','rgba(148,163,184,.75)'],borderWidth:2,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:tick,font:{family:'Plus Jakarta Sans',size:11},padding:10,boxWidth:10}}},cutout:'65%'}});}
-  if(pageId==='payroll'){var pd={};HR_EMPLOYEES.forEach(function(e){pd[e.dept]=(pd[e.dept]||0)+e.salary;});mk('chart-payroll-dept',{type:'bar',data:{labels:Object.keys(pd),datasets:[{label:'Monthly SAR',data:Object.values(pd),backgroundColor:'rgba(240,165,0,.4)',borderColor:'#f0c040',borderWidth:2,borderRadius:6}]},options:base()});}
-  if(pageId==='performance'){var b2={'90-100':0,'80-89':0,'70-79':0,'Under 70':0};HR_EMPLOYEES.forEach(function(e){if(e.performance>=90)b2['90-100']++;else if(e.performance>=80)b2['80-89']++;else if(e.performance>=70)b2['70-79']++;else b2['Under 70']++;});mk('chart-perf-dist',{type:'bar',data:{labels:Object.keys(b2),datasets:[{label:'Employees',data:Object.values(b2),backgroundColor:['rgba(52,211,153,.55)','rgba(96,165,250,.55)','rgba(245,158,11,.55)','rgba(248,113,113,.55)'],borderColor:['#34d399','#60a5fa','#f59e0b','#f87171'],borderWidth:2,borderRadius:8}]},options:base()});}
-  if(pageId==='fin-dash'){var cm=TODAY_D.getMonth(),ml=MONTH_NAMES.slice(0,cm+1);mk('chart-fin-pnl',{type:'bar',data:{labels:ml,datasets:[{label:'Revenue',data:REV_MONTHLY.slice(0,cm+1),backgroundColor:'rgba(52,211,153,.25)',borderColor:'#34d399',borderWidth:2,borderRadius:4},{label:'Cost',data:COST_MONTHLY.slice(0,cm+1),backgroundColor:'rgba(248,113,113,.2)',borderColor:'#f87171',borderWidth:2,borderRadius:4}]},options:base()});mk('chart-fin-pie',{type:'doughnut',data:{labels:FIN_BUDGET.slice(0,5).map(function(c){return c.name;}),datasets:[{data:FIN_BUDGET.slice(0,5).map(function(c){return c.actual;}),backgroundColor:['rgba(52,211,153,.7)','rgba(240,165,0,.7)','rgba(96,165,250,.7)','rgba(167,139,250,.7)','rgba(248,113,113,.7)'],borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:tick,font:{family:'Plus Jakarta Sans',size:10},padding:8,boxWidth:10}}},cutout:'60%'}});}
-  if(pageId==='fin-revenue'){mk('chart-rev-monthly',{type:'line',data:{labels:MONTH_NAMES.slice(0,TODAY_D.getMonth()+1),datasets:[{label:'Revenue',data:REV_MONTHLY.slice(0,TODAY_D.getMonth()+1),borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.1)',tension:.4,fill:true,pointRadius:4,borderWidth:2}]},options:base()});}
-  if(pageId==='budget'){mk('chart-budget',{type:'bar',data:{labels:FIN_BUDGET.map(function(c){return c.name.substring(0,14);}),datasets:[{label:'Budget',data:FIN_BUDGET.map(function(c){return c.budget;}),backgroundColor:'rgba(96,165,250,.25)',borderColor:'#60a5fa',borderWidth:2,borderRadius:4},{label:'Actual',data:FIN_BUDGET.map(function(c){return c.actual;}),backgroundColor:'rgba(52,211,153,.25)',borderColor:'#34d399',borderWidth:2,borderRadius:4}]},options:base()});}
-  if(pageId==='forecast'&&window._forecastData){mk('chart-cashflow',{type:'line',data:{labels:window._forecastData.map(function(m){return m.label;}),datasets:[{label:'Revenue',data:window._forecastData.map(function(m){return Math.round(m.rev);}),borderColor:'#34d399',backgroundColor:'transparent',tension:.4,borderWidth:2,pointRadius:2},{label:'Expenses',data:window._forecastData.map(function(m){return Math.round(m.exp);}),borderColor:'#f87171',backgroundColor:'transparent',tension:.4,borderWidth:2,pointRadius:2},{label:'Net Cash',data:window._forecastData.map(function(m){return Math.round(m.net);}),borderColor:'#f0c040',backgroundColor:'rgba(240,165,0,.08)',tension:.4,fill:true,borderWidth:2,pointRadius:2}]},options:base()});}
-};
-
-// ═════════════════════════════
-// CRUD ACTIONS
-// ═════════════════════════════
-function hrApproveLeave(id){var l=HR_LEAVES.find(function(x){return x.id===id;});if(l){l.status='approved';showToast('Leave approved — '+l.empName,'success');pushNotif({type:'info',icon:'✅',title:'Leave Approved',msg:l.empName+' leave approved',branch:'HR'});if(db)db.ref('hr/leave_requests/'+l.id).set(l);navTo(NX.page);}}
-function hrRejectLeave(id){var l=HR_LEAVES.find(function(x){return x.id===id;});if(l){l.status='rejected';showToast('Leave rejected — '+l.empName,'warning');if(db)db.ref('hr/leave_requests/'+l.id).set(l);navTo(NX.page);}}
-function finApproveExp(id){var e=FIN_EXPENSES.find(function(x){return x.id===id;});if(e){e.status='approved';showToast('Expense approved: '+e.desc,'success');pushNotif({type:'info',icon:'✅',title:'Expense Approved',msg:e.by+' — '+fsar(e.amount),branch:'Finance'});if(db)db.ref('finance/expenses/'+e.id).set(e);navTo(NX.page);}}
-function finRejectExp(id){var e=FIN_EXPENSES.find(function(x){return x.id===id;});if(e){e.status='rejected';showToast('Expense rejected','warning');if(db)db.ref('finance/expenses/'+e.id).set(e);navTo(NX.page);}}
-function markInvoicePaid(id){var i=FIN_INVOICES.find(function(x){return x.id===id;});if(i){i.status='paid';showToast('Invoice '+id+' marked paid','success');if(db)db.ref('finance/invoices/'+i.id.replace(/[^a-z0-9]/gi,'_')).set(i);navTo(NX.page);}}
-function advanceFlow(id){
-  var f=NX_FLOWS.find(function(x){return x.id===id;});if(!f)return;
-  if(f.currentStep<f.steps.length-1){f.currentStep++;showToast('Advanced to: '+f.steps[f.currentStep],'success');}
-  else{f.status='approved';showToast('Flow complete: '+f.title,'success');}
-  pushNotif({type:'info',icon:'🔀',title:'Flow Updated',msg:f.title+' → Step '+(f.currentStep+1),branch:'System'});
-  if(db)db.ref('nexus/flows/'+f.id).set(f);
-  renderFlowPanel();if(NX.page&&(NX.page.indexOf('flow')>=0||NX.page.indexOf('approval')>=0))navTo(NX.page);
-}
-function deleteFlow(id){if(!confirm('Remove this flow?'))return;NX_FLOWS=NX_FLOWS.filter(function(f){return f.id!==id;});if(db)db.ref('nexus/flows/'+id).remove();showToast('Flow removed','success');if(NX.page&&NX.page.indexOf('flow')>=0)navTo(NX.page);}
-function deleteEmployee(id){if(!confirm('Delete employee '+id+'?'))return;HR_EMPLOYEES=HR_EMPLOYEES.filter(function(e){return e.id!==id;});if(db)db.ref('hr/employees/'+id).remove();showToast('Employee deleted','success');navTo('employees');}
-function deleteLeave(id){if(!confirm('Delete leave request?'))return;var idx=HR_LEAVES.findIndex(function(l){return l.id===id;});if(idx>-1)HR_LEAVES.splice(idx,1);showToast('Deleted','success');navTo('leave-mgmt');}
-function deleteExpense(id){if(!confirm('Delete expense?'))return;var idx=FIN_EXPENSES.findIndex(function(e){return e.id===id;});if(idx>-1)FIN_EXPENSES.splice(idx,1);showToast('Deleted','success');navTo('fin-expenses');}
-function deleteInvoice(id){if(!confirm('Delete invoice '+id+'?'))return;var idx=FIN_INVOICES.findIndex(function(i){return i.id===id;});if(idx>-1)FIN_INVOICES.splice(idx,1);showToast('Deleted','success');navTo('fin-invoices');}
-function deleteJournal(id){if(!confirm('Delete journal entry?'))return;var idx=FIN_JOURNAL.findIndex(function(j){return j.id===id;});if(idx>-1)FIN_JOURNAL.splice(idx,1);showToast('Deleted','success');navTo('journal');}
-function deleteAccount(code){if(!confirm('Delete account '+code+'?'))return;var idx=FIN_COA.findIndex(function(a){return a.code===code;});if(idx>-1)FIN_COA.splice(idx,1);showToast('Deleted','success');navTo('coa');}
-function deleteAnnouncement(id){if(!confirm('Delete announcement?'))return;var idx=HR_ANNOUNCEMENTS.findIndex(function(a){return a.id===id;});if(idx>-1)HR_ANNOUNCEMENTS.splice(idx,1);showToast('Deleted','success');navTo('announcements');}
-function deletePosition(id){if(!confirm('Close this position?'))return;showToast('Position closed','success');navTo('recruitment');}
-function processPayroll(month){showToast('Processing payroll for '+month+'…','info');pushNotif({type:'info',icon:'💸',title:'Payroll Processing',msg:'Payroll '+month+' processing started',branch:'HR'});}
-function exportCSV(){showToast('Exporting as CSV…','success');}
-
-// ═════════════════════════════
-// ALL MODALS
-// ═════════════════════════════
-function openAddEmpModal(){
-  openModal(mH('Add Employee')+
-    mR(mF('Full Name',mI('e.g. Ahmed Al-Rashidi'))+mF('Employee ID',mI('e.g. E013')))+
-    mR(mF('Role',mI('e.g. Branch Manager'))+mF('Department',mSel(['Operations','HR','Finance','F&B','Marketing','IT'])))+
-    mR(mF('Branch',mSel(['HQ','Piatto Riyadh','Piatto Jeddah','The Grill']))+mF('Phone',mI('+966 5X XXX XXXX')))+
-    mR(mF('Nationality',mI('Saudi'))+mF('Joined Date',mI('','date',TODAY_STR2)))+
-    mF('Monthly Basic Salary (SAR)',mI('0','number'))+
-    mAct('Add Employee',"saveNewEmployee()"));
-}
-function saveNewEmployee(){showToast('Employee added!','success');pushNotif({type:'info',icon:'👥',title:'New Employee Added',msg:'Record created',branch:'HR'});closeModalForce();navTo('employees');}
-function openEditEmpModal(id){
-  var e=HR_EMPLOYEES.find(function(x){return x.id===id;})||{};
-  openModal(mH('Edit — '+xe(e.name||id))+
-    mR(mF('Full Name',mI('',undefined,e.name))+mF('Employee ID',mI('',undefined,e.id)))+
-    mR(mF('Role',mI('',undefined,e.role))+mF('Department',mI('',undefined,e.dept)))+
-    mR(mF('Branch',mI('',undefined,e.branch))+mF('Phone',mI('',undefined,e.phone)))+
-    mR(mF('Salary (SAR)',mI('','number',e.salary))+mF('Status',mSel(['active','on-leave','inactive'],e.status)))+
-    mAct('Save Changes',"showToast('Employee updated!','success');closeModalForce();navTo('employees')"));
-}
-function openEmpDetail(id){
-  var e=HR_EMPLOYEES.find(function(x){return x.id===id;});if(!e)return;
-  var html=mH('Employee Profile');
-  html+='<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:16px;background:linear-gradient(135deg,rgba(167,139,250,.1),rgba(52,211,153,.07));border-radius:10px">'+empAvatar(e.name,52)+'<div><div style="font-size:17px;font-weight:800">'+xe(e.name)+'</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px">'+xe(e.role)+' · '+xe(e.dept)+'</div><div style="margin-top:6px">'+sBadge(e.status)+'</div></div></div>';
-  [['ID',e.id],['Branch',e.branch],['Joined',e.joined],['Leave Balance',e.leaveBalance+' days'],['Performance',e.performance+'%'],['Monthly Salary',fsar(e.salary)]].forEach(function(r){html+='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text-secondary)">'+r[0]+'</span><span style="font-weight:600;color:var(--text-primary)">'+xe(r[1])+'</span></div>';});
-  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px"><button class="btn" onclick="openEditEmpModal(\''+id+'\');closeModalForce()">Edit</button><button class="btn btn-primary" onclick="window._slipEmpId=\''+id+'\';closeModalForce();navTo(\'salary-slip\')">Salary Slip</button></div>';
-  openModal(html);
-}
-function openNewLeaveModal(){
-  openModal(mH('New Leave Request')+
-    mF('Employee',mSel(HR_EMPLOYEES.map(function(e){return e.name;})))+
-    mF('Leave Type',mSel(['Annual','Sick','Emergency','Maternity','Paternity']))+
-    mR(mF('From',mI('','date',TODAY_STR2))+mF('To',mI('','date')))+
-    mF('Reason','<textarea class="form-input" rows="3" placeholder="Reason…" style="resize:vertical"></textarea>')+
-    mAct('Submit',"saveNewLeave()"));
-}
-function saveNewLeave(){showToast('Leave request submitted!','success');pushNotif({type:'info',icon:'🏖',title:'Leave Submitted',msg:'Pending approval',branch:'HR'});closeModalForce();navTo('leave-mgmt');}
-function openEditLeaveModal(id){var l=HR_LEAVES.find(function(x){return x.id===id;})||{};openModal(mH('Edit Leave — '+xe(l.id||id))+mF('Status',mSel(['pending','approved','rejected'],l.status))+mF('Reason','<textarea class="form-input" rows="3" style="resize:vertical">'+xe(l.reason||'')+'</textarea>')+mAct('Save',"showToast('Updated!','success');closeModalForce();navTo('leave-mgmt')"));}
-function openRunPayrollModal(){openModal(mH('Run Payroll — Apr 2025')+'<div style="background:rgba(240,165,0,.08);border:1px solid rgba(240,165,0,.2);border-radius:8px;padding:12px;margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:var(--warning)">Pre-run Checklist</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">12 employees · Attendance locked · Leave deductions applied</div></div>'+mF('Payment Date',mI('','date','2025-04-28'))+mF('Notes','<textarea class="form-input" rows="2" style="resize:vertical"></textarea>')+mAct('Process',"processPayroll('Apr 2025');closeModalForce()"));}
-function openPerformanceModal(id){var e=HR_EMPLOYEES.find(function(x){return x.id===id;})||{};openModal(mH('Performance Review — '+xe(e.name||id))+mF('Score (0–100)','<input class="form-input" type="number" min="0" max="100" value="'+(e.performance||80)+'">')+mF('Feedback','<textarea class="form-input" rows="4" placeholder="Review comments…" style="resize:vertical"></textarea>')+mAct('Save Review',"showToast('Review saved!','success');closeModalForce()"));}
-function openNewCourseModal(){openModal(mH('Add Training Course')+mF('Course Name',mI('e.g. Food Safety & Hygiene'))+mR(mF('Department',mI('F&B / All Staff / etc.'))+mF('Duration',mI('e.g. 8 hrs')))+mR(mF('Due Date',mI('','date'))+mF('Type',mSel(['Required','Optional'])))+mAct('Add Course',"showToast('Course added!','success');closeModalForce();navTo('training')"));}
-function openEditCourseModal(id){openModal(mH('Edit Course')+mF('Course Name',mI(''))+mAct('Save',"showToast('Course updated!','success');closeModalForce();navTo('training')"));}
-function openNewAnnouncementModal(){openModal(mH('New Announcement')+mF('Title',mI('Announcement title…'))+mR(mF('Category',mSel(['HR','Finance','Policy','Operations']))+mF('Priority',mSel(['medium','high','low'])))+mF('Message','<textarea class="form-input" rows="4" style="resize:vertical"></textarea>')+mAct('Publish',"saveAnn()"));}
-function saveAnn(){showToast('Published!','success');pushNotif({type:'info',icon:'📢',title:'New Announcement',msg:'HR announcement published',branch:'HR'});closeModalForce();navTo('announcements');}
-function openEditAnnouncementModal(id){var a=HR_ANNOUNCEMENTS.find(function(x){return x.id===id;})||{};openModal(mH('Edit Announcement')+mF('Title',mI('',undefined,a.title))+mF('Body','<textarea class="form-input" rows="4" style="resize:vertical">'+xe(a.body||'')+'</textarea>')+mAct('Save',"showToast('Updated!','success');closeModalForce();navTo('announcements')"));}
-function viewAnn(id){var a=HR_ANNOUNCEMENTS.find(function(x){return x.id===id;});if(a)openModal(mH(a.title)+'<div style="font-size:12px;color:var(--text-tertiary);margin-bottom:12px">'+xe(a.cat)+' · '+xe(a.date)+'</div><div style="font-size:14px;line-height:1.7">'+xe(a.body)+'</div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px"><button class="btn" onclick="closeModalForce()">Close</button><button class="btn btn-primary" onclick="openEditAnnouncementModal(\''+a.id+'\');closeModalForce()">Edit</button></div>');}
-function openNewPositionModal(){openModal(mH('Open Position')+mF('Job Title',mI('e.g. Head Chef, Finance Manager…'))+mR(mF('Department',mSel(['F&B','Operations','Finance','HR','Marketing','IT']))+mF('Branch',mSel(['HQ','Piatto Riyadh','Piatto Jeddah','The Grill'])))+mR(mF('Deadline',mI('','date'))+mF('Salary Range (SAR)',mI('e.g. 8,000 – 12,000')))+mAct('Open Position',"showToast('Position opened!','success');closeModalForce();navTo('recruitment')"));}
-function openEditPositionModal(id){openModal(mH('Edit Position')+mF('Title',mI(''))+mF('Status',mSel(['open','interview','filled']))+mAct('Save',"showToast('Updated!','success');closeModalForce();navTo('recruitment')"));}
-function openNewExpenseModal(){openModal(mH('Submit Expense')+mF('Description',mI('What was the expense for?'))+mR(mF('Category',mSel(['Marketing','Maintenance','Training','IT','Utilities','Supplies','Transport']))+mF('Amount (SAR)',mI('0','number')))+mR(mF('Date',mI('','date',TODAY_STR2))+mF('Branch',mSel(['HQ','Piatto Riyadh','Piatto Jeddah','The Grill'])))+mAct('Submit',"showToast('Expense submitted!','success');pushNotif({type:'info',icon:'🧾',title:'Expense Submitted',msg:'Pending approval',branch:'Finance'});closeModalForce();navTo('fin-expenses')"));}
-function openEditExpenseModal(id){var e=FIN_EXPENSES.find(function(x){return x.id===id;})||{};openModal(mH('Edit Expense — '+xe(e.id||id))+mF('Description',mI('',undefined,e.desc))+mR(mF('Amount (SAR)',mI('','number',e.amount))+mF('Status',mSel(['pending','approved','rejected'],e.status)))+mAct('Save',"showToast('Updated!','success');closeModalForce();navTo('fin-expenses')"));}
-function openNewInvoiceModal(){openModal(mH('Add Invoice')+mR(mF('Invoice #',mI('INV-XXXX'))+mF('Supplier',mI('Supplier name…')))+mR(mF('Amount (SAR)',mI('0','number'))+mF('Due Date',mI('','date')))+mF('Branch',mSel(['HQ','Piatto Riyadh','Piatto Jeddah','The Grill']))+mAct('Add Invoice',"showToast('Invoice added!','success');closeModalForce();navTo('fin-invoices')"));}
-function openEditInvoiceModal(id){var i=FIN_INVOICES.find(function(x){return x.id===id;})||{};openModal(mH('Edit Invoice — '+xe(id))+mR(mF('Amount',mI('','number',i.amount))+mF('Status',mSel(['unpaid','paid','overdue'],i.status)))+mF('Due Date',mI('','date',i.due))+mAct('Save',"showToast('Updated!','success');closeModalForce();navTo('fin-invoices')"));}
-function openNewPettyModal(){openModal(mH('New Petty Cash Entry')+mF('Description',mI('What was spent on?'))+mR(mF('Amount (SAR)',mI('0','number'))+mF('Type',mSel(['out','in'])))+mR(mF('Category',mSel(['Supplies','Office','Transport','Misc','Top-up']))+mF('Branch',mSel(['HQ','Piatto Riyadh','Piatto Jeddah','The Grill'])))+mAct('Save',"showToast('Entry saved!','success');closeModalForce();navTo('fin-petty')"));}
-function openEditPettyModal(idx){openModal(mH('Edit Petty Cash Entry')+mF('Description',mI(''))+mF('Amount (SAR)',mI('0','number'))+mAct('Save',"showToast('Updated!','success');closeModalForce();navTo('fin-petty')"));}
-function openNewJournalModal(){openModal(mH('New Journal Entry')+mF('Description',mI('Describe the transaction…'))+mR(mF('Debit Account','<select class="form-input">'+FIN_COA.map(function(a){return '<option>'+xe(a.code)+' — '+xe(a.name)+'</option>';}).join('')+'</select>')+mF('Credit Account','<select class="form-input">'+FIN_COA.map(function(a){return '<option>'+xe(a.code)+' — '+xe(a.name)+'</option>';}).join('')+'</select>'))+mR(mF('Amount (SAR)',mI('0','number'))+mF('Reference',mI('Invoice/PO ref…')))+mAct('Post Entry',"showToast('Journal entry posted!','success');closeModalForce();navTo('journal')"));}
-function openEditJournalModal(id){openModal(mH('Edit Journal — '+xe(id))+mF('Description',mI(''))+mF('Amount (SAR)',mI('0','number'))+mAct('Save',"showToast('Updated!','success');closeModalForce();navTo('journal')"));}
-function openEditBudgetModal(){openModal(mH('Edit Budget — 2025')+'<div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">Use the Edit button next to each category row in the budget breakdown to update individual allocations.</div><div style="display:flex;justify-content:flex-end"><button class="btn" onclick="closeModalForce()">Close</button></div>');}
-function openEditBudgetCat(name){var c=FIN_BUDGET.find(function(x){return x.name===name;})||{};openModal(mH('Edit Budget — '+xe(name))+mF('Annual Budget (SAR)',mI('',undefined,c.budget))+mAct('Save',"showToast('Budget updated!','success');closeModalForce();navTo('budget')"));}
-function openNewAccountModal(){openModal(mH('Add Account')+mR(mF('Code',mI('e.g. 1300'))+mF('Type',mSel(['Asset','Liability','Equity','Revenue','Expense'])))+mF('Account Name',mI('e.g. Prepaid Expenses'))+mF('Opening Balance',mI('0','number'))+mAct('Add Account',"showToast('Account added!','success');closeModalForce();navTo('coa')"));}
-function openEditAccountModal(code){var a=FIN_COA.find(function(x){return x.code===code;})||{};openModal(mH('Edit Account — '+xe(code))+mF('Name',mI('',undefined,a.name))+mF('Balance',mI('','number',a.balance))+mAct('Save',"showToast('Updated!','success');closeModalForce();navTo('coa')"));}
-function openNewFlowModal(){
-  openModal(mH('New Workflow')+
-    mF('Flow Title',mI('e.g. Invoice Approval, Leave Request…'))+
-    mR(mF('Type',mSel(['hr','finance','ops']))+mF('Priority',mSel(['medium','high','low'])))+
-    mF('Steps (comma-separated)','<input class="form-input" id="nf-steps" value="Submit, Review, Approve, Complete">')+
-    mF('Description (optional)','<textarea class="form-input" rows="2" style="resize:vertical"></textarea>')+
-    mAct('Create Flow',"saveNewFlow()"));
-}
-function saveNewFlow(){
-  var titleEl=document.querySelector('#modal-body input[type=text]');
-  var stepsEl=document.getElementById('nf-steps');
-  var steps=stepsEl?stepsEl.value.split(',').map(function(s){return s.trim();}).filter(Boolean):['Submit','Review','Approve','Complete'];
-  var flow={id:'FL'+Date.now(),title:titleEl&&titleEl.value.trim()?titleEl.value.trim():'New Flow',type:'hr',status:'active',steps:steps,currentStep:0,requester:(NX.session||{}).entityName||'You',date:TODAY_STR2,priority:'medium'};
-  NX_FLOWS.unshift(flow);if(db)db.ref('nexus/flows/'+flow.id).set(flow);
-  showToast('Flow created: '+flow.title,'success');pushNotif({type:'info',icon:'🔀',title:'New Flow',msg:flow.title,branch:'System'});
-  closeModalForce();if(NX.page&&NX.page.indexOf('flow')>=0)navTo(NX.page);renderFlowPanel();
-}
-function openFlowDetailModal(id){
-  var f=NX_FLOWS.find(function(x){return x.id===id;});if(!f)return;
-  var sc={active:'var(--warning)',approved:'var(--success)',pending:'var(--info)',rejected:'var(--danger)'}[f.status]||'var(--text-tertiary)';
-  var html=mH(f.title);
-  html+='<div style="display:flex;gap:8px;margin-bottom:12px"><span class="badge" style="background:'+sc+'18;color:'+sc+'">'+xe(f.status)+'</span><span class="badge badge-amber">'+xe(f.priority)+' priority</span></div>';
-  html+='<div style="font-size:12px;color:var(--text-secondary);margin-bottom:20px">By '+xe(f.requester)+' · '+xe(f.date)+'</div>';
-  html+='<div style="position:relative;padding-left:32px">';
-  html+='<div style="position:absolute;left:10px;top:16px;bottom:16px;width:2px;background:var(--border)"></div>';
-  f.steps.forEach(function(step,i){
-    var done=i<f.currentStep,act=i===f.currentStep;
-    html+='<div style="display:flex;gap:12px;padding-bottom:16px;position:relative"><div style="width:20px;height:20px;border-radius:50%;background:'+(done?'var(--success)':act?'var(--warning)':'var(--surface-3)')+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:'+(done||act?'#000':'var(--text-tertiary)')+';position:absolute;left:-32px;top:2px;z-index:1;border:2px solid var(--body-bg)">'+(done?'✓':String(i+1))+'</div><div><div style="font-size:13px;font-weight:700">'+xe(step)+'</div><div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">'+(done?'Completed':act?'In progress — awaiting action':'Pending')+'</div></div></div>';
-  });
-  html+='</div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">';
-  if(f.status==='active'||f.status==='pending')html+='<button class="btn btn-primary" onclick="advanceFlow(\''+f.id+'\');closeModalForce()">Advance Flow →</button>';
-  html+='<button class="btn" onclick="closeModalForce()">Close</button></div>';
-  openModal(html);
-}
-
-// ═════════════════════════════
-// HOOK INTO launchApp
-// ═════════════════════════════
-var _extLA=launchApp;
-launchApp=function(){_extLA();setTimeout(startChatListener,2000);};
-
-console.log('NEXUS Full Extension loaded — HR + Finance + Chat + Flows v3 ✓');
-</script>
-
-
-<script>
-// ══════════════════════════════════════════════════
-// NEXUS PATCH — Missing HR page functions
-// ══════════════════════════════════════════════════
-
-// Fix truncated pHRFlows
-function pHRFlows(){return pFlowsPage('hr');}
-
-function pHRDash(){
-  var tot=HR_EMPLOYEES.length,act=HR_EMPLOYEES.filter(function(e){return e.status==='active';}).length;
-  var pend=HR_LEAVES.filter(function(l){return l.status==='pending';}).length;
-  var avg=Math.round(HR_EMPLOYEES.reduce(function(s,e){return s+e.performance;},0)/HR_EMPLOYEES.length);
-  var h=phRow('HR Dashboard','People ops — '+new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'}),
-    '<button class="btn" onclick="toggleChat()">💬 Chat</button>'+
-    '<button class="btn" onclick="toggleFlow()">🔀 Flows</button>'+
-    '<button class="btn btn-primary" onclick="openAddEmpModal()">+ Add Employee</button>');
-  h+='<div class="kpi-grid section">';
-  h+=kpiH('👥','Total Employees',tot,'All branches','#a78bfa');
-  h+=kpiH('✅','Active',act,'Working today','#34d399');
-  h+=kpiH('🏖','On Leave',HR_EMPLOYEES.filter(function(e){return e.status==='on-leave';}).length,'Currently absent','#f59e0b');
-  h+=kpiH('📋','Pending Approvals',pend,'Leave requests','#60a5fa');
-  h+=kpiH('💸','Payroll MTD',fsar(143700),'Apr 2025 Draft','#f0c040');
-  h+=kpiH('⭐','Avg Performance',avg+'%','Company-wide','#f87171');
-  h+='</div>';
-  h+='<div class="grid-2 section">';
-  h+='<div class="chart-card"><div class="chart-header"><div class="chart-title">Headcount by Department</div></div><div style="height:240px"><canvas id="chart-hr-dept"></canvas></div></div>';
-  h+='<div class="card"><div class="chart-title" style="margin-bottom:14px">Leave Queue</div>';
-  var pl=HR_LEAVES.filter(function(l){return l.status==='pending';});
-  if(!pl.length)h+='<div class="empty-state" style="padding:24px 0"><div class="es-icon">✅</div><p>No pending leaves</p></div>';
-  pl.forEach(function(l){
-    h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+empAvatar(l.empName);
-    h+='<div style="flex:1"><div style="font-size:13px;font-weight:600">'+xe(l.empName)+'</div><div style="font-size:11px;color:var(--text-tertiary)">'+xe(l.type)+' · '+xe(l.from)+' to '+xe(l.to)+'</div></div>';
-    h+='<button class="btn btn-sm" style="color:var(--success)" onclick="hrApproveLeave(''+l.id+'')">✓</button>';
-    h+='<button class="btn btn-sm" style="color:var(--danger)" onclick="hrRejectLeave(''+l.id+'')">✗</button></div>';
-  });
-  h+='</div></div>';
-  h+='<div class="section"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:14px;font-weight:700">Employees</span><button class="btn btn-sm" onclick="navTo('employees')">View All →</button></div>';
-  h+='<div class="table-wrap"><table class="data-table"><thead><tr><th>Employee</th><th>Dept</th><th>Branch</th><th>Status</th><th>Perf.</th><th>Actions</th></tr></thead><tbody>';
-  HR_EMPLOYEES.slice(0,6).forEach(function(e){
-    var pc=e.performance>=90?'var(--success)':e.performance>=80?'var(--warning)':'var(--danger)';
-    h+='<tr onclick="openEmpDetail(''+e.id+'')" style="cursor:pointer"><td><div style="display:flex;align-items:center;gap:10px">'+empAvatar(e.name)+'<div><div style="font-weight:600;color:var(--text-primary)">'+xe(e.name)+'</div><div style="font-size:11px;color:var(--text-tertiary)">'+xe(e.id)+'</div></div></div></td>';
-    h+='<td>'+xe(e.dept)+'</td><td style="font-size:12px;color:var(--text-secondary)">'+xe(e.branch)+'</td>';
-    h+='<td>'+sBadge(e.status)+'</td>';
-    h+='<td><div style="display:flex;align-items:center;gap:6px"><div style="width:48px;height:4px;background:var(--surface-3);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+e.performance+'%;background:'+pc+';border-radius:2px"></div></div><span style="font-family:var(--mono);font-size:11px;color:'+pc+'">'+e.performance+'%</span></div></td>';
-    h+='<td onclick="event.stopPropagation()"><div style="display:flex;gap:4px"><button class="btn btn-sm" onclick="openEditEmpModal(''+e.id+'')">Edit</button></div></td></tr>';
-  });
-  h+='</tbody></table></div></div>';
-  h+='<div class="section"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:14px;font-weight:700">Announcements</span><button class="btn btn-sm btn-primary" onclick="openNewAnnouncementModal()">+ New</button></div>';
-  HR_ANNOUNCEMENTS.forEach(function(a){
-    var cc=a.cat==='Finance'?'var(--success)':a.cat==='Policy'?'var(--warning)':'#a78bfa';
-    h+='<div style="background:var(--surface-2);border:1px solid var(--border);border-left:4px solid '+cc+';border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:8px;cursor:pointer" onclick="viewAnn(''+a.id+'')">';
-    h+='<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;font-weight:700">'+xe(a.title)+'</span><span class="badge '+(a.priority==='high'?'badge-red':'badge-amber')+'">'+xe(a.priority)+'</span></div>';
-    h+='<div style="font-size:11px;color:var(--text-tertiary);margin-top:3px">'+xe(a.cat)+' · '+xe(a.date)+'</div></div>';
-  });
-  return h+'</div>';
-}
-
-function pEmployees(){
-  var q=(window._empQ||'').toLowerCase(),dept=window._empDept||'';
-  var list=HR_EMPLOYEES.filter(function(e){
-    if(q&&e.name.toLowerCase().indexOf(q)<0&&e.id.toLowerCase().indexOf(q)<0)return false;
-    if(dept&&e.dept!==dept)return false;
-    return true;
-  });
-  var depts=[...new Set(HR_EMPLOYEES.map(function(e){return e.dept;}))];
-  var h=phRow('Employee Directory',list.length+'/'+HR_EMPLOYEES.length+' employees',
-    '<button class="btn" onclick="exportCSV()">Export</button><button class="btn btn-primary" onclick="openAddEmpModal()">+ Add Employee</button>');
-  h+='<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><input style="flex:1;min-width:180px;padding:8px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:var(--font);font-size:13px;outline:none" placeholder="Search name or ID" value="'+xe(window._empQ||'')+'" onkeyup="window._empQ=this.value;navTo('employees')">';
-  h+='<select class="form-select" style="width:auto" onchange="window._empDept=this.value;navTo('employees')"><option value="">All Departments</option>';
-  depts.forEach(function(d){h+='<option value="'+xe(d)+'"'+(dept===d?' selected':'')+'>'+xe(d)+'</option>';});
-  h+='</select></div>';
-  h+='<div class="table-wrap"><table class="data-table"><thead><tr><th>Employee</th><th>Role</th><th>Dept</th><th>Branch</th><th>Status</th><th style="text-align:right">Salary</th><th>Leave</th><th>Actions</th></tr></thead><tbody>';
-  list.forEach(function(e){
-    h+='<tr onclick="openEmpDetail(''+e.id+'')" style="cursor:pointer"><td><div style="display:flex;align-items:center;gap:10px">'+empAvatar(e.name)+'<div><div style="font-weight:600;color:var(--text-primary)">'+xe(e.name)+'</div><div style="font-size:11px;color:var(--text-tertiary)">'+xe(e.id)+'</div></div></div></td>';
-    h+='<td style="font-size:12px">'+xe(e.role)+'</td>';
-    h+='<td><span class="badge" style="background:rgba(167,139,250,.15);color:#a78bfa">'+xe(e.dept)+'</span></td>';
-    h+='<td style="font-size:12px;color:var(--text-secondary)">'+xe(e.branch)+'</td>';
-    h+='<td>'+sBadge(e.status)+'</td>';
-    h+='<td style="text-align:right;font-family:var(--mono);font-weight:700;color:#f0c040">'+fsar(e.salary)+'</td>';
-    var lc=e.leaveBalance>10?'var(--success)':e.leaveBalance>5?'var(--warning)':'var(--danger)';
-    h+='<td style="font-family:var(--mono);font-size:12px;color:'+lc+'">'+e.leaveBalance+'d</td>';
-    h+='<td onclick="event.stopPropagation()"><div style="display:flex;gap:4px"><button class="btn btn-sm" onclick="openEditEmpModal(''+e.id+'')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="deleteEmployee(''+e.id+'')">Del</button></div></td></tr>';
-  });
-  return h+'</tbody></table></div>';
-}
-
-function pLeaveMgmt(){
-  var tab=window._leaveTab||'requests';
-  var h=phRow('Leave Management','Requests and leave balances','<button class="btn btn-primary" onclick="openNewLeaveModal()">+ New Request</button>');
-  h+='<div class="tab-row">';
-  [['requests','Requests'],['balances','Balances'],['calendar','Calendar']].forEach(function(t){h+='<button class="tab-btn '+(tab===t[0]?'active':'')+'" onclick="window._leaveTab=''+t[0]+'';navTo('leave-mgmt')">'+t[1]+'</button>';});
-  h+='</div>';
-  if(tab==='balances'){
-    h+='<div class="table-wrap"><table class="data-table"><thead><tr><th>Employee</th><th>Dept</th><th>Total</th><th>Used</th><th>Remaining</th></tr></thead><tbody>';
-    HR_EMPLOYEES.forEach(function(e){
-      var used=30-e.leaveBalance,pct=Math.round(used/30*100),col=e.leaveBalance>15?'var(--success)':e.leaveBalance>5?'var(--warning)':'var(--danger)';
-      h+='<tr><td><div style="display:flex;align-items:center;gap:8px">'+empAvatar(e.name,26)+'<span style="font-weight:600;color:var(--text-primary)">'+xe(e.name)+'</span></div></td><td>'+xe(e.dept)+'</td><td style="font-family:var(--mono)">30</td><td style="font-family:var(--mono)">'+used+'</td>';
-      h+='<td><div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--mono);font-weight:700;color:'+col+'">'+e.leaveBalance+'</span><div style="width:56px;height:4px;background:var(--surface-3);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:2px"></div></div></div></td></tr>';
-    });
-    h+='</tbody></table></div>';
-  } else if(tab==='calendar'){
-    h+='<div class="empty-state"><div class="es-icon">📅</div><h3>Leave Calendar</h3><p>Visual calendar — connect to Firebase for live data</p></div>';
-  } else {
-    h+='<div class="table-wrap"><table class="data-table"><thead><tr><th>Ref</th><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
-    HR_LEAVES.forEach(function(l){
-      h+='<tr><td style="font-family:var(--mono);font-size:11px;color:var(--text-tertiary)">'+xe(l.id)+'</td>';
-      h+='<td><div style="display:flex;align-items:center;gap:8px">'+empAvatar(l.empName,26)+'<span style="font-weight:600">'+xe(l.empName)+'</span></div></td>';
-      h+='<td><span class="badge badge-blue">'+xe(l.type)+'</span></td>';
-      h+='<td style="font-family:var(--mono);font-size:12px">'+xe(l.from)+'</td><td style="font-family:var(--mono);font-size:12px">'+xe(l.to)+'</td><td style="font-family:var(--mono);font-weight:700">'+l.days+'</td>';
-      h+='<td>'+lBadge(l.status)+'</td>';
-      h+='<td><div style="display:flex;gap:3px">';
-      if(l.status==='pending'){h+='<button class="btn btn-sm" style="color:var(--success)" onclick="hrApproveLeave(''+l.id+'')">✓</button><button class="btn btn-sm" style="color:var(--danger)" onclick="hrRejectLeave(''+l.id+'')">✗</button>';}
-      h+='<button class="btn btn-sm" onclick="openEditLeaveModal(''+l.id+'')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="deleteLeave(''+l.id+'')">Del</button></div></td></tr>';
-    });
-    h+='</tbody></table></div>';
-  }
-  return h;
-}
-
-function pSalarySlip(){
-  var empId=window._slipEmpId||'E001';
-  var e=HR_EMPLOYEES.find(function(x){return x.id===empId;})||HR_EMPLOYEES[0];
-  var h=phRow('Salary Slips','Generate employee salary slips');
-  h+='<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">';
-  h+='<select class="form-select" style="width:auto" onchange="window._slipEmpId=this.value;navTo('salary-slip')">';
-  HR_EMPLOYEES.forEach(function(emp){h+='<option value="'+emp.id+'"'+(emp.id===empId?' selected':'')+'>'+xe(emp.name)+'</option>';});
-  h+='</select><select class="form-select" style="width:auto">';
-  HR_PAYROLL.forEach(function(p){h+='<option>'+xe(p.month)+'</option>';});
-  h+='</select><button class="btn btn-primary" onclick="showToast('Generating PDF…','info')">🖨 Print</button></div>';
-  var basic=e.salary,housing=Math.round(basic*.15),transport=Math.round(basic*.06),bonus=Math.round(basic*.07);
-  var gross=basic+housing+transport+bonus,gosiEmp=Math.round(gross*.1),deduct=Math.round(basic*.04),net=gross-gosiEmp-deduct;
-  h+='<div class="pay-slip"><div class="pay-slip-head"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">';
-  h+='<div><div style="font-size:20px;font-weight:800">ALFA.CO</div><div style="font-size:11px;color:var(--text-secondary);margin-top:2px">Salary Slip — April 2025</div></div>';
-  h+='<div style="text-align:right"><div style="font-size:16px;font-weight:700">'+xe(e.name)+'</div><div style="font-size:11px;color:var(--text-secondary)">'+xe(e.id)+' · '+xe(e.role)+' · '+xe(e.branch)+'</div></div></div></div>';
-  h+='<div style="padding:20px 24px"><div class="grid-2">';
-  h+='<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary);margin-bottom:10px">Earnings</div>';
-  [['Basic Salary',basic],['Housing Allowance',housing],['Transport',transport],['Performance Bonus',bonus]].forEach(function(r){h+='<div class="slip-line"><span>'+r[0]+'</span><span style="font-family:var(--mono);color:var(--success)">'+fsar(r[1])+'</span></div>';});
-  h+='<div class="slip-total-line"><span>Gross</span><span style="font-family:var(--mono);color:#f0c040">'+fsar(gross)+'</span></div></div>';
-  h+='<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary);margin-bottom:10px">Deductions</div>';
-  [['GOSI Employee 10%',gosiEmp],['Absence Deduction',deduct]].forEach(function(r){h+='<div class="slip-line"><span>'+r[0]+'</span><span style="font-family:var(--mono);color:var(--danger)">- '+fsar(r[1])+'</span></div>';});
-  h+='<div class="slip-total-line"><span>Total Deductions</span><span style="font-family:var(--mono);color:var(--danger)">- '+fsar(gosiEmp+deduct)+'</span></div></div></div>';
-  h+='<div style="margin-top:20px;padding:16px;background:linear-gradient(135deg,rgba(240,165,0,.1),rgba(52,211,153,.08));border-radius:10px;border:1px solid rgba(240,165,0,.2)"><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;font-weight:700">Net Salary (Take Home)</span><span style="font-family:var(--mono);font-size:26px;font-weight:300;color:#f0c040">'+fsar(net)+'</span></div></div>';
-  return h+'</div></div>';
-}
-</script>
-
 </body>
 </html>
