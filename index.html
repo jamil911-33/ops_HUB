@@ -1329,6 +1329,10 @@ var NX = {
   demoMode: false
 };
 
+// Checklist module globals (must be declared at top level)
+var clNxState = {};
+var clNxRole  = null;
+
 // ── Firebase Initialization ──────────────────────────────────────────────────
 function initFirebase() {
   if (typeof firebase === 'undefined') return false;
@@ -2788,7 +2792,12 @@ function launchApp() {
   if (tb) tb.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
 
   // Nav to default page
-  var role = NX.session.role;
+  var role = NX.session && NX.session.role;
+  if (!role) {
+    // No valid session — return to login
+    showLogin();
+    return;
+  }
   var defaultPages = {
     'super_admin':'exec-dash','ceo':'exec-dash','brand_dir':'brand-dash',
     'regional':'region-dash','branch_mgr':'branch-dash','staff':'branch-dash',
