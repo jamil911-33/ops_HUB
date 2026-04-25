@@ -1691,24 +1691,33 @@ var NAV_CONFIG = {
   ],
   branch_mgr: [
     { section:'DASHBOARD', items:[
-      { id:'branch-dash', icon:'📊', label:'Dashboard' }
+      { id:'branch-dash',       icon:'📊', label:'Dashboard' }
     ]},
     { section:'INVENTORY', items:[
-      { id:'inv-items',   icon:'📦', label:'Items' },
-      { id:'inv-moves',   icon:'🔄', label:'Receive / Issue' },
-      { id:'inv-orders',  icon:'🛒', label:'Purchase Orders' },
-      { id:'low-stock',   icon:'🚨', label:'Low Stock', badge:'lowstock' },
-      { id:'inv-report',  icon:'📅', label:'Monthly Report' },
-      { id:'wastage',     icon:'🗑️', label:'Wastage Log' }
+      { id:'inv-items',         icon:'📦', label:'Items' },
+      { id:'inv-moves',         icon:'🔄', label:'Receive / Issue' },
+      { id:'inv-orders',        icon:'🛒', label:'Purchase Orders' },
+      { id:'low-stock',         icon:'🚨', label:'Low Stock', badge:'lowstock' },
+      { id:'inv-report',        icon:'📅', label:'Monthly Report' },
+      { id:'wastage',           icon:'🗑️', label:'Wastage Log' },
+      { id:'bm-transfers',      icon:'🔀', label:'Transfer Requests', badge:'bm-transfers-pending' }
     ]},
     { section:'OPERATIONS', items:[
-      { id:'staff',        icon:'👥', label:'Staff' },
-      { id:'schedule',     icon:'🗓️', label:'Schedule' },
-      { id:'timesheet',    icon:'⏱️', label:'Timesheet' },
-      { id:'health-cards', icon:'💳', label:'Health Cards' },
-      { id:'sales',        icon:'💰', label:'Sales' },
-      { id:'petty-cash',   icon:'🧾', label:'Petty Cash' },
-      { id:'dsr',          icon:'📋', label:'DSR' }
+      { id:'staff',             icon:'👥', label:'Staff' },
+      { id:'schedule',          icon:'🗓️', label:'Schedule' },
+      { id:'timesheet',         icon:'⏱️', label:'Timesheet' },
+      { id:'health-cards',      icon:'💳', label:'Health Cards' },
+      { id:'sales',             icon:'💰', label:'Sales' },
+      { id:'petty-cash',        icon:'🧾', label:'Petty Cash' },
+      { id:'dsr',               icon:'📋', label:'DSR' },
+      { id:'bm-invoices',       icon:'📄', label:'Invoices' },
+      { id:'bm-leave',          icon:'🏖️', label:'Leave Management', badge:'bm-leave-pending' }
+    ]},
+    { section:'PAYROLL', items:[
+      { id:'bm-payroll',        icon:'💸', label:'Payroll Submit' }
+    ]},
+    { section:'COMMUNICATIONS', items:[
+      { id:'bm-announcements',  icon:'📢', label:'Announcements', badge:'bm-ann-unread' }
     ]}
   ],
   staff: [
@@ -1725,73 +1734,42 @@ var NAV_CONFIG = {
   ],
   hr_manager: [
     { section:'HR OVERVIEW', items:[
-      { id:'hrf-hr-dash',      icon:'📊', label:'HR Dashboard' },
-      { id:'hrf-approvals',    icon:'✅', label:'Leave Approvals', badge:'hrf-pending' },
-      { id:'hrf-hr-team',      icon:'🧑‍💼', label:'HR Team' }
+      { id:'hrf-hr-dash',     icon:'📊', label:'HR Dashboard' },
+      { id:'hrf-approvals',   icon:'✅', label:'Leave Approvals', badge:'hrf-pending' }
     ]},
     { section:'WORKFORCE', items:[
-      { id:'hrf-employees',    icon:'👥', label:'All Employees' },
-      { id:'hrf-attendance',   icon:'⏱️', label:'Attendance' },
-      { id:'hrf-leave',        icon:'🏖️', label:'Leave Management' },
-      { id:'hrf-schedule',     icon:'📅', label:'Work Schedules' },
-      { id:'hrf-health',       icon:'💳', label:'Health Cards' }
-    ]},
-    { section:'EMPLOYEE LIFECYCLE', items:[
-      { id:'hrf-onboarding',   icon:'🆕', label:'Onboarding' },
-      { id:'hrf-offboarding',  icon:'🚪', label:'Offboarding' },
-      { id:'hrf-contracts',    icon:'📄', label:'Contracts', badge:'hrf-expiring' }
-    ]},
-    { section:'PERFORMANCE', items:[
-      { id:'hrf-kpi',          icon:'⭐', label:'KPI Ratings' },
-      { id:'hrf-disciplinary', icon:'⚠️', label:'Disciplinary Log' },
-      { id:'hrf-probation',    icon:'⏳', label:'Probation Tracker' }
-    ]},
-    { section:'TRAINING', items:[
-      { id:'hrf-training',     icon:'🎓', label:'Training Records' },
-      { id:'hrf-training-cal', icon:'📅', label:'Training Calendar' }
+      { id:'hrf-employees',   icon:'👥', label:'All Employees' },
+      { id:'hrf-attendance',  icon:'⏱️', label:'Attendance' },
+      { id:'hrf-leave',       icon:'🏖️', label:'Leave Management' },
+      { id:'hrf-schedule',    icon:'📅', label:'Work Schedules' },
+      { id:'hrf-health',      icon:'💳', label:'Health Cards' }
     ]},
     { section:'PAYROLL', items:[
-      { id:'hrf-payroll',      icon:'💸', label:'Payroll Overview' },
-      { id:'hrf-salary-cfg',   icon:'⚙️', label:'Salary Config' },
-      { id:'hrf-payroll-q',    icon:'📤', label:'Payroll Queue', badge:'hrf-payroll-pending' },
-      { id:'hrf-petty-cash',   icon:'🧾', label:'Petty Cash' }
-    ]},
-    { section:'COMMUNICATIONS', items:[
-      { id:'hrf-announcements',  icon:'📢', label:'Announcements', badge:'hrf-unack' },
-      { id:'hrf-policy-library', icon:'📚', label:'Policy Library' }
+      { id:'hrf-payroll',     icon:'💸', label:'Payroll Overview' },
+      { id:'hrf-petty-cash',  icon:'🧾', label:'Petty Cash' }
     ]},
     { section:'REPORTS', items:[
-      { id:'hrf-hr-report',    icon:'📋', label:'HR Reports' }
+      { id:'hrf-hr-report',   icon:'📋', label:'HR Reports' }
     ]}
   ],
   finance_dir: [
     { section:'FINANCE OVERVIEW', items:[
-      { id:'hrf-fin-dash',     icon:'📊', label:'Finance Dashboard' },
-      { id:'hrf-approvals',    icon:'✅', label:'Expense Approvals', badge:'hrf-pending' },
-      { id:'hrf-pnl',          icon:'📈', label:'P&L Statement' },
-      { id:'hrf-cash-flow',    icon:'💸', label:'Cash Flow' }
+      { id:'hrf-fin-dash',    icon:'📊', label:'Finance Dashboard' },
+      { id:'hrf-approvals',   icon:'✅', label:'Expense Approvals', badge:'hrf-pending' }
     ]},
     { section:'REVENUE & COSTS', items:[
-      { id:'hrf-revenue',      icon:'💰', label:'Revenue' },
-      { id:'hrf-food-cost',    icon:'🍽️', label:'Food Cost' },
-      { id:'hrf-expenses',     icon:'🧾', label:'Expenses' }
-    ]},
-    { section:'BUDGETS', items:[
-      { id:'hrf-budget',       icon:'🎯', label:'Budget Config', badge:'hrf-budget-alerts' },
-      { id:'hrf-variance',     icon:'📉', label:'Variance Tracker' }
+      { id:'hrf-revenue',     icon:'💰', label:'Revenue' },
+      { id:'hrf-pnl',         icon:'📈', label:'P&L Statement' },
+      { id:'hrf-food-cost',   icon:'🍽️', label:'Food Cost' },
+      { id:'hrf-expenses',    icon:'🧾', label:'Expenses' }
     ]},
     { section:'OPERATIONS', items:[
-      { id:'hrf-invoices',     icon:'📋', label:'Supplier Invoices' },
-      { id:'hrf-petty-cash',   icon:'💵', label:'Petty Cash' },
-      { id:'hrf-dsr',          icon:'📑', label:'DSR Summary' },
-      { id:'hrf-payroll-rel',  icon:'💼', label:'Payroll Release', badge:'hrf-payroll-pending' }
-    ]},
-    { section:'TEAM', items:[
-      { id:'hrf-fin-team',     icon:'🏦', label:'Finance Team' }
+      { id:'hrf-invoices',    icon:'📋', label:'Supplier Invoices' },
+      { id:'hrf-petty-cash',  icon:'💵', label:'Petty Cash' },
+      { id:'hrf-dsr',         icon:'📑', label:'DSR Summary' }
     ]},
     { section:'REPORTS', items:[
-      { id:'hrf-fin-report',   icon:'📄', label:'Financial Reports' },
-      { id:'hrf-vat',          icon:'🧮', label:'VAT Summary' }
+      { id:'hrf-fin-report',  icon:'📄', label:'Financial Reports' }
     ]}
   ]
 };
@@ -2883,48 +2861,33 @@ function renderPage(pageId) {
     'sales': pSales,
     'petty-cash': pPettyCash,
     'dsr': pDSR,
-    'checklists': pChecklists,
-    'qr-checkin': pQRCheckin,
+    'checklists':        pChecklists,
+    'qr-checkin':        pQRCheckin,
+    // ── Branch Manager new pages ──
+    'bm-invoices':       pBmInvoices,
+    'bm-leave':          pBmLeave,
+    'bm-payroll':        pBmPayroll,
+    'bm-transfers':      pBmTransfers,
+    'bm-announcements':  pBmAnnouncements,
     // ── HR & Finance Manager pages ──
-    'hrf-hr-dash':       pHrfHrDash,
-    'hrf-fin-dash':      pHrfFinDash,
-    'hrf-employees':     pHrfEmployees,
-    'hrf-attendance':    pHrfAttendance,
-    'hrf-leave':         pHrfLeave,
-    'hrf-schedule':      pHrfSchedule,
-    'hrf-health':        pHrfHealth,
-    'hrf-payroll':       pHrfPayroll,
-    'hrf-petty-cash':    pHrfPettyCash,
-    'hrf-revenue':       pHrfRevenue,
-    'hrf-pnl':           pHrfPnL,
-    'hrf-food-cost':     pHrfFoodCost,
-    'hrf-expenses':      pHrfExpenses,
-    'hrf-invoices':      pHrfInvoices,
-    'hrf-dsr':           pHrfDsr,
-    'hrf-approvals':     pHrfApprovals,
-    'hrf-hr-report':     pHrfHrReport,
-    'hrf-fin-report':    pHrfFinReport,
-    // ── HR new pages (plan M1-M9) ──
-    'hrf-hr-team':       pHrfHRTeam,
-    'hrf-onboarding':    pHrfOnboarding,
-    'hrf-offboarding':   pHrfOffboarding,
-    'hrf-contracts':     pHrfContracts,
-    'hrf-kpi':           pHrfKPI,
-    'hrf-disciplinary':  pHrfDisciplinary,
-    'hrf-probation':     pHrfProbation,
-    'hrf-training':      pHrfTraining,
-    'hrf-training-cal':  pHrfTrainingCal,
-    'hrf-salary-cfg':    pHrfSalaryConfig,
-    'hrf-payroll-q':     pHrfPayrollQueue,
-    'hrf-announcements': pHrfAnnouncements,
-    'hrf-policy-library':pHrfPolicyLibrary,
-    // ── Finance new pages (plan M1-M9) ──
-    'hrf-fin-team':      pHrfFinTeam,
-    'hrf-cash-flow':     pHrfCashFlow,
-    'hrf-budget':        pHrfBudgetConfig,
-    'hrf-variance':      pHrfVariance,
-    'hrf-payroll-rel':   pHrfPayrollRelease,
-    'hrf-vat':           pHrfVAT
+    'hrf-hr-dash':    pHrfHrDash,
+    'hrf-fin-dash':   pHrfFinDash,
+    'hrf-employees':  pHrfEmployees,
+    'hrf-attendance': pHrfAttendance,
+    'hrf-leave':      pHrfLeave,
+    'hrf-schedule':   pHrfSchedule,
+    'hrf-health':     pHrfHealth,
+    'hrf-payroll':    pHrfPayroll,
+    'hrf-petty-cash': pHrfPettyCash,
+    'hrf-revenue':    pHrfRevenue,
+    'hrf-pnl':        pHrfPnL,
+    'hrf-food-cost':  pHrfFoodCost,
+    'hrf-expenses':   pHrfExpenses,
+    'hrf-invoices':   pHrfInvoices,
+    'hrf-dsr':        pHrfDsr,
+    'hrf-approvals':  pHrfApprovals,
+    'hrf-hr-report':  pHrfHrReport,
+    'hrf-fin-report': pHrfFinReport
   };
 
   var fn = fns[pageId];
@@ -5121,6 +5084,12 @@ function attachBranchListeners() {
   db.ref(bPath('tsAtt')).on('value', function(snap){ BS.tsAtt=snap.val()||{}; });
   db.ref(bPath('config')).on('value', function(snap){ BS._branchConfig=snap.val()||{}; });
 
+  // Load new BM data (transfers + announcements) once on attach, then update badges
+  if(NX.session&&(NX.session.role==='branch_mgr'||NX.session.role==='staff')){
+    bmLoadTransfers(null);
+    bmLoadAnnouncements(null);
+  }
+
   // Locations — same as index.html: stored at branches/{id}/locations
   db.ref(bPath('locations')).on('value', function(snap){
     var v=snap.val();
@@ -5583,6 +5552,20 @@ function pBranchDash() {
     h += '<div style="font-size:9px;color:var(--text-tertiary)">'+p[3]+'</div></div></a>';
   });
   h += '</div></div>';
+
+  // ── NEW: Pending alerts row ──
+  (function(){
+    var pt=(BS._bmTransfers||[]).filter(function(t){return t.status==='pending';});
+    var pl=(BS.tsLeaves||[]).filter(function(l){return l.status==='pending';});
+    var ua=(BS._bmAnns||[]).filter(function(a){return !(BS._bmAcks||{})[a.id];});
+    if(!pt.length&&!pl.length&&!ua.length) return;
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px">';
+    if(pt.length) h+='<div class="card" style="border-color:rgba(167,139,250,.4);cursor:pointer;padding:14px" onclick="navTo(&quot;bm-transfers&quot;)"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:26px">&#x1F500;</div><div><div style="font-size:13px;font-weight:700;color:#a78bfa">'+pt.length+' Transfer Request'+(pt.length>1?'s':'')+'</div><div style="font-size:11px;color:var(--text-secondary)">Awaiting approval</div></div></div></div>';
+    if(pl.length) h+='<div class="card" style="border-color:rgba(245,158,11,.4);cursor:pointer;padding:14px" onclick="navTo(&quot;bm-leave&quot;)"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:26px">&#x1F3D6;&#xFE0F;</div><div><div style="font-size:13px;font-weight:700;color:#f59e0b">'+pl.length+' Leave Request'+(pl.length>1?'s':'')+'</div><div style="font-size:11px;color:var(--text-secondary)">Pending your decision</div></div></div></div>';
+    if(ua.length) h+='<div class="card" style="border-color:rgba(248,113,113,.4);cursor:pointer;padding:14px" onclick="navTo(&quot;bm-announcements&quot;)"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:26px">&#x1F4E2;</div><div><div style="font-size:13px;font-weight:700;color:#f87171">'+ua.length+' Announcement'+(ua.length>1?'s':'')+'</div><div style="font-size:11px;color:var(--text-secondary)">From HR — needs acknowledgement</div></div></div></div>';
+    h+='</div>';
+  })();
+
   return h;
 }
 
@@ -10016,1558 +9999,529 @@ function hrfInitFoodCostChart(){
     options:hrfBaseOpts()});
 }
 
-// ════════════════════════════════════════════════════════
-// HR DEPARTMENT — NEW MODULES (M1–M9)
-// ════════════════════════════════════════════════════════
 
-// ── M1: HR Team Staff Management ──
-function hrfLoadHRTeam(cb){
-  if(!db){cb([]);return;}
-  db.ref('admin/hr_staff').once('value',function(snap){
-    var raw=snap.val()||{};
-    cb(Object.values(raw).filter(Boolean));
-  });
-}
-function hrfSaveHRStaff(member,cb){
-  if(!db)return;
-  var id=member.id||'hrs_'+Date.now();
-  member.id=id;
-  db.ref('admin/hr_staff/'+id).set(member,function(err){
-    if(!err){showToast('HR team updated \u2713','success');if(cb)cb();}
-    else showToast('Save failed','error');
-  });
-}
-var HR_ROLES=['HR Director','HR Manager','HR Officer','Recruitment Officer','Payroll Officer','Training Coordinator','HR Administrator'];
-var HR_PERMISSIONS=['view_all_staff','approve_leave','edit_employee','run_payroll','view_salary','manage_health',
-  'manage_schedules','view_reports','export_data','manage_training','issue_warnings','manage_onboarding',
-  'manage_offboarding','configure_roles','post_announcements','view_audit_log','manage_contracts','release_payroll'];
+// ════════════════════════════════════════════════════════════════
+// BRANCH MANAGER — NEW MODULES
+// ════════════════════════════════════════════════════════════════
 
-function pHrfHRTeam(){
-  hrfLoadHRTeam(function(hrStaff){
-    var h=hrfHeader('HR Team','HR department \u00b7 '+hrStaff.length+' members',
-      '<button class="btn btn-primary" onclick="hrfShowAddHRStaffModal()">+ Add Member</button>');
-    h+='<div class="hrf-kpi-grid">';
-    h+=hrfKpi('\ud83e\uddd1\u200d\ud83d\udcbc','Total HR Staff',hrStaff.length,'All roles','var(--hr-color)');
-    h+=hrfKpi('\u2705','Active',hrStaff.filter(function(s){return s.status!=='inactive';}).length,'On duty','var(--success)');
-    h+=hrfKpi('\ud83c\udfe2','Branch Coverage',hrStaff.reduce(function(a,s){return Math.max(a,(s.branchIds||[]).length);},0)+' max','Branches per officer','var(--blue)');
-    h+='</div>';
-    if(!hrStaff.length){
-      h+='<div class="hrf-section" style="text-align:center;padding:40px;color:var(--text-secondary)">No HR team members yet. Click <strong>+ Add Member</strong> to get started.</div>';
-    } else {
-      var rows=hrStaff.map(function(s){
-        var tasks=(s.tasks||[]).length;
-        var load=tasks>5?'<span style="color:var(--danger)">'+tasks+' \u26a0\ufe0f</span>':'<span>'+tasks+'</span>';
-        return '<tr>'+
-          '<td><strong>'+hxe(s.name||'')+'</strong></td>'+
-          '<td>'+hrfBadge(s.role||'','var(--hr-color)')+'</td>'+
-          '<td>'+((s.branchIds||[]).length)+' branches</td>'+
-          '<td>'+load+'</td>'+
-          '<td><span class="hrf-status-dot" style="background:'+(s.status==='inactive'?'var(--text-muted)':'var(--success)')+'"></span>'+hxe(s.status||'active')+'</td>'+
-          '<td><button class="btn btn-sm" onclick="hrfOpenHRStaffProfile(\''+hxe(s.id)+'\')">View \u2192</button></td>'+
-          '</tr>';
-      }).join('');
-      h+='<div class="hrf-section">'+hrfTable(['Name','Role','Branch Access','Tasks','Status',''],rows)+'</div>';
-    }
-    // Permission matrix
-    h+='<div class="hrf-section"><div style="font-size:13px;font-weight:700;margin-bottom:14px">\ud83d\udd10 Permission Matrix</div>';
-    h+='<div style="overflow-x:auto"><table class="hrf-table"><thead><tr><th>Permission</th>';
-    HR_ROLES.forEach(function(r){h+='<th style="font-size:11px;white-space:nowrap">'+hxe(r)+'</th>';});
-    h+='</tr></thead><tbody>';
-    var DEFAULT_PERMS={
-      'HR Director':HR_PERMISSIONS,
-      'HR Manager':['view_all_staff','approve_leave','edit_employee','manage_health','manage_schedules','view_reports','export_data','manage_training','manage_onboarding','manage_offboarding','post_announcements'],
-      'HR Officer':['view_all_staff','approve_leave','manage_health','manage_schedules','view_reports','manage_onboarding'],
-      'Recruitment Officer':['view_all_staff','manage_onboarding','view_reports'],
-      'Payroll Officer':['view_salary','run_payroll','view_reports','export_data'],
-      'Training Coordinator':['manage_training','view_all_staff','view_reports'],
-      'HR Administrator':['view_all_staff','view_reports','post_announcements']
-    };
-    HR_PERMISSIONS.forEach(function(perm){
-      h+='<tr><td style="font-size:11px;font-family:monospace">'+hxe(perm)+'</td>';
-      HR_ROLES.forEach(function(role){
-        var has=(DEFAULT_PERMS[role]||[]).indexOf(perm)>=0;
-        h+='<td style="text-align:center">'+(has?'<span style="color:var(--success)">&#x2713;</span>':'<span style="color:var(--text-muted)">&#x2212;</span>')+'</td>';
-      });
-      h+='</tr>';
-    });
-    h+='</tbody></table></div></div>';
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-  return hrfLoading('Loading HR team...');
+// ── Shared badge updater for BM new pages ──
+function bmUpdateBadges() {
+  // Transfer requests pending
+  var pt = (BS._bmTransfers||[]).filter(function(t){return t.status==='pending';});
+  var nb1 = document.getElementById('nb-bm-transfers-pending');
+  if(nb1){nb1.style.display=pt.length?'flex':'none';nb1.textContent=pt.length;}
+  // Leave requests pending
+  var pl = (BS.tsLeaves||[]).filter(function(l){return l.status==='pending';});
+  var nb2 = document.getElementById('nb-bm-leave-pending');
+  if(nb2){nb2.style.display=pl.length?'flex':'none';nb2.textContent=pl.length;}
+  // Unread announcements
+  var ua = (BS._bmAnns||[]).filter(function(a){return !(BS._bmAcks||{})[a.id];});
+  var nb3 = document.getElementById('nb-bm-ann-unread');
+  if(nb3){nb3.style.display=ua.length?'flex':'none';nb3.textContent=ua.length;}
 }
 
-function hrfOpenHRStaffProfile(id){
-  if(!db)return;
-  db.ref('admin/hr_staff/'+id).once('value',function(snap){
-    var s=snap.val()||{};
-    var branches=hrfBranches();
-    var branchChecks=branches.map(function(b){
-      var checked=(s.branchIds||[]).indexOf(b.id)>=0;
-      return '<label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer">'+
-        '<input type="checkbox" id="hrsp-b-'+hxe(b.id)+'" '+(checked?'checked':'')+'>'+hxe(b.name||b.id)+'</label>';
-    }).join('');
-    var roleOpts=HR_ROLES.map(function(r){return '<option '+(s.role===r?'selected':'')+'>'+hxe(r)+'</option>';}).join('');
-    var html='<div class="modal-head"><h2>\ud83e\uddd1\u200d\ud83d\udcbc '+hxe(s.name||'HR Staff')+'</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
-    html+='<div class="form-row"><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="hrsp-name" value="'+hxe(s.name||'')+'"></div>'+
-      '<div class="form-group"><label class="form-label">Role</label><select class="form-input form-select" id="hrsp-role">'+roleOpts+'</select></div></div>';
-    html+='<div class="form-row"><div class="form-group"><label class="form-label">Email</label><input class="form-input" id="hrsp-email" value="'+hxe(s.email||'')+'"></div>'+
-      '<div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="hrsp-phone" value="'+hxe(s.phone||'')+'"></div></div>';
-    html+='<div class="form-group"><label class="form-label">Branch Access</label><div style="max-height:140px;overflow-y:auto;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px">'+branchChecks+'</div></div>';
-    html+='<div class="modal-actions">'+
-      '<button class="btn btn-danger" onclick="hrfRemoveHRStaff(\''+hxe(id)+'\')">Remove</button>'+
-      '<button class="btn" onclick="closeModalForce()">Cancel</button>'+
-      '<button class="btn btn-primary" onclick="hrfSaveHRStaffProfile(\''+hxe(id)+'\')">Save</button></div>';
-    openModal(html);
-  });
-}
-
-function hrfSaveHRStaffProfile(id){
-  var name=document.getElementById('hrsp-name')&&document.getElementById('hrsp-name').value.trim();
-  var role=document.getElementById('hrsp-role')&&document.getElementById('hrsp-role').value;
-  var email=document.getElementById('hrsp-email')&&document.getElementById('hrsp-email').value.trim();
-  var phone=document.getElementById('hrsp-phone')&&document.getElementById('hrsp-phone').value.trim();
-  var branches=hrfBranches();
-  var branchIds=branches.filter(function(b){var el=document.getElementById('hrsp-b-'+b.id);return el&&el.checked;}).map(function(b){return b.id;});
-  db.ref('admin/hr_staff/'+id).update({name:name,role:role,email:email,phone:phone,branchIds:branchIds},function(err){
-    if(!err){showToast('Saved \u2713','success');closeModalForce();navTo('hrf-hr-team');}
-    else showToast('Save failed','error');
-  });
-}
-
-function hrfRemoveHRStaff(id){
-  if(!confirm('Remove this HR team member?'))return;
-  db.ref('admin/hr_staff/'+id).remove(function(err){
-    if(!err){showToast('Removed','success');closeModalForce();navTo('hrf-hr-team');}
-    else showToast('Remove failed','error');
-  });
-}
-
-function hrfShowAddHRStaffModal(){
-  var roleOpts=HR_ROLES.map(function(r){return '<option>'+hxe(r)+'</option>';}).join('');
-  var html='<div class="modal-head"><h2>Add HR Team Member</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="hradd-name" placeholder="Full name"></div>'+
-    '<div class="form-group"><label class="form-label">Role</label><select class="form-input form-select" id="hradd-role">'+roleOpts+'</select></div></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Email</label><input class="form-input" id="hradd-email" placeholder="email@alfa.co"></div>'+
-    '<div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="hradd-phone" placeholder="+966..."></div></div>';
-  html+='<div class="modal-actions"><button class="btn" onclick="closeModalForce()">Cancel</button><button class="btn btn-primary" onclick="hrfAddHRStaff()">Add Member</button></div>';
-  openModal(html);
-}
-
-function hrfAddHRStaff(){
-  var name=document.getElementById('hradd-name')&&document.getElementById('hradd-name').value.trim();
-  var role=document.getElementById('hradd-role')&&document.getElementById('hradd-role').value;
-  var email=document.getElementById('hradd-email')&&document.getElementById('hradd-email').value.trim();
-  var phone=document.getElementById('hradd-phone')&&document.getElementById('hradd-phone').value.trim();
-  if(!name){showToast('Name required','error');return;}
-  hrfSaveHRStaff({name:name,role:role,email:email,phone:phone,status:'active',branchIds:[],tasks:[],lastLogin:null},function(){
-    closeModalForce();navTo('hrf-hr-team');
-  });
-}
-
-// ── M3: Onboarding & Offboarding ──
-var ONBOARD_ITEMS=['documents','uniform','sap','access','training','health','emergency_contact','branch_induction'];
-var ONBOARD_LABELS={documents:'Documents Submitted',uniform:'Uniform Issued',sap:'SAP Number Assigned',
-  access:'System Access Granted',training:'Food Safety Training',health:'Health Card Applied',
-  emergency_contact:'Emergency Contact Recorded',branch_induction:'Branch Induction Done'};
-var OFFBOARD_ITEMS=['resignation_logged','clearance_signed','uniform_returned','access_revoked','final_pay','exit_interview','sap_closed'];
-var OFFBOARD_LABELS={resignation_logged:'Resignation/Termination Logged',clearance_signed:'Clearance Form Signed',
-  uniform_returned:'Uniform Returned',access_revoked:'System Access Revoked',final_pay:'Final Pay Calculated',
-  exit_interview:'Exit Interview Done',sap_closed:'SAP Closed'};
-
-function pHrfOnboarding(){
-  hrfLoadAll('staff','staff',function(){
-    var branches=hrfBranches();
-    var incomplete=[];
-    branches.forEach(function(b){
-      (HRF.staff[b.id]||[]).forEach(function(emp){
-        if(emp.status!=='Active'&&emp.status!=='active')return;
-        var ob=emp.onboarding||{};
-        var done=ONBOARD_ITEMS.filter(function(k){return ob[k]&&ob[k].done;}).length;
-        if(done<ONBOARD_ITEMS.length)incomplete.push({emp:emp,branchId:b.id,branchName:b.name||b.id,done:done,total:ONBOARD_ITEMS.length});
-      });
-    });
-    var h=hrfHeader('Onboarding','New hire checklist tracker across all branches',
-      '<span style="font-size:12px;color:var(--text-secondary)">'+incomplete.length+' incomplete</span>');
-    h+='<div class="hrf-kpi-grid">';
-    h+=hrfKpi('\ud83c\udd95','Incomplete Onboarding',incomplete.length,'Active staff','var(--amber)');
-    h+=hrfKpi('\u2705','Fully Onboarded',
-      branches.reduce(function(a,b){return a+(HRF.staff[b.id]||[]).filter(function(e){
-        var ob=e.onboarding||{};return ONBOARD_ITEMS.every(function(k){return ob[k]&&ob[k].done;});
-      }).length;},0),'Complete','var(--success)');
-    h+='</div>';
-    if(!incomplete.length){
-      h+='<div class="hrf-section" style="text-align:center;padding:40px;color:var(--text-secondary)">\u2705 All active staff are fully onboarded!</div>';
-    } else {
-      var rows=incomplete.map(function(item){
-        var pct=Math.round(item.done/item.total*100);
-        var bar='<div style="width:100%;background:var(--surface-3);border-radius:4px;height:6px;margin-top:4px">'+
-          '<div style="width:'+pct+'%;background:var(--hr-color);height:6px;border-radius:4px"></div></div>';
-        return '<tr>'+
-          '<td><strong>'+hxe(item.emp.name||'')+'</strong></td>'+
-          '<td>'+hxe(item.branchName)+'</td>'+
-          '<td>'+item.done+'/'+item.total+'<br>'+bar+'</td>'+
-          '<td><button class="btn btn-sm" onclick="hrfOpenOnboardingDetail(\''+hxe(item.branchId)+'\',\''+hxe(item.emp.id||item.emp.sap||'')+'\')">Manage</button></td>'+
-          '</tr>';
-      }).join('');
-      h+='<div class="hrf-section">'+hrfTable(['Employee','Branch','Progress',''],rows)+'</div>';
-    }
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-  return hrfLoading('Loading onboarding data...');
-}
-
-function hrfOpenOnboardingDetail(branchId,empId){
-  if(!db)return;
-  db.ref('branches/'+branchId+'/staff/'+empId+'/onboarding').once('value',function(snap){
-    var ob=snap.val()||{};
-    var items=ONBOARD_ITEMS.map(function(k){
-      var done=ob[k]&&ob[k].done;
-      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
-        '<input type="checkbox" id="ob-'+k+'" '+(done?'checked':'')+' onchange="hrfToggleOnboardItem(\''+branchId+'\',\''+empId+'\',\''+k+'\',this.checked)">'+
-        '<span style="font-weight:600">'+hxe(ONBOARD_LABELS[k]||k)+'</span>'+
-        (done&&ob[k].doneAt?'<span style="font-size:11px;color:var(--text-secondary);margin-left:auto">'+new Date(ob[k].doneAt).toLocaleDateString('en-GB')+'</span>':'')+'</div>';
-    }).join('');
-    var html='<div class="modal-head"><h2>\ud83c\udd95 Onboarding Checklist</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
-    html+='<div style="padding:8px 0">'+items+'</div>';
-    html+='<div class="modal-actions"><button class="btn" onclick="closeModalForce()">Close</button></div>';
-    openModal(html);
-  });
-}
-
-function hrfToggleOnboardItem(branchId,empId,key,checked){
-  if(!db||!NX.session)return;
-  var path='branches/'+branchId+'/staff/'+empId+'/onboarding/'+key;
-  db.ref(path).set({done:checked,doneAt:checked?Date.now():null,doneBy:NX.session.entityName||'HR'},function(err){
-    if(!err)showToast((checked?'\u2713 Marked complete':'\u2715 Unmarked'),'success');
-  });
-}
-
-function pHrfOffboarding(){
-  hrfLoadAll('staff','staff',function(){
-    var branches=hrfBranches();
-    var pending=[];
-    branches.forEach(function(b){
-      (HRF.staff[b.id]||[]).forEach(function(emp){
-        if(emp.status!=='Resigned'&&emp.status!=='Terminated'&&emp.status!=='resigned'&&emp.status!=='terminated')return;
-        var ob=emp.offboarding||{};
-        var done=OFFBOARD_ITEMS.filter(function(k){return ob[k]&&ob[k].done;}).length;
-        if(done<OFFBOARD_ITEMS.length)pending.push({emp:emp,branchId:b.id,branchName:b.name||b.id,done:done,total:OFFBOARD_ITEMS.length});
-      });
-    });
-    var h=hrfHeader('Offboarding','Departure checklist tracker \u2014 '+pending.length+' pending');
-    h+='<div class="hrf-kpi-grid">';
-    h+=hrfKpi('\ud83d\udeb6','Pending Offboarding',pending.length,'Not fully cleared','var(--amber)');
-    h+='</div>';
-    if(!pending.length){
-      h+='<div class="hrf-section" style="text-align:center;padding:40px;color:var(--text-secondary)">\u2705 No pending offboarding tasks.</div>';
-    } else {
-      var rows=pending.map(function(item){
-        var pct=Math.round(item.done/item.total*100);
-        var bar='<div style="width:100%;background:var(--surface-3);border-radius:4px;height:6px;margin-top:4px">'+
-          '<div style="width:'+pct+'%;background:var(--amber);height:6px;border-radius:4px"></div></div>';
-        return '<tr>'+
-          '<td><strong>'+hxe(item.emp.name||'')+'</strong></td>'+
-          '<td>'+hxe(item.branchName)+'</td>'+
-          '<td>'+hxe(item.emp.status||'')+'</td>'+
-          '<td>'+item.done+'/'+item.total+'<br>'+bar+'</td>'+
-          '<td><button class="btn btn-sm" onclick="hrfOpenOffboardingDetail(\''+hxe(item.branchId)+'\',\''+hxe(item.emp.id||item.emp.sap||'')+'\')">Manage</button></td>'+
-          '</tr>';
-      }).join('');
-      h+='<div class="hrf-section">'+hrfTable(['Employee','Branch','Status','Progress',''],rows)+'</div>';
-    }
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-  return hrfLoading('Loading offboarding data...');
-}
-
-function hrfOpenOffboardingDetail(branchId,empId){
-  if(!db)return;
-  db.ref('branches/'+branchId+'/staff/'+empId+'/offboarding').once('value',function(snap){
-    var ob=snap.val()||{};
-    var items=OFFBOARD_ITEMS.map(function(k){
-      var done=ob[k]&&ob[k].done;
-      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
-        '<input type="checkbox" id="offb-'+k+'" '+(done?'checked':'')+' onchange="hrfToggleOffboardItem(\''+branchId+'\',\''+empId+'\',\''+k+'\',this.checked)">'+
-        '<span style="font-weight:600">'+hxe(OFFBOARD_LABELS[k]||k)+'</span></div>';
-    }).join('');
-    var html='<div class="modal-head"><h2>\ud83d\udeb6 Offboarding Checklist</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
-    html+='<div style="padding:8px 0">'+items+'</div>';
-    html+='<div class="modal-actions"><button class="btn" onclick="closeModalForce()">Close</button></div>';
-    openModal(html);
-  });
-}
-
-function hrfToggleOffboardItem(branchId,empId,key,checked){
-  if(!db||!NX.session)return;
-  db.ref('branches/'+branchId+'/staff/'+empId+'/offboarding/'+key).set({done:checked,doneAt:checked?Date.now():null,doneBy:NX.session.entityName||'HR'},function(err){
-    if(!err)showToast((checked?'\u2713 Marked complete':'\u2715 Unmarked'),'success');
-  });
-}
-
-// ── M3: Contracts ──
-function pHrfContracts(){
-  hrfLoadAll('staff','staff',function(){
-    var branches=hrfBranches();
-    var now=Date.now();
-    var contracts=[];
-    branches.forEach(function(b){
-      (HRF.staff[b.id]||[]).forEach(function(emp){
-        if(!emp.contractExpiry&&!emp.contractType)return;
-        var exp=emp.contractExpiry?new Date(emp.contractExpiry).getTime():null;
-        var daysLeft=exp?Math.ceil((exp-now)/86400000):null;
-        contracts.push({emp:emp,branchId:b.id,branchName:b.name||b.id,exp:exp,daysLeft:daysLeft,type:emp.contractType||'full-time'});
-      });
-    });
-    contracts.sort(function(a,b){return (a.daysLeft||9999)-(b.daysLeft||9999);});
-    var expired=contracts.filter(function(c){return c.daysLeft!==null&&c.daysLeft<=0;});
-    var soon30=contracts.filter(function(c){return c.daysLeft!==null&&c.daysLeft>0&&c.daysLeft<=30;});
-    var soon60=contracts.filter(function(c){return c.daysLeft!==null&&c.daysLeft>30&&c.daysLeft<=60;});
-    var h=hrfHeader('Contracts','Contract expiry tracker \u2014 next 90 days');
-    h+='<div class="hrf-kpi-grid">';
-    h+=hrfKpi('\ud83d\udea8','Expired',expired.length,'Need renewal','var(--danger)');
-    h+=hrfKpi('\u26a0\ufe0f','Expiring <30d',soon30.length,'Urgent','var(--amber)');
-    h+=hrfKpi('\ud83d\udcc5','Expiring <60d',soon60.length,'Plan renewal','var(--blue)');
-    h+=hrfKpi('\ud83d\udcc4','Total Tracked',contracts.length,'With expiry date','var(--hr-color)');
-    h+='</div>';
-    var rows=contracts.slice(0,80).map(function(c){
-      var color=c.daysLeft===null?'var(--text-secondary)':c.daysLeft<=0?'var(--danger)':c.daysLeft<=30?'var(--amber)':c.daysLeft<=60?'var(--blue)':'var(--success)';
-      var label=c.daysLeft===null?'No expiry':c.daysLeft<=0?'EXPIRED':c.daysLeft+'d left';
-      return '<tr>'+
-        '<td><strong>'+hxe(c.emp.name||'')+'</strong></td>'+
-        '<td>'+hxe(c.branchName)+'</td>'+
-        '<td>'+hrfBadge(c.type,'var(--blue)')+'</td>'+
-        '<td>'+(c.exp?new Date(c.exp).toLocaleDateString('en-GB'):'N/A')+'</td>'+
-        '<td><span style="color:'+color+';font-weight:700">'+label+'</span></td>'+
-        '</tr>';
-    }).join('');
-    h+='<div class="hrf-section">'+hrfTable(['Employee','Branch','Type','Expiry','Status'],rows)+'</div>';
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-  return hrfLoading('Loading contracts...');
-}
-
-// ── M4: Performance Management ──
-function pHrfKPI(){
-  hrfLoadAll('staff','staff',function(){
-    var branches=hrfBranches();
-    var scored=[];
-    branches.forEach(function(b){
-      (HRF.staff[b.id]||[]).forEach(function(emp){
-        if(!(emp.kpiScores&&emp.kpiScores.length))return;
-        var last=emp.kpiScores[emp.kpiScores.length-1];
-        var avg=emp.kpiScores.reduce(function(a,k){return a+(parseFloat(k.score)||0);},0)/emp.kpiScores.length;
-        scored.push({emp:emp,branchId:b.id,branchName:b.name||b.id,lastScore:last.score,avg:avg.toFixed(1),month:last.month,note:last.note||''});
-      });
-    });
-    scored.sort(function(a,b){return a.lastScore-b.lastScore;});
-    var branchAvgs={};
-    branches.forEach(function(b){
-      var emps=(HRF.staff[b.id]||[]).filter(function(e){return e.kpiScores&&e.kpiScores.length;});
-      if(!emps.length)return;
-      branchAvgs[b.name||b.id]=emps.reduce(function(a,e){var last=e.kpiScores[e.kpiScores.length-1];return a+(parseFloat(last.score)||0);},0)/emps.length;
-    });
-    var h=hrfHeader('KPI Ratings','Monthly performance scores across all branches',
-      '<button class="btn btn-primary" onclick="hrfOpenAddKPIModal()">+ Add Rating</button>');
-    h+='<div class="hrf-kpi-grid">';
-    h+=hrfKpi('\u2b50','Employees Rated',scored.length,'This period','var(--gold)');
-    var low=scored.filter(function(s){return s.lastScore<=2;}).length;
-    h+=hrfKpi('\u26a0\ufe0f','Low Performers',low,'Score \u22642','var(--danger)');
-    h+='</div>';
-    if(Object.keys(branchAvgs).length){
-      h+='<div class="hrf-section"><div style="font-size:13px;font-weight:700;margin-bottom:12px">Branch Average Scores</div>';
-      h+='<div class="hrf-grid-3">';
-      Object.keys(branchAvgs).forEach(function(bn){
-        var avg=branchAvgs[bn];
-        var color=avg>=4?'var(--success)':avg>=3?'var(--amber)':'var(--danger)';
-        h+='<div class="hrf-kpi-card" style="--kpi-color:'+color+'">'+
-          '<div style="font-size:24px;font-weight:800;color:'+color+'">'+avg.toFixed(1)+'<span style="font-size:14px">/5</span></div>'+
-          '<div style="font-size:11px;color:var(--text-secondary);margin-top:4px">'+hxe(bn)+'</div></div>';
-      });
-      h+='</div></div>';
-    }
-    var rows=scored.map(function(s){
-      var stars='';for(var i=1;i<=5;i++)stars+=(i<=s.lastScore?'\u2b50':'\u2606');
-      return '<tr>'+
-        '<td><strong>'+hxe(s.emp.name||'')+'</strong></td>'+
-        '<td>'+hxe(s.branchName)+'</td>'+
-        '<td>'+stars+'</td>'+
-        '<td>'+s.avg+'</td>'+
-        '<td style="font-size:11px;color:var(--text-secondary)">'+hxe(s.note.slice(0,50))+'</td>'+
-        '</tr>';
-    }).join('');
-    h+='<div class="hrf-section"><div style="font-size:13px;font-weight:700;margin-bottom:12px">All Rated Employees (sorted low\u2192high)</div>'+
-      hrfTable(['Employee','Branch','Last Score','Avg','Note'],rows)+'</div>';
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-  return hrfLoading('Loading KPI data...');
-}
-
-function hrfOpenAddKPIModal(){
-  var branches=hrfBranches();
-  var brOpts=branches.map(function(b){return '<option value="'+hxe(b.id)+'">'+hxe(b.name||b.id)+'</option>';}).join('');
-  var html='<div class="modal-head"><h2>\u2b50 Add KPI Rating</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Branch</label><select class="form-input form-select" id="kpi-branch" onchange="hrfLoadBranchStaffOptions(\'kpi-emp\',this.value)">'+brOpts+'</select></div>'+
-    '<div class="form-group"><label class="form-label">Employee</label><select class="form-input form-select" id="kpi-emp"><option>Select branch first</option></select></div></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Month</label><input class="form-input" id="kpi-month" type="month" value="'+new Date().toISOString().slice(0,7)+'"></div>'+
-    '<div class="form-group"><label class="form-label">Score (1-5)</label><select class="form-input form-select" id="kpi-score"><option value="5">5 \u2014 Excellent</option><option value="4">4 \u2014 Good</option><option value="3" selected>3 \u2014 Satisfactory</option><option value="2">2 \u2014 Needs Improvement</option><option value="1">1 \u2014 Poor</option></select></div></div>';
-  html+='<div class="form-group"><label class="form-label">Note</label><textarea class="form-input" id="kpi-note" rows="2" placeholder="Performance notes..."></textarea></div>';
-  html+='<div class="modal-actions"><button class="btn" onclick="closeModalForce()">Cancel</button><button class="btn btn-primary" onclick="hrfSubmitKPI()">Save Rating</button></div>';
-  openModal(html);
-  var firstBranch=branches[0];
-  if(firstBranch)hrfLoadBranchStaffOptions('kpi-emp',firstBranch.id);
-}
-
-function hrfLoadBranchStaffOptions(selectId,branchId){
-  var sel=document.getElementById(selectId);if(!sel)return;
-  var staff=HRF.staff[branchId]||[];
-  sel.innerHTML=staff.map(function(s){return '<option value="'+hxe(s.id||s.sap||s.name)+'">'+hxe(s.name||s.id)+'</option>';}).join('');
-}
-
-function hrfSubmitKPI(){
-  var branchId=document.getElementById('kpi-branch')&&document.getElementById('kpi-branch').value;
-  var empId=document.getElementById('kpi-emp')&&document.getElementById('kpi-emp').value;
-  var month=document.getElementById('kpi-month')&&document.getElementById('kpi-month').value;
-  var score=parseInt(document.getElementById('kpi-score')&&document.getElementById('kpi-score').value,10);
-  var note=document.getElementById('kpi-note')&&document.getElementById('kpi-note').value.trim();
-  if(!branchId||!empId||!month){showToast('Fill all required fields','error');return;}
-  var path='branches/'+branchId+'/staff/'+empId+'/kpiScores';
-  db.ref(path).push({month:month,score:score,note:note,scoredBy:NX.session.entityName||'HR',loggedAt:Date.now()},function(err){
-    if(!err){showToast('KPI rating saved \u2713','success');closeModalForce();navTo('hrf-kpi');}
-    else showToast('Save failed','error');
-  });
-}
-
-function pHrfDisciplinary(){
-  hrfLoadAll('staff','staff',function(){
-    var branches=hrfBranches();
-    var records=[];
-    branches.forEach(function(b){
-      (HRF.staff[b.id]||[]).forEach(function(emp){
-        (emp.disciplinary||[]).forEach(function(rec){
-          records.push(Object.assign({},rec,{empName:emp.name||emp.id,branchId:b.id,branchName:b.name||b.id}));
-        });
-      });
-    });
-    records.sort(function(a,b){return (b.loggedAt||0)-(a.loggedAt||0);});
-    var typeColors={verbal:'var(--amber)',written:'var(--orange,#f97316)',final:'var(--danger)',suspension:'#7c3aed',termination:'var(--danger)'};
-    var h=hrfHeader('Disciplinary Log','Append-only disciplinary records across all branches',
-      '<button class="btn btn-primary" onclick="hrfOpenAddDisciplinaryModal()">+ Add Record</button>');
-    h+='<div class="hrf-kpi-grid">';
-    h+=hrfKpi('\u26a0\ufe0f','Total Records',records.length,'All branches','var(--amber)');
-    ['verbal','written','final','suspension','termination'].forEach(function(t){
-      var cnt=records.filter(function(r){return r.type===t;}).length;
-      if(cnt)h+=hrfKpi('',''+t.charAt(0).toUpperCase()+t.slice(1),cnt,'records',(typeColors[t]||'var(--text-secondary)'));
-    });
-    h+='</div>';
-    if(!records.length){
-      h+='<div class="hrf-section" style="text-align:center;padding:40px;color:var(--text-secondary)">No disciplinary records on file.</div>';
-    } else {
-      var rows=records.map(function(r){
-        var tc=typeColors[r.type]||'var(--text-secondary)';
-        return '<tr>'+
-          '<td>'+hxe(r.date||'')+'</td>'+
-          '<td><strong>'+hxe(r.empName||'')+'</strong></td>'+
-          '<td>'+hxe(r.branchName||'')+'</td>'+
-          '<td><span style="color:'+tc+';font-weight:700">'+hxe(r.type||'')+'</span></td>'+
-          '<td style="font-size:11px">'+hxe((r.reason||'').slice(0,60))+'</td>'+
-          '<td style="font-size:11px;color:var(--text-secondary)">'+hxe(r.issuedBy||'')+'</td>'+
-          '</tr>';
-      }).join('');
-      h+='<div class="hrf-section">'+hrfTable(['Date','Employee','Branch','Type','Reason','Issued By'],rows)+'</div>';
-    }
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-  return hrfLoading('Loading disciplinary records...');
-}
-
-function hrfOpenAddDisciplinaryModal(){
-  var branches=hrfBranches();
-  var brOpts=branches.map(function(b){return '<option value="'+hxe(b.id)+'">'+hxe(b.name||b.id)+'</option>';}).join('');
-  var html='<div class="modal-head"><h2>\u26a0\ufe0f Add Disciplinary Record</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Branch</label><select class="form-input form-select" id="disc-branch" onchange="hrfLoadBranchStaffOptions(\'disc-emp\',this.value)">'+brOpts+'</select></div>'+
-    '<div class="form-group"><label class="form-label">Employee</label><select class="form-input form-select" id="disc-emp"><option>Select branch first</option></select></div></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="disc-date" value="'+new Date().toISOString().slice(0,10)+'"></div>'+
-    '<div class="form-group"><label class="form-label">Type</label><select class="form-input form-select" id="disc-type"><option value="verbal">Verbal Warning</option><option value="written">Written Warning</option><option value="final">Final Warning</option><option value="suspension">Suspension</option><option value="termination">Termination</option></select></div></div>';
-  html+='<div class="form-group"><label class="form-label">Reason</label><textarea class="form-input" id="disc-reason" rows="2" placeholder="Reason for disciplinary action..."></textarea></div>';
-  html+='<div class="form-group"><label class="form-label">Employee Response</label><textarea class="form-input" id="disc-response" rows="2" placeholder="Employee acknowledgement or response..."></textarea></div>';
-  html+='<div class="modal-actions"><button class="btn" onclick="closeModalForce()">Cancel</button><button class="btn btn-primary" onclick="hrfSubmitDisciplinary()">Save Record</button></div>';
-  openModal(html);
-  var fb=branches[0];if(fb)hrfLoadBranchStaffOptions('disc-emp',fb.id);
-}
-
-function hrfSubmitDisciplinary(){
-  var branchId=document.getElementById('disc-branch')&&document.getElementById('disc-branch').value;
-  var empId=document.getElementById('disc-emp')&&document.getElementById('disc-emp').value;
-  var date=document.getElementById('disc-date')&&document.getElementById('disc-date').value;
-  var type=document.getElementById('disc-type')&&document.getElementById('disc-type').value;
-  var reason=document.getElementById('disc-reason')&&document.getElementById('disc-reason').value.trim();
-  var response=document.getElementById('disc-response')&&document.getElementById('disc-response').value.trim();
-  if(!branchId||!empId||!date||!reason){showToast('Fill all required fields','error');return;}
-  db.ref('branches/'+branchId+'/staff/'+empId+'/disciplinary').push({
-    date:date,type:type,reason:reason,issuedBy:NX.session.entityName||'HR',empResponse:response,loggedAt:Date.now()
-  },function(err){
-    if(!err){showToast('Record saved \u2713','success');closeModalForce();navTo('hrf-disciplinary');}
-    else showToast('Save failed','error');
-  });
-}
-
-function pHrfProbation(){
-  hrfLoadAll('staff','staff',function(){
-    var branches=hrfBranches();
-    var now=Date.now();
-    var onProbation=[];
-    branches.forEach(function(b){
-      (HRF.staff[b.id]||[]).forEach(function(emp){
-        if(emp.probationStatus!=='active')return;
-        var endTs=emp.probationEnd?new Date(emp.probationEnd).getTime():null;
-        var daysLeft=endTs?Math.ceil((endTs-now)/86400000):null;
-        onProbation.push({emp:emp,branchId:b.id,branchName:b.name||b.id,endTs:endTs,daysLeft:daysLeft});
-      });
-    });
-    onProbation.sort(function(a,b){return (a.daysLeft||9999)-(b.daysLeft||9999);});
-    var h=hrfHeader('Probation Tracker','Employees currently on probation');
-    h+='<div class="hrf-kpi-grid">';
-    h+=hrfKpi('\u23f3','On Probation',onProbation.length,'Active','var(--amber)');
-    var endingSoon=onProbation.filter(function(p){return p.daysLeft!==null&&p.daysLeft<=7;}).length;
-    h+=hrfKpi('\u26a0\ufe0f','Ending This Week',endingSoon,'Need decision','var(--danger)');
-    h+='</div>';
-    if(!onProbation.length){
-      h+='<div class="hrf-section" style="text-align:center;padding:40px;color:var(--text-secondary)">No employees currently on probation.</div>';
-    } else {
-      var rows=onProbation.map(function(p){
-        var color=p.daysLeft===null?'var(--text-secondary)':p.daysLeft<=0?'var(--danger)':p.daysLeft<=7?'var(--amber)':'var(--text-primary)';
-        return '<tr>'+
-          '<td><strong>'+hxe(p.emp.name||'')+'</strong></td>'+
-          '<td>'+hxe(p.branchName)+'</td>'+
-          '<td>'+(p.endTs?new Date(p.endTs).toLocaleDateString('en-GB'):'N/A')+'</td>'+
-          '<td><span style="color:'+color+';font-weight:700">'+(p.daysLeft===null?'No date':p.daysLeft<=0?'OVERDUE':p.daysLeft+'d')+'</span></td>'+
-          '<td>'+
-            '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);color:var(--success);margin-right:4px" onclick="hrfSetProbationResult(\''+hxe(p.branchId)+'\',\''+hxe(p.emp.id||p.emp.sap||'')+'\',\'passed\')">Pass</button>'+
-            '<button class="btn btn-sm" style="background:rgba(248,113,113,.15);color:var(--danger)" onclick="hrfSetProbationResult(\''+hxe(p.branchId)+'\',\''+hxe(p.emp.id||p.emp.sap||'')+'\',\'failed\')">Fail</button>'+
-          '</td>'+
-          '</tr>';
-      }).join('');
-      h+='<div class="hrf-section">'+hrfTable(['Employee','Branch','End Date','Days Left','Decision'],rows)+'</div>';
-    }
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-  return hrfLoading('Loading probation data...');
-}
-
-function hrfSetProbationResult(branchId,empId,result){
-  if(!confirm('Mark probation as '+result+'?'))return;
-  db.ref('branches/'+branchId+'/staff/'+empId).update({probationStatus:result},function(err){
-    if(!err){showToast('Probation marked: '+result,'success');navTo('hrf-probation');}
-    else showToast('Update failed','error');
-  });
-}
-
-// ── M5: Training & Certification ──
-function pHrfTraining(){
-  hrfLoadAll('staff','staff',function(){
-    var branches=hrfBranches();
-    var now=Date.now();
-    var cutoff30=now+30*86400000;
-    var cutoff60=now+60*86400000;
-    var expiring=[];
-    branches.forEach(function(b){
-      (HRF.staff[b.id]||[]).forEach(function(emp){
-        (emp.training||[]).forEach(function(cert){
-          var exp=new Date(cert.expiryDate).getTime();
-          var daysLeft=Math.ceil((exp-now)/86400000);
-          if(exp<cutoff60){
-            expiring.push({emp:emp,branchId:b.id,branchName:b.name||b.id,cert:cert,daysLeft:daysLeft});
-          }
-        });
-      });
-    });
-    expiring.sort(function(a,b){return a.daysLeft-b.daysLeft;});
-    var h=hrfHeader('Training Records','Certification tracker \u2014 expiry alerts',
-      '<button class="btn btn-primary" onclick="hrfOpenAddTrainingModal()">+ Add Record</button>');
-    h+='<div class="hrf-kpi-grid">';
-    h+=hrfKpi('\ud83d\udea8','Expired',expiring.filter(function(e){return e.daysLeft<=0;}).length,'Certs expired','var(--danger)');
-    h+=hrfKpi('\u26a0\ufe0f','< 30 Days',expiring.filter(function(e){return e.daysLeft>0&&e.daysLeft<=30;}).length,'Urgent renewal','var(--amber)');
-    h+=hrfKpi('\ud83d\udcc5','< 60 Days',expiring.filter(function(e){return e.daysLeft>30&&e.daysLeft<=60;}).length,'Plan renewal','var(--blue)');
-    h+='</div>';
-    if(!expiring.length){
-      h+='<div class="hrf-section" style="text-align:center;padding:40px;color:var(--text-secondary)">\u2705 No certifications expiring in the next 60 days.</div>';
-    } else {
-      var rows=expiring.map(function(item){
-        var color=item.daysLeft<=0?'var(--danger)':item.daysLeft<=30?'var(--amber)':'var(--blue)';
-        return '<tr>'+
-          '<td><strong>'+hxe(item.emp.name||'')+'</strong></td>'+
-          '<td>'+hxe(item.branchName)+'</td>'+
-          '<td>'+hxe(item.cert.typeId||item.cert.type||'Food Safety')+'</td>'+
-          '<td>'+hxe(item.cert.expiryDate||'')+'</td>'+
-          '<td><span style="color:'+color+';font-weight:700">'+(item.daysLeft<=0?'EXPIRED':item.daysLeft+'d')+'</span></td>'+
-          '</tr>';
-      }).join('');
-      h+='<div class="hrf-section">'+hrfTable(['Employee','Branch','Certification','Expiry','Status'],rows)+'</div>';
-    }
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-  return hrfLoading('Loading training records...');
-}
-
-function hrfOpenAddTrainingModal(){
-  var branches=hrfBranches();
-  var brOpts=branches.map(function(b){return '<option value="'+hxe(b.id)+'">'+hxe(b.name||b.id)+'</option>';}).join('');
-  var typeOpts=['Food Safety','Fire Safety','Customer Service','Equipment Operation','HACCP','First Aid'].map(function(t){return '<option>'+t+'</option>';}).join('');
-  var html='<div class="modal-head"><h2>\ud83c\udf93 Add Training Record</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Branch</label><select class="form-input form-select" id="tr-branch" onchange="hrfLoadBranchStaffOptions(\'tr-emp\',this.value)">'+brOpts+'</select></div>'+
-    '<div class="form-group"><label class="form-label">Employee</label><select class="form-input form-select" id="tr-emp"></select></div></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Training Type</label><select class="form-input form-select" id="tr-type">'+typeOpts+'</select></div>'+
-    '<div class="form-group"><label class="form-label">Completed Date</label><input class="form-input" type="date" id="tr-completed"></div></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Expiry Date</label><input class="form-input" type="date" id="tr-expiry"></div>'+
-    '<div class="form-group"><label class="form-label">Certificate Ref</label><input class="form-input" id="tr-ref" placeholder="Cert number..."></div></div>';
-  html+='<div class="modal-actions"><button class="btn" onclick="closeModalForce()">Cancel</button><button class="btn btn-primary" onclick="hrfSubmitTraining()">Save</button></div>';
-  openModal(html);
-  var fb=branches[0];if(fb)hrfLoadBranchStaffOptions('tr-emp',fb.id);
-}
-
-function hrfSubmitTraining(){
-  var branchId=document.getElementById('tr-branch')&&document.getElementById('tr-branch').value;
-  var empId=document.getElementById('tr-emp')&&document.getElementById('tr-emp').value;
-  var type=document.getElementById('tr-type')&&document.getElementById('tr-type').value;
-  var completed=document.getElementById('tr-completed')&&document.getElementById('tr-completed').value;
-  var expiry=document.getElementById('tr-expiry')&&document.getElementById('tr-expiry').value;
-  var ref=document.getElementById('tr-ref')&&document.getElementById('tr-ref').value.trim();
-  if(!branchId||!empId||!completed||!expiry){showToast('Fill all required fields','error');return;}
-  db.ref('branches/'+branchId+'/staff/'+empId+'/training').push({typeId:type,completedDate:completed,expiryDate:expiry,certRef:ref,loggedAt:Date.now()},function(err){
-    if(!err){showToast('Training record saved \u2713','success');closeModalForce();navTo('hrf-training');}
-    else showToast('Save failed','error');
-  });
-}
-
-function pHrfTrainingCal(){
-  if(!db){
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=hrfHeader('Training Calendar','Upcoming training sessions')+'<div class="hrf-section" style="text-align:center;padding:40px;color:var(--text-secondary)">Offline \u2014 cannot load sessions.</div>';
-    return;
-  }
-  db.ref('admin/trainingSessions').once('value',function(snap){
-    var raw=snap.val()||{};
-    var sessions=Object.values(raw).filter(Boolean);
-    sessions.sort(function(a,b){return (a.date||'').localeCompare(b.date||'');});
-    var h=hrfHeader('Training Calendar','Schedule and track training sessions',
-      '<button class="btn btn-primary" onclick="hrfOpenAddSessionModal()">+ Schedule Session</button>');
-    h+='<div class="hrf-kpi-grid">';
-    h+=hrfKpi('\ud83d\udcc5','Upcoming',sessions.filter(function(s){return s.date>=new Date().toISOString().slice(0,10);}).length,'Sessions','var(--blue)');
-    h+=hrfKpi('\ud83c\udf93','Total Sessions',sessions.length,'All time','var(--hr-color)');
-    h+='</div>';
-    if(!sessions.length){
-      h+='<div class="hrf-section" style="text-align:center;padding:40px;color:var(--text-secondary)">No training sessions scheduled. Click <strong>+ Schedule Session</strong> to add one.</div>';
-    } else {
-      var rows=sessions.map(function(s){
-        var past=s.date<new Date().toISOString().slice(0,10);
-        return '<tr style="opacity:'+(past?0.6:1)+'">'+
-          '<td>'+hxe(s.date||'')+'</td>'+
-          '<td><strong>'+hxe(s.type||'')+'</strong></td>'+
-          '<td>'+hxe(s.location||'')+'</td>'+
-          '<td>'+hxe(s.trainer||'')+'</td>'+
-          '<td>'+((s.attendees||[]).length)+'/'+(s.maxAttendees||'\u221e')+'</td>'+
-          '<td>'+hrfBadge(past?'Past':'Upcoming',past?'var(--text-muted)':'var(--success)')+'</td>'+
-          '</tr>';
-      }).join('');
-      h+='<div class="hrf-section">'+hrfTable(['Date','Type','Location','Trainer','Attendees','Status'],rows)+'</div>';
-    }
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-  return hrfLoading('Loading training calendar...');
-}
-
-function hrfOpenAddSessionModal(){
-  var typeOpts=['Food Safety','Fire Safety','Customer Service','Equipment Operation','HACCP','First Aid'].map(function(t){return '<option>'+t+'</option>';}).join('');
-  var html='<div class="modal-head"><h2>\ud83d\udcc5 Schedule Training Session</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Training Type</label><select class="form-input form-select" id="sess-type">'+typeOpts+'</select></div>'+
-    '<div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="sess-date"></div></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Location</label><input class="form-input" id="sess-location" placeholder="Venue or branch name"></div>'+
-    '<div class="form-group"><label class="form-label">Trainer</label><input class="form-input" id="sess-trainer" placeholder="Trainer name"></div></div>';
-  html+='<div class="form-group"><label class="form-label">Max Attendees</label><input class="form-input" type="number" id="sess-max" value="20" min="1"></div>';
-  html+='<div class="modal-actions"><button class="btn" onclick="closeModalForce()">Cancel</button><button class="btn btn-primary" onclick="hrfSubmitSession()">Schedule</button></div>';
-  openModal(html);
-}
-
-function hrfSubmitSession(){
-  var type=document.getElementById('sess-type')&&document.getElementById('sess-type').value;
-  var date=document.getElementById('sess-date')&&document.getElementById('sess-date').value;
-  var location=document.getElementById('sess-location')&&document.getElementById('sess-location').value.trim();
-  var trainer=document.getElementById('sess-trainer')&&document.getElementById('sess-trainer').value.trim();
-  var max=parseInt(document.getElementById('sess-max')&&document.getElementById('sess-max').value,10)||20;
-  if(!date||!location){showToast('Fill date and location','error');return;}
-  var id='sess_'+Date.now();
-  db.ref('admin/trainingSessions/'+id).set({id:id,type:type,date:date,location:location,trainer:trainer,maxAttendees:max,attendees:[],createdAt:Date.now()},function(err){
-    if(!err){showToast('Session scheduled \u2713','success');closeModalForce();navTo('hrf-training-cal');}
-    else showToast('Save failed','error');
-  });
-}
-
-// ── M2: Payroll — Salary Config & Queue ──
-function pHrfSalaryConfig(){
-  if(!db){
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=hrfHeader('Salary Config','Role-based salary structure')+'<div style="text-align:center;padding:40px;color:var(--text-secondary)">Offline.</div>';
-    return;
-  }
-  db.ref('admin/payrollConfig').once('value',function(snap){
-    var config=snap.val()||{};
-    var roles=['Branch Manager','Supervisor','Senior Staff','Staff','Driver','Trainee'];
-    var h=hrfHeader('Salary Config','Configure base salary and allowances per role',
-      '<button class="btn btn-primary" onclick="hrfSaveAllSalaryConfig()">Save All</button>');
-    h+='<div class="hrf-section"><div style="font-size:13px;font-weight:700;margin-bottom:16px">\u2699\ufe0f Role-Based Salary Structure</div>';
-    h+='<div style="overflow-x:auto"><table class="hrf-table"><thead><tr><th>Role</th><th>Base (SAR)</th><th>Transport</th><th>Housing</th><th>Meal</th><th>Total Est.</th></tr></thead><tbody>';
-    roles.forEach(function(role){
-      var cfg=config[role]||{};
-      var base=cfg.base||0,transport=cfg.transport||0,housing=cfg.housing||0,meal=cfg.meal||0;
-      var total=parseFloat(base)+parseFloat(transport)+parseFloat(housing)+parseFloat(meal);
-      var key=role.replace(/\s+/g,'_');
-      h+='<tr>'+
-        '<td><strong>'+hxe(role)+'</strong></td>'+
-        '<td><input class="form-input" style="width:100px" id="sc-base-'+key+'" type="number" value="'+base+'"></td>'+
-        '<td><input class="form-input" style="width:90px" id="sc-transport-'+key+'" type="number" value="'+transport+'"></td>'+
-        '<td><input class="form-input" style="width:90px" id="sc-housing-'+key+'" type="number" value="'+housing+'"></td>'+
-        '<td><input class="form-input" style="width:90px" id="sc-meal-'+key+'" type="number" value="'+meal+'"></td>'+
-        '<td style="font-weight:700;color:var(--success)">'+total.toLocaleString()+' SAR</td>'+
-        '</tr>';
-    });
-    h+='</tbody></table></div></div>';
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-  return hrfLoading('Loading salary config...');
-}
-
-function hrfSaveAllSalaryConfig(){
-  var roles=['Branch Manager','Supervisor','Senior Staff','Staff','Driver','Trainee'];
-  var updates={};
-  roles.forEach(function(role){
-    var key=role.replace(/\s+/g,'_');
-    var base=parseFloat(document.getElementById('sc-base-'+key)&&document.getElementById('sc-base-'+key).value)||0;
-    var transport=parseFloat(document.getElementById('sc-transport-'+key)&&document.getElementById('sc-transport-'+key).value)||0;
-    var housing=parseFloat(document.getElementById('sc-housing-'+key)&&document.getElementById('sc-housing-'+key).value)||0;
-    var meal=parseFloat(document.getElementById('sc-meal-'+key)&&document.getElementById('sc-meal-'+key).value)||0;
-    updates[role]={base:base,transport:transport,housing:housing,meal:meal,updatedAt:Date.now(),updatedBy:NX.session.entityName||'HR'};
-  });
-  db.ref('admin/payrollConfig').update(updates,function(err){
-    if(!err)showToast('Salary config saved \u2713','success');
-    else showToast('Save failed','error');
-  });
-}
-
-function pHrfPayrollQueue(){
-  var branches=hrfBranches();
-  var now=new Date(new Date().getTime()+3*3600000);
-  var monthKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  var h=hrfHeader('Payroll Queue','Monthly payroll approval \u2014 '+monthKey);
-  h+='<div id="pq-content">'+hrfLoading('Loading payroll queue...')+'</div>';
-  var area=document.getElementById('page-area');
-  if(area)area.innerHTML=h;
-  var results={};var done=0;
-  if(!db){document.getElementById('pq-content').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-secondary)">Offline.</div>';return;}
-  branches.forEach(function(b){
-    db.ref('branches/'+b.id+'/payroll/'+monthKey).once('value',function(snap){
-      results[b.id]={branch:b,emps:snap.val()||{}};
-      if(++done===branches.length)renderPayrollQueue(results,monthKey);
-    });
-  });
-}
-
-function renderPayrollQueue(results,monthKey){
-  var rows='';var totalBranches=0;
-  Object.keys(results).forEach(function(bid){
-    var r=results[bid];
-    var emps=r.emps;
-    var empArr=Object.values(emps).filter(Boolean);
-    if(!empArr.length)return;
-    totalBranches++;
-    var gross=empArr.reduce(function(a,e){return a+parseFloat(e.grossPay||0);},0);
-    var net=empArr.reduce(function(a,e){return a+parseFloat(e.netPay||0);},0);
-    var status=empArr[0].status||'draft';
-    var statusColor={draft:'var(--text-secondary)',pending_hr:'var(--amber)',pending_finance:'var(--blue)',released:'var(--success)'}[status]||'var(--text-secondary)';
-    rows+='<tr>'+
-      '<td><strong>'+hxe(r.branch.name||bid)+'</strong></td>'+
-      '<td>'+empArr.length+'</td>'+
-      '<td>'+gross.toLocaleString()+' SAR</td>'+
-      '<td>'+net.toLocaleString()+' SAR</td>'+
-      '<td><span style="color:'+statusColor+';font-weight:700">'+hxe(status)+'</span></td>'+
-      '<td>'+(status==='pending_hr'?'<button class="btn btn-sm btn-primary" onclick="hrfApprovePayrollBranch(\''+hxe(bid)+'\',\''+hxe(monthKey)+'\')">Approve \u2192 Finance</button>':'')+'</td>'+
-      '</tr>';
-  });
-  var container=document.getElementById('pq-content');
-  if(!container)return;
-  if(!rows){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-secondary)">No payroll data for '+monthKey+'.<br>Branch managers must submit payroll first.</div>';return;}
-  container.innerHTML=hrfTable(['Branch','Staff','Gross Pay','Net Pay','Status','Action'],rows);
-}
-
-function hrfApprovePayrollBranch(branchId,monthKey){
-  if(!db||!NX.session)return;
-  var path='branches/'+branchId+'/payroll/'+monthKey;
-  db.ref(path).once('value',function(snap){
-    var emps=snap.val()||{};
-    var updates={};
-    Object.keys(emps).forEach(function(empId){
-      updates[empId+'/status']='pending_finance';
-      updates[empId+'/approvedByHR']=NX.session.entityName||'HR';
-      updates[empId+'/approvedAt']=Date.now();
-    });
-    db.ref(path).update(updates,function(err){
-      if(!err){showToast('Payroll sent to Finance \u2713','success');navTo('hrf-payroll-q');}
-      else showToast('Approval failed','error');
-    });
-  });
-}
-
-// ── M7: Announcements & Policy Library ──
-function pHrfAnnouncements(){
-  if(!db){
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=hrfHeader('Announcements','HR broadcast channel')+'<div style="text-align:center;padding:40px;color:var(--text-secondary)">Offline.</div>';
-    return;
-  }
+// Load announcements + acks for branch manager
+function bmLoadAnnouncements(cb) {
+  if(!db){cb();return;}
+  var s = NX.session||{};
+  var done = 0;
+  function check(){if(++done>=2){bmUpdateBadges();if(cb)cb();}}
   db.ref('admin/announcements').once('value',function(snap){
     var raw=snap.val()||{};
-    var anns=Object.values(raw).filter(Boolean);
-    anns.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
-    var h=hrfHeader('Announcements','HR communications \u2014 '+anns.length+' posted',
-      '<button class="btn btn-primary" onclick="hrfOpenPostAnnouncementModal()">+ Post Announcement</button>');
-    h+='<div class="hrf-kpi-grid">';
-    h+=hrfKpi('\ud83d\udce2','Total Posted',anns.length,'All time','var(--hr-color)');
-    h+=hrfKpi('\ud83d\udea8','Urgent',anns.filter(function(a){return a.priority==='urgent';}).length,'Urgent notices','var(--danger)');
-    h+=hrfKpi('\u2705','Require Ack',anns.filter(function(a){return a.requiresAck;}).length,'Need acknowledgement','var(--amber)');
-    h+='</div>';
-    if(!anns.length){
-      h+='<div class="hrf-section" style="text-align:center;padding:40px;color:var(--text-secondary)">No announcements posted yet.</div>';
-    } else {
-      h+='<div class="hrf-section">';
-      anns.slice(0,30).forEach(function(a){
-        var urgColor=a.priority==='urgent'?'var(--danger)':'var(--hr-color)';
-        h+='<div class="hrf-announcement" style="border-left-color:'+urgColor+'">'+
-          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'+
-          '<strong style="font-size:13px">'+hxe(a.title||'')+'</strong>'+
-          (a.priority==='urgent'?hrfBadge('URGENT','var(--danger)'):'')+(a.requiresAck?hrfBadge('ACK REQUIRED','var(--amber)'):'')+'</div>'+
-          '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">'+hxe(a.body||'')+'</div>'+
-          '<div style="font-size:11px;color:var(--text-muted)">Posted by '+hxe(a.postedBy||'')+'  \u00b7  '+hxe(a.date||'')+'</div></div>';
-      });
-      h+='</div>';
-    }
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
+    BS._bmAnns=Object.values(raw).filter(Boolean).sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+    check();
   });
-  return hrfLoading('Loading announcements...');
-}
-
-function hrfOpenPostAnnouncementModal(){
-  var html='<div class="modal-head"><h2>\ud83d\udce2 Post Announcement</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
-  html+='<div class="form-group"><label class="form-label">Title</label><input class="form-input" id="ann-title" placeholder="Announcement title..."></div>';
-  html+='<div class="form-group"><label class="form-label">Body</label><textarea class="form-input" id="ann-body" rows="3" placeholder="Full announcement text..."></textarea></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Priority</label><select class="form-input form-select" id="ann-priority"><option value="normal">Normal</option><option value="urgent">Urgent</option></select></div>'+
-    '<div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:8px;margin-top:24px"><input type="checkbox" id="ann-ack"> Requires Acknowledgement</label></div></div>';
-  html+='<div class="modal-actions"><button class="btn" onclick="closeModalForce()">Cancel</button><button class="btn btn-primary" onclick="hrfPostAnnouncement()">Post</button></div>';
-  openModal(html);
-}
-
-function hrfPostAnnouncement(){
-  var title=document.getElementById('ann-title')&&document.getElementById('ann-title').value.trim();
-  var body=document.getElementById('ann-body')&&document.getElementById('ann-body').value.trim();
-  var priority=document.getElementById('ann-priority')&&document.getElementById('ann-priority').value;
-  var requiresAck=document.getElementById('ann-ack')&&document.getElementById('ann-ack').checked;
-  if(!title||!body){showToast('Title and body required','error');return;}
-  var id='ann_'+Date.now();
-  db.ref('admin/announcements/'+id).set({id:id,title:title,body:body,postedBy:NX.session.entityName||'HR',
-    date:new Date().toISOString().slice(0,10),priority:priority,requiresAck:requiresAck,createdAt:Date.now()},function(err){
-    if(!err){showToast('Announcement posted \u2713','success');closeModalForce();navTo('hrf-announcements');}
-    else showToast('Post failed','error');
-  });
-}
-
-function pHrfPolicyLibrary(){
-  if(!db){
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=hrfHeader('Policy Library','HR policy document archive')+'<div style="text-align:center;padding:40px;color:var(--text-secondary)">Offline.</div>';
-    return;
-  }
-  db.ref('admin/policies').once('value',function(snap){
-    var raw=snap.val()||{};
-    var policies=Object.values(raw).filter(Boolean);
-    var cats=['HR Policy','Health & Safety','Operations','Finance'];
-    var h=hrfHeader('Policy Library','Searchable policy document archive',
-      '<button class="btn btn-primary" onclick="hrfOpenAddPolicyModal()">+ Add Document</button>');
-    h+='<div class="hrf-kpi-grid">';
-    h+=hrfKpi('\ud83d\udcda','Total Policies',policies.length,'In library','var(--hr-color)');
-    h+='</div>';
-    cats.forEach(function(cat){
-      var catPolicies=policies.filter(function(p){return p.category===cat;});
-      if(!catPolicies.length)return;
-      h+='<div class="hrf-section"><div style="font-size:13px;font-weight:700;margin-bottom:12px">'+hxe(cat)+'</div>';
-      catPolicies.forEach(function(p){
-        h+='<div class="hrf-announcement">'+
-          '<div style="display:flex;align-items:center;gap:10px">'+
-          '\ud83d\udcc4 <strong>'+hxe(p.title||'')+'</strong>'+
-          '<span style="margin-left:auto">'+
-          (p.url?'<a href="'+hxe(p.url)+'" target="_blank" class="btn btn-sm">Open \u2197</a>':'')+'</span></div>'+
-          '<div style="font-size:11px;color:var(--text-muted);margin-top:4px">Added '+hxe(p.addedAt?new Date(p.addedAt).toLocaleDateString('en-GB'):'')+'</div></div>';
-      });
-      h+='</div>';
+  if(s.branchId){
+    db.ref('branches/'+s.branchId+'/annAcks').once('value',function(snap){
+      BS._bmAcks=snap.val()||{};
+      check();
     });
-    if(!policies.length)h+='<div class="hrf-section" style="text-align:center;padding:40px;color:var(--text-secondary)">No policy documents yet. Click <strong>+ Add Document</strong> to start the library.</div>';
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-  return hrfLoading('Loading policy library...');
+  } else {BS._bmAcks={};check();}
 }
 
-function hrfOpenAddPolicyModal(){
-  var catOpts=['HR Policy','Health & Safety','Operations','Finance'].map(function(c){return '<option>'+c+'</option>';}).join('');
-  var html='<div class="modal-head"><h2>\ud83d\udcda Add Policy Document</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
-  html+='<div class="form-group"><label class="form-label">Title</label><input class="form-input" id="pol-title" placeholder="Policy document title..."></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Category</label><select class="form-input form-select" id="pol-cat">'+catOpts+'</select></div>'+
-    '<div class="form-group"><label class="form-label">URL / Link</label><input class="form-input" id="pol-url" placeholder="https://..."></div></div>';
-  html+='<div class="modal-actions"><button class="btn" onclick="closeModalForce()">Cancel</button><button class="btn btn-primary" onclick="hrfSavePolicy()">Add</button></div>';
+// Load incoming transfer requests
+function bmLoadTransfers(cb) {
+  if(!db){if(cb)cb();return;}
+  var s = NX.session||{};
+  if(!s.branchId){BS._bmTransfers=[];if(cb)cb();return;}
+  db.ref('branches/'+s.branchId+'/transfer_requests').once('value',function(snap){
+    var raw=snap.val()||{};
+    BS._bmTransfers=Object.values(raw).filter(Boolean).sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);});
+    bmUpdateBadges();
+    if(cb)cb();
+  });
+}
+
+// ── 1. INVOICES ──────────────────────────────────────────────
+function pBmInvoices() {
+  attachBranchListeners();
+  var s = NX.session||{};
+  var filt = BS._bmInvFilt||'all';
+  var data = BS.invoices.filter(function(inv){
+    if(filt==='pending') return !inv.status||inv.status==='draft'||inv.status==='pending';
+    if(filt==='approved') return inv.status==='approved';
+    if(filt==='paid') return inv.status==='paid';
+    return true;
+  }).slice().sort(function(a,b){return (b.invoiceDate||'').localeCompare(a.invoiceDate||'');});
+
+  var total = data.reduce(function(a,inv){return a+parseFloat(inv.amount||0);},0);
+  var pending = BS.invoices.filter(function(i){return !i.status||i.status==='draft'||i.status==='pending';}).length;
+  var paid = BS.invoices.filter(function(i){return i.status==='paid';}).length;
+
+  var h = '<div class="page-header"><h1>&#x1F4C4; Supplier Invoices</h1><p>Log and track supplier invoices &mdash; submitted to Finance for approval</p></div>';
+  h += '<div class="header-actions"><div style="display:flex;gap:6px">';
+  ['all','pending','approved','paid'].forEach(function(f){
+    var lbl = {all:'All',pending:'Pending',approved:'Approved',paid:'Paid'}[f];
+    h += '<button class="btn'+(filt===f?' btn-primary':'')+'" onclick="BS._bmInvFilt=\''+f+'\';navTo(\'bm-invoices\')">'+lbl+'</button>';
+  });
+  h += '</div><button class="btn btn-primary" onclick="openBmInvoiceModal()">+ Add Invoice</button></div>';
+
+  h += '<div class="bgrid-4" style="margin-bottom:16px">';
+  h += '<div class="bsc"><div class="bsc-lbl">Total Invoices</div><div class="bsc-val bca">'+BS.invoices.length+'</div></div>';
+  h += '<div class="bsc"><div class="bsc-lbl">Pending Finance</div><div class="bsc-val" style="color:#f59e0b">'+pending+'</div></div>';
+  h += '<div class="bsc"><div class="bsc-lbl">Paid</div><div class="bsc-val" style="color:#34d399">'+paid+'</div></div>';
+  h += '<div class="bsc"><div class="bsc-lbl">Total Value</div><div class="bsc-val bcr">'+bfsar(total)+'</div></div>';
+  h += '</div>';
+
+  var statusColor = {draft:'#94a3b8',pending:'#f59e0b',approved:'#60a5fa',paid:'#34d399'};
+  var rows = data.map(function(inv){
+    var sc = statusColor[inv.status||'draft']||'#94a3b8';
+    return '<tr>'+
+      '<td class="bmono" style="font-size:11px;color:var(--text-tertiary)">'+bfdate(inv.invoiceDate)+'</td>'+
+      '<td style="font-weight:600;color:var(--text-primary)">'+bxe(inv.supplier||'—')+'</td>'+
+      '<td>'+bpl(inv.category||'—','#60a5fa')+'</td>'+
+      '<td class="bmono" style="font-weight:700;color:#f87171">'+bfsar(inv.amount)+'</td>'+
+      '<td style="font-size:11px;color:var(--text-secondary)">'+bxe((inv.note||'').slice(0,40))+'</td>'+
+      '<td><span style="color:'+sc+';font-weight:700;font-size:11px">'+bxe(inv.status||'draft')+'</span></td>'+
+      '<td><div style="display:flex;gap:4px">'+
+        ((!inv.status||inv.status==='draft')?'<button class="btn btn-sm btn-primary" onclick="bmSubmitInvoice(\''+bxe(inv.id)+'\')">Submit</button>':'')+
+        '<button class="btn btn-sm" style="color:var(--danger)" onclick="bmDeleteInvoice(\''+bxe(inv.id)+'\')">Del</button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+
+  h += '<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr>'+
+    '<th>Date</th><th>Supplier</th><th>Category</th><th>Amount</th><th>Note</th><th>Status</th><th>Actions</th>'+
+    '</tr></thead><tbody>'+(rows||'<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:28px">No invoices yet. Click <strong>+ Add Invoice</strong> to log one.</td></tr>')+'</tbody></table></div></div>';
+  return h;
+}
+
+function openBmInvoiceModal() {
+  var sups = getSuppliers();
+  var supOpts = sups.map(function(s){return '<option>'+bxe(s)+'</option>';}).join('');
+  var catOpts = ['Food & Beverage','Utilities','Maintenance','Supplies','Equipment','Cleaning','Other'].map(function(c){return '<option>'+c+'</option>';}).join('');
+  var html = '<div class="modal-head"><h2>&#x1F4C4; Add Supplier Invoice</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
+  html += '<div class="form-row"><div class="bfg"><label class="form-label">Supplier *</label><select class="form-input form-select" id="bmi-sup"><option value="">Select...</option>'+supOpts+'</select></div>'+
+    '<div class="bfg"><label class="form-label">Invoice Date *</label><input class="form-input" type="date" id="bmi-date" value="'+TODAY_BS+'"></div></div>';
+  html += '<div class="form-row"><div class="bfg"><label class="form-label">Amount (SAR) *</label><input class="form-input" type="number" id="bmi-amount" placeholder="0.00" step="0.01"></div>'+
+    '<div class="bfg"><label class="form-label">Category</label><select class="form-input form-select" id="bmi-cat">'+catOpts+'</select></div></div>';
+  html += '<div class="form-row"><div class="bfg"><label class="form-label">Invoice #</label><input class="form-input" id="bmi-ref" placeholder="INV-2025-001"></div>'+
+    '<div class="bfg"><label class="form-label">VAT Amount (SAR)</label><input class="form-input" type="number" id="bmi-vat" placeholder="0.00" step="0.01"></div></div>';
+  html += '<div class="bfg"><label class="form-label">Note</label><textarea class="form-input" id="bmi-note" rows="2" placeholder="Description or items..."></textarea></div>';
+  html += '<div class="modal-actions"><button class="btn" onclick="closeModalForce()">Cancel</button><button class="btn btn-primary" onclick="saveBmInvoice()">Save Invoice</button></div>';
   openModal(html);
 }
 
-function hrfSavePolicy(){
-  var title=document.getElementById('pol-title')&&document.getElementById('pol-title').value.trim();
-  var cat=document.getElementById('pol-cat')&&document.getElementById('pol-cat').value;
-  var url=document.getElementById('pol-url')&&document.getElementById('pol-url').value.trim();
-  if(!title){showToast('Title required','error');return;}
-  var id='pol_'+Date.now();
-  db.ref('admin/policies/'+id).set({id:id,title:title,category:cat,url:url,addedBy:NX.session.entityName||'HR',addedAt:Date.now()},function(err){
-    if(!err){showToast('Policy added \u2713','success');closeModalForce();navTo('hrf-policy-library');}
-    else showToast('Save failed','error');
+function saveBmInvoice() {
+  var sup = bgv('bmi-sup'), date = bgv('bmi-date'), amount = parseFloat(bgv('bmi-amount'))||0;
+  if(!sup||!date||amount<=0){showToast('Supplier, date and amount required','error');return;}
+  var inv = {id:buid(),supplier:sup,invoiceDate:date,amount:amount,category:bgv('bmi-cat'),
+    invoiceRef:bgv('bmi-ref'),vatAmount:parseFloat(bgv('bmi-vat'))||0,note:bgv('bmi-note'),
+    status:'draft',createdAt:Date.now()};
+  BS.invoices.push(inv);
+  bSaveColl('invoices',BS.invoices);
+  closeModalForce();
+  showToast('Invoice saved \u2713','success');
+  navTo('bm-invoices');
+}
+
+function bmSubmitInvoice(id) {
+  var inv = BS.invoices.find(function(i){return i.id===id;});
+  if(!inv)return;
+  inv.status='pending';
+  bSaveColl('invoices',BS.invoices);
+  showToast('Invoice submitted to Finance \u2713','success');
+  navTo('bm-invoices');
+}
+
+function bmDeleteInvoice(id) {
+  if(!confirm('Delete this invoice?'))return;
+  BS.invoices = BS.invoices.filter(function(i){return i.id!==id;});
+  bSaveColl('invoices',BS.invoices);
+  showToast('Deleted');
+  navTo('bm-invoices');
+}
+
+// ── 2. LEAVE MANAGEMENT ──────────────────────────────────────
+function pBmLeave() {
+  attachBranchListeners();
+  var filt = BS._bmLeaveFilt||'all';
+  var data = BS.tsLeaves.filter(function(l){
+    if(filt==='pending') return l.status==='pending';
+    if(filt==='approved') return l.status==='approved';
+    if(filt==='rejected') return l.status==='rejected';
+    return true;
+  }).slice().sort(function(a,b){return (b.start||'').localeCompare(a.start||'');});
+
+  var pend = BS.tsLeaves.filter(function(l){return l.status==='pending';}).length;
+  var appr = BS.tsLeaves.filter(function(l){return l.status==='approved';}).length;
+  var rej  = BS.tsLeaves.filter(function(l){return l.status==='rejected';}).length;
+
+  var eo = '<option value="">Select employee...</option>'+BS.tsEmps.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(e){return '<option value="'+bxe(e.id)+'">'+bxe(e.name)+' ('+bxe(e.dept||'')+')</option>';}).join('');
+
+  var h = '<div class="page-header"><h1>&#x1F3D6;&#xFE0F; Leave Management</h1><p>Submit and manage leave requests for your team</p></div>';
+
+  // Submit form
+  h += '<div class="bcard" style="margin-bottom:16px;border-color:rgba(52,211,153,.2)">';
+  h += '<div style="font-size:13px;font-weight:700;color:var(--success);margin-bottom:14px">New Leave Request</div>';
+  h += '<div class="bgrid-2" style="margin-bottom:12px">';
+  h += '<div class="bfg" style="margin-bottom:0"><label class="form-label">Employee *</label><select class="form-input form-select" id="bmlv-emp">'+eo+'</select></div>';
+  h += '<div class="bfg" style="margin-bottom:0"><label class="form-label">Type *</label><select class="form-input form-select" id="bmlv-type"><option value="annual">Annual Leave</option><option value="sick">Sick Leave</option><option value="emergency">Emergency Leave</option><option value="unpaid">Unpaid Leave</option></select></div>';
+  h += '<div class="bfg" style="margin-bottom:0"><label class="form-label">From *</label><input class="form-input" type="date" id="bmlv-from"></div>';
+  h += '<div class="bfg" style="margin-bottom:0"><label class="form-label">To *</label><input class="form-input" type="date" id="bmlv-to"></div>';
+  h += '</div>';
+  h += '<div class="bfg" style="margin-bottom:12px"><label class="form-label">Notes</label><input class="form-input" id="bmlv-note" placeholder="Reason (optional)"></div>';
+  h += '<button class="btn btn-primary" onclick="saveBmLeaveRequest()">Submit Request &#x2192; HR</button>';
+  h += '</div>';
+
+  // Filter tabs
+  h += '<div style="display:flex;gap:6px;margin-bottom:14px">';
+  [{k:'all',l:'All'},{k:'pending',l:'Pending'},{k:'approved',l:'Approved'},{k:'rejected',l:'Rejected'}].forEach(function(f){
+    h += '<button class="btn'+(filt===f.k?' btn-primary':'')+'" onclick="BS._bmLeaveFilt=\''+f.k+'\';navTo(\'bm-leave\')">'+f.l+'</button>';
   });
-}
+  h += '</div>';
 
-// ════════════════════════════════════════════════════════
-// FINANCE DEPARTMENT — NEW MODULES (M1–M9)
-// ════════════════════════════════════════════════════════
-
-// ── Shared Finance helpers ──
-function finCSVEscape(cell){
-  var s=String(cell==null?'':cell);
-  if(s.indexOf(',')>=0||s.indexOf('"')>=0||s.indexOf('\n')>=0)s='"'+s.replace(/"/g,'""')+'"';
-  return s;
-}
-function finExportCSV(headers,rows,filename){
-  var lines=[headers.map(finCSVEscape).join(',')];
-  rows.forEach(function(row){lines.push(row.map(finCSVEscape).join(','));});
-  var blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8;'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=url;a.download=filename+'.csv';a.click();
-  URL.revokeObjectURL(url);
-}
-function finAuditLog(action,entityId,branchId,meta){
-  if(!db||!NX.session)return;
-  db.ref('admin/finance/audit_log').push({action:action,actorId:NX.session.entityName||'Finance',
-    entityId:entityId||'',branchId:branchId||'',meta:meta||{},ts:Date.now()});
-}
-function finCalcFoodCostPct(branchId,monthKey){
-  var rev=(HRF.sales[branchId]||[]).filter(function(s){return s.date&&s.date.startsWith(monthKey);})
-    .reduce(function(a,s){return a+parseFloat(s.actual||s.total||0);},0);
-  var foodCost=(HRF.invoices[branchId]||[]).filter(function(i){return i.invoiceDate&&i.invoiceDate.startsWith(monthKey)&&(i.category||'').toLowerCase().indexOf('food')>=0;})
-    .reduce(function(a,i){return a+parseFloat(i.amount||0);},0);
-  var waste=(HRF.waste[branchId]||[]).filter(function(w){return w.date&&w.date.startsWith(monthKey);})
-    .reduce(function(a,w){return a+parseFloat(w.value||0);},0);
-  var totalFC=foodCost+waste;
-  var pct=rev>0?(totalFC/rev*100).toFixed(1):0;
-  var target=parseFloat(((NX_BRANCHES[branchId]||{}).fcTarget)||30);
-  var status=pct<=target?'ok':pct<=target+3?'warning':'danger';
-  return {rev:rev,foodCost:foodCost,waste:waste,totalFC:totalFC,pct:pct,target:target,status:status};
-}
-function finCalcVariance(actual,budget){
-  if(!budget)return{delta:0,pct:0,status:'no-budget'};
-  var delta=actual-budget;
-  var pct=(delta/budget*100).toFixed(1);
-  return{delta:delta,pct:pct,status:Math.abs(pct)<5?'ok':delta>0?'over':'under'};
-}
-
-// ── M1: Finance Team ──
-var FIN_ROLES=['Finance Director','Senior Accountant','Accountant','Finance Officer','Payroll Officer','Accounts Payable Officer'];
-var FIN_PERMISSIONS=['view_pnl','approve_invoices','release_payroll','edit_budget','export_reports','view_salary','view_all_branches',
-  'approve_petty_cash','view_dsr','manage_finance_team','view_food_cost','run_vat_report','post_announcements',
-  'view_audit_log','edit_salary_config','approve_expenses'];
-
-function finLoadTeam(cb){
-  if(!db){cb([]);return;}
-  db.ref('admin/finance_staff').once('value',function(snap){
-    var raw=snap.val()||{};
-    cb(Object.values(raw).filter(Boolean));
+  // KPI cards
+  h += '<div class="bgrid-4" style="margin-bottom:16px">';
+  [{l:'Pending',v:pend,c:'#f59e0b'},{l:'Approved',v:appr,c:'#34d399'},{l:'Rejected',v:rej,c:'#f87171'},{l:'Total',v:BS.tsLeaves.length,c:'var(--text-primary)'}].forEach(function(x){
+    h += '<div style="text-align:center;background:var(--surface-2);border:1px solid '+x.c+'30;border-radius:9px;padding:12px"><div class="bmono" style="font-size:24px;font-weight:300;color:'+x.c+'">'+x.v+'</div><div style="font-size:9px;color:var(--text-tertiary);margin-top:3px;text-transform:uppercase;letter-spacing:1px">'+x.l+'</div></div>';
   });
+  h += '</div>';
+
+  var typeColors = {annual:'#34d399',sick:'#f87171',emergency:'#f97316',unpaid:'#94a3b8'};
+  var statusColor = {pending:'#f59e0b',approved:'#34d399',rejected:'#f87171'};
+  var rows = data.map(function(l){
+    var emp = BS.tsEmps.find(function(e){return e.id===l.empId;});
+    var tc = typeColors[l.type]||'#888';
+    var sc = statusColor[l.status]||'#888';
+    return '<tr>'+
+      '<td style="font-weight:600;color:var(--text-primary)">'+bxe(emp?emp.name:'Unknown')+'</td>'+
+      '<td>'+bpl((l.type||'').replace(/_/g,' '),tc)+'</td>'+
+      '<td class="bmono">'+bxe(l.start||l.from||'')+'</td>'+
+      '<td class="bmono">'+bxe(l.end||l.to||'')+'</td>'+
+      '<td class="bmono" style="font-weight:600">'+bxe(l.days||1)+'d</td>'+
+      '<td><span style="color:'+sc+';font-weight:700;font-size:11px">'+bxe(l.status||'pending')+'</span></td>'+
+      '<td><div style="display:flex;gap:4px">'+
+        (l.status==='pending'?
+          '<button class="btn btn-sm" style="color:var(--success);background:rgba(52,211,153,.1)" onclick="bmApproveLeave(\''+bxe(l.id)+'\')">&#x2713; Approve</button>'+
+          '<button class="btn btn-sm" style="color:var(--danger);background:rgba(248,113,113,.1)" onclick="bmRejectLeave(\''+bxe(l.id)+'\')">&#x2715; Reject</button>':'')+'</div></td>'+
+    '</tr>';
+  }).join('');
+
+  h += '<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Status</th><th>Action</th></tr></thead><tbody>'+
+    (rows||'<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:28px">No leave requests yet.</td></tr>')+
+    '</tbody></table></div></div>';
+  return h;
 }
 
-function pHrfFinTeam(){
-  finLoadTeam(function(team){
-    var h=hrfHeader('Finance Team','Finance department \u00b7 '+team.length+' members',
-      '<button class="btn btn-primary" onclick="finShowAddMemberModal()">+ Add Member</button>');
-    h+='<div class="hrf-kpi-grid">';
-    h+=hrfKpi('\ud83c\udfe6','Team Size',team.length,'All roles','var(--fin-color)');
-    h+=hrfKpi('\u2705','Active',team.filter(function(m){return m.status!=='inactive';}).length,'On duty','var(--success)');
-    h+='</div>';
-    if(!team.length){
-      h+='<div class="hrf-section" style="text-align:center;padding:40px;color:var(--text-secondary)">No Finance team members. Click <strong>+ Add Member</strong> to start.</div>';
-    } else {
-      var rows=team.map(function(m){
+function saveBmLeaveRequest() {
+  var eid = bgv('bmlv-emp'), type = bgv('bmlv-type'), from = bgv('bmlv-from'), to = bgv('bmlv-to');
+  if(!eid||!from||!to){showToast('Select employee and dates','error');return;}
+  var days = Math.max(1,Math.ceil((new Date(to+'T00:00:00')-new Date(from+'T00:00:00'))/86400000)+1);
+  var s = NX.session||{};
+  var rec = {id:buid(),empId:eid,type:type,start:from,from:from,end:to,to:to,days:days,
+    note:bgv('bmlv-note'),status:'pending',branchId:s.branchId||'',branchName:s.branchName||'',
+    submittedBy:s.entityName||'Branch Manager',createdAt:Date.now()};
+  BS.tsLeaves.push(rec);
+  bSaveColl('tsLeaves',BS.tsLeaves);
+  // Also write to shared leaves path so HR sees it
+  if(db&&s.branchId){
+    db.ref('branches/'+s.branchId+'/tsLeaves').push(rec);
+  }
+  bmUpdateBadges();
+  showToast('Leave request submitted \u2713','success');
+  navTo('bm-leave');
+}
+
+function bmApproveLeave(id) {
+  var l = BS.tsLeaves.find(function(x){return x.id===id;});
+  if(!l)return;
+  l.status='approved';l.approvedAt=Date.now();
+  bSaveColl('tsLeaves',BS.tsLeaves);
+  bmUpdateBadges();
+  showToast('Leave approved \u2713','success');
+  navTo('bm-leave');
+}
+
+function bmRejectLeave(id) {
+  var l = BS.tsLeaves.find(function(x){return x.id===id;});
+  if(!l)return;
+  l.status='rejected';
+  bSaveColl('tsLeaves',BS.tsLeaves);
+  bmUpdateBadges();
+  showToast('Leave rejected','success');
+  navTo('bm-leave');
+}
+
+// ── 3. PAYROLL SUBMIT ────────────────────────────────────────
+function pBmPayroll() {
+  attachBranchListeners();
+  var s = NX.session||{};
+  var now = new Date(new Date().getTime()+3*3600000);
+  var monthKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  var h = '<div class="page-header"><h1>&#x1F4B8; Payroll Submit</h1><p>Enter monthly payroll for '+bxe(monthKey)+' &mdash; sent to HR for approval</p></div>';
+  h += '<div id="bm-payroll-area">'+bxe('Loading payroll data...')+'</div>';
+  if(db&&s.branchId){
+    db.ref('branches/'+s.branchId+'/payroll/'+monthKey).once('value',function(snap){
+      var existing = snap.val()||{};
+      var area = document.getElementById('bm-payroll-area');
+      if(!area)return;
+      var staff = BS.staff.filter(function(m){return m.status==='Active'||m.status==='active';});
+      if(!staff.length){area.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-tertiary)">No active staff found. Add staff first.</div>';return;}
+
+      // Check if already submitted
+      var statuses = Object.values(existing).map(function(e){return (e||{}).status||'draft';});
+      var submitted = statuses.some(function(st){return st==='pending_hr'||st==='pending_finance'||st==='released';});
+      if(submitted){
+        var st = statuses[0]||'pending_hr';
+        var stColor = {pending_hr:'#f59e0b',pending_finance:'#60a5fa',released:'#34d399'}[st]||'#94a3b8';
+        area.innerHTML = '<div class="bcard" style="text-align:center;padding:32px;border-color:'+stColor+'40">'+
+          '<div style="font-size:48px;margin-bottom:12px">&#x2705;</div>'+
+          '<div style="font-size:16px;font-weight:700;margin-bottom:6px">Payroll Submitted</div>'+
+          '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Status: <span style="color:'+stColor+';font-weight:700">'+st+'</span></div>'+
+          '<div style="font-size:11px;color:var(--text-tertiary)">'+monthKey+' &mdash; Awaiting HR approval</div></div>';
+        return;
+      }
+
+      var rows = staff.map(function(m){
+        var ex = existing[m.id]||{};
         return '<tr>'+
-          '<td><strong>'+hxe(m.name||'')+'</strong></td>'+
-          '<td>'+hrfBadge(m.role||'','var(--fin-color)')+'</td>'+
-          '<td>'+((m.branchIds||[]).length)+' branches</td>'+
-          '<td><span class="hrf-status-dot" style="background:'+(m.status==='inactive'?'var(--text-muted)':'var(--success)')+'"></span>'+hxe(m.status||'active')+'</td>'+
-          '<td><button class="btn btn-sm" onclick="finOpenProfile(\''+hxe(m.id)+'\')">View \u2192</button></td>'+
+          '<td><div style="display:flex;align-items:center;gap:8px"><div class="bav">'+bini(m.name)+'</div>'+
+          '<div><div style="font-size:12px;font-weight:600">'+bxe(m.name)+'</div>'+
+          '<div style="font-size:10px;color:var(--text-tertiary)">'+bxe(m.role||m.dept||'')+'</div></div></div></td>'+
+          '<td><input class="form-input" style="width:110px" type="number" id="bpay-base-'+bxe(m.id)+'" value="'+(ex.base||0)+'" placeholder="0"></td>'+
+          '<td><input class="form-input" style="width:90px" type="number" id="bpay-allow-'+bxe(m.id)+'" value="'+(ex.allowances||0)+'" placeholder="0"></td>'+
+          '<td><input class="form-input" style="width:90px" type="number" id="bpay-ded-'+bxe(m.id)+'" value="'+(ex.deductions||0)+'" placeholder="0"></td>'+
+          '<td><input class="form-input" style="width:90px" type="number" id="bpay-ot-'+bxe(m.id)+'" value="'+(ex.overtime||0)+'" placeholder="0"></td>'+
+          '<td class="bmono" style="font-weight:700;color:#34d399" id="bpay-net-'+bxe(m.id)+'">'+bfsar((ex.base||0)+(ex.allowances||0)-(ex.deductions||0)+(ex.overtime||0))+'</td>'+
           '</tr>';
       }).join('');
-      h+='<div class="hrf-section">'+hrfTable(['Name','Role','Access','Status',''],rows)+'</div>';
-    }
-    // Permission matrix
-    h+='<div class="hrf-section"><div style="font-size:13px;font-weight:700;margin-bottom:14px">\ud83d\udd10 Finance Permission Matrix</div>';
-    h+='<div style="overflow-x:auto"><table class="hrf-table"><thead><tr><th>Permission</th>';
-    FIN_ROLES.forEach(function(r){h+='<th style="font-size:11px;white-space:nowrap">'+hxe(r)+'</th>';});
-    h+='</tr></thead><tbody>';
-    var FIN_DEFAULT_PERMS={
-      'Finance Director':FIN_PERMISSIONS,
-      'Senior Accountant':['view_pnl','approve_invoices','export_reports','view_all_branches','view_dsr','view_food_cost','view_audit_log'],
-      'Accountant':['view_pnl','export_reports','view_dsr','view_food_cost'],
-      'Finance Officer':['approve_petty_cash','view_dsr','export_reports'],
-      'Payroll Officer':['release_payroll','view_salary','export_reports'],
-      'Accounts Payable Officer':['approve_invoices','approve_expenses','view_dsr']
-    };
-    FIN_PERMISSIONS.forEach(function(perm){
-      h+='<tr><td style="font-size:11px;font-family:monospace">'+hxe(perm)+'</td>';
-      FIN_ROLES.forEach(function(role){
-        var has=(FIN_DEFAULT_PERMS[role]||[]).indexOf(perm)>=0;
-        h+='<td style="text-align:center">'+(has?'<span style="color:var(--fin-color)">&#x2713;</span>':'<span style="color:var(--text-muted)">&#x2212;</span>')+'</td>';
+
+      area.innerHTML = '<div style="margin-bottom:12px;font-size:12px;color:var(--text-secondary)">&#x1F4A1; Enter base salary and adjust allowances / deductions. Overtime auto-calculated from timesheet if available.</div>'+
+        '<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Employee</th><th>Base (SAR)</th><th>Allowances</th><th>Deductions</th><th>Overtime</th><th>Net Pay</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
+        '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">'+
+        '<button class="btn" onclick="bmCalcPayrollNetPay()">&#x1F5A9;&#xFE0F; Recalculate</button>'+
+        '<button class="btn btn-primary" onclick="bmSubmitPayroll(\''+bxe(s.branchId)+'\',\''+bxe(monthKey)+'\')">Submit to HR &#x2192;</button>'+
+        '</div>';
+    });
+  } else {
+    document.getElementById('bm-payroll-area').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-tertiary)">Offline &mdash; cannot load payroll.</div>';
+  }
+  return h;
+}
+
+function bmCalcPayrollNetPay() {
+  var staff = BS.staff.filter(function(m){return m.status==='Active'||m.status==='active';});
+  staff.forEach(function(m){
+    var base=parseFloat((document.getElementById('bpay-base-'+m.id)||{}).value)||0;
+    var allow=parseFloat((document.getElementById('bpay-allow-'+m.id)||{}).value)||0;
+    var ded=parseFloat((document.getElementById('bpay-ded-'+m.id)||{}).value)||0;
+    var ot=parseFloat((document.getElementById('bpay-ot-'+m.id)||{}).value)||0;
+    var net=base+allow-ded+ot;
+    var el=document.getElementById('bpay-net-'+m.id);
+    if(el)el.textContent=bfsar(net);
+  });
+  showToast('Recalculated \u2713','success');
+}
+
+function bmSubmitPayroll(branchId,monthKey) {
+  if(!db||!NX.session)return;
+  var staff = BS.staff.filter(function(m){return m.status==='Active'||m.status==='active';});
+  if(!staff.length){showToast('No active staff','error');return;}
+  if(!confirm('Submit payroll for '+monthKey+' to HR?'))return;
+  var updates={};
+  staff.forEach(function(m){
+    var base=parseFloat((document.getElementById('bpay-base-'+m.id)||{}).value)||0;
+    var allow=parseFloat((document.getElementById('bpay-allow-'+m.id)||{}).value)||0;
+    var ded=parseFloat((document.getElementById('bpay-ded-'+m.id)||{}).value)||0;
+    var ot=parseFloat((document.getElementById('bpay-ot-'+m.id)||{}).value)||0;
+    var gross=base+allow+ot;var net=gross-ded;
+    updates[m.id]={empId:m.id,empName:m.name,dept:m.dept||'',role:m.role||'',
+      base:base,allowances:allow,deductions:ded,overtime:ot,grossPay:gross,netPay:net,
+      status:'pending_hr',submittedBy:NX.session.entityName||'Branch Manager',submittedAt:Date.now()};
+  });
+  db.ref('branches/'+branchId+'/payroll/'+monthKey).set(updates,function(err){
+    if(err){showToast('Submit failed: '+err.message,'error');return;}
+    showToast('Payroll submitted to HR \u2713','success');
+    navTo('bm-payroll');
+  });
+}
+
+// ── 4. TRANSFER REQUESTS ─────────────────────────────────────
+function pBmTransfers() {
+  attachBranchListeners();
+  bmLoadTransfers(function(){
+    var area = document.getElementById('page-area');
+    if(!area)return;
+    var pending = (BS._bmTransfers||[]).filter(function(t){return t.status==='pending';});
+    var history = (BS._bmTransfers||[]).filter(function(t){return t.status!=='pending';});
+    var h = '<div class="page-header"><h1>&#x1F500; Transfer Requests</h1><p>Incoming stock transfer requests from other branches</p></div>';
+    h += '<div class="bgrid-3" style="margin-bottom:16px">';
+    h += '<div class="bsc"><div class="bsc-lbl">Pending</div><div class="bsc-val" style="color:#f59e0b">'+pending.length+'</div></div>';
+    h += '<div class="bsc"><div class="bsc-lbl">Accepted</div><div class="bsc-val" style="color:#34d399">'+((BS._bmTransfers||[]).filter(function(t){return t.status==='accepted';}).length)+'</div></div>';
+    h += '<div class="bsc"><div class="bsc-lbl">Total</div><div class="bsc-val bca">'+((BS._bmTransfers||[]).length)+'</div></div>';
+    h += '</div>';
+
+    if(pending.length){
+      h += '<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#f59e0b">&#x23F3; Pending Approval ('+pending.length+')</div>';
+      pending.forEach(function(t){
+        h += '<div class="bcard" style="margin-bottom:10px;border-color:rgba(245,158,11,.3)">';
+        h += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">';
+        h += '<div style="flex:1"><div style="font-size:13px;font-weight:700;margin-bottom:4px">'+bxe(t.name||t.code||'Unknown Item')+'</div>';
+        h += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">'+
+          '<span class="bmono" style="color:var(--ceo)">'+bxe(t.code||'')+'</span> &mdash; '+
+          '<strong style="color:#a78bfa">'+bxe(t.qty)+' '+bxe(t.unit||'units')+'</strong> from '+
+          '<strong>'+bxe(t.fromBranchName||t.fromBranch||'')+'</strong></div>';
+        h += '<div style="font-size:11px;color:var(--text-tertiary)">Requested: '+bfdate(t.date)+(t.note?' &mdash; '+bxe(t.note):'')+'</div></div>';
+        h += '<div style="display:flex;flex-direction:column;gap:6px">'+
+          '<button class="btn btn-sm btn-primary" onclick="bmAcceptTransfer(\''+bxe(t.id)+'\')">&#x2713; Accept</button>'+
+          '<button class="btn btn-sm" style="color:var(--danger);background:rgba(248,113,113,.1)" onclick="bmRejectTransfer(\''+bxe(t.id)+'\')">&#x2715; Reject</button>'+
+          '</div>';
+        h += '</div></div>';
       });
-      h+='</tr>';
-    });
-    h+='</tbody></table></div></div>';
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
+    }
+
+    if(history.length){
+      h += '<div style="font-size:13px;font-weight:700;margin-bottom:10px;margin-top:20px;color:var(--text-secondary)">History</div>';
+      var rows = history.map(function(t){
+        var sc = t.status==='accepted'?'#34d399':'#f87171';
+        return '<tr>'+
+          '<td class="bmono" style="font-size:11px;color:var(--text-tertiary)">'+bfdate(t.date)+'</td>'+
+          '<td style="font-weight:600;color:var(--text-primary)">'+bxe(t.name||t.code||'')+'</td>'+
+          '<td class="bmono" style="color:#a78bfa">'+bxe(t.qty)+' '+bxe(t.unit||'')+'</td>'+
+          '<td style="font-size:11px">'+bxe(t.fromBranchName||t.fromBranch||'')+'</td>'+
+          '<td><span style="color:'+sc+';font-weight:700;font-size:11px">'+bxe(t.status)+'</span></td>'+
+          '</tr>';
+      }).join('');
+      h += '<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>From</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+    }
+
+    if(!(BS._bmTransfers||[]).length){
+      h += '<div style="text-align:center;padding:48px;color:var(--text-tertiary)"><div style="font-size:48px;margin-bottom:12px">&#x1F4E5;</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">No Transfer Requests</div><div style="font-size:12px">Transfer requests from other branches will appear here.</div></div>';
+    }
+
+    area.innerHTML = h;
+    bmUpdateBadges();
   });
-  return hrfLoading('Loading Finance team...');
+  return '<div class="page-header"><h1>&#x1F500; Transfer Requests</h1></div>'+
+    '<div style="display:flex;align-items:center;gap:12px;padding:32px;color:var(--text-secondary)">'+
+    '<div style="font-size:24px;animation:spin 1s linear infinite">&#x21BB;</div> Loading requests...</div>';
 }
 
-function finOpenProfile(id){
-  if(!db)return;
-  db.ref('admin/finance_staff/'+id).once('value',function(snap){
-    var m=snap.val()||{};
-    var branches=hrfBranches();
-    var branchChecks=branches.map(function(b){
-      var checked=(m.branchIds||[]).indexOf(b.id)>=0;
-      return '<label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer">'+
-        '<input type="checkbox" id="finsp-b-'+hxe(b.id)+'" '+(checked?'checked':'')+'>'+hxe(b.name||b.id)+'</label>';
-    }).join('');
-    var roleOpts=FIN_ROLES.map(function(r){return '<option '+(m.role===r?'selected':'')+'>'+hxe(r)+'</option>';}).join('');
-    var html='<div class="modal-head"><h2>\ud83c\udfe6 '+hxe(m.name||'Finance Staff')+'</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
-    html+='<div class="form-row"><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="finsp-name" value="'+hxe(m.name||'')+'"></div>'+
-      '<div class="form-group"><label class="form-label">Role</label><select class="form-input form-select" id="finsp-role">'+roleOpts+'</select></div></div>';
-    html+='<div class="form-row"><div class="form-group"><label class="form-label">Email</label><input class="form-input" id="finsp-email" value="'+hxe(m.email||'')+'"></div>'+
-      '<div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="finsp-phone" value="'+hxe(m.phone||'')+'"></div></div>';
-    html+='<div class="form-group"><label class="form-label">Branch Access</label><div style="max-height:140px;overflow-y:auto;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px">'+branchChecks+'</div></div>';
-    html+='<div class="modal-actions">'+
-      '<button class="btn btn-danger" onclick="finRemoveMember(\''+hxe(id)+'\')">Remove</button>'+
-      '<button class="btn" onclick="closeModalForce()">Cancel</button>'+
-      '<button class="btn btn-primary" onclick="finSaveProfile(\''+hxe(id)+'\')">Save</button></div>';
-    openModal(html);
-  });
-}
-
-function finSaveProfile(id){
-  var name=document.getElementById('finsp-name')&&document.getElementById('finsp-name').value.trim();
-  var role=document.getElementById('finsp-role')&&document.getElementById('finsp-role').value;
-  var email=document.getElementById('finsp-email')&&document.getElementById('finsp-email').value.trim();
-  var phone=document.getElementById('finsp-phone')&&document.getElementById('finsp-phone').value.trim();
-  var branches=hrfBranches();
-  var branchIds=branches.filter(function(b){var el=document.getElementById('finsp-b-'+b.id);return el&&el.checked;}).map(function(b){return b.id;});
-  db.ref('admin/finance_staff/'+id).update({name:name,role:role,email:email,phone:phone,branchIds:branchIds},function(err){
-    if(!err){showToast('Saved \u2713','success');closeModalForce();navTo('hrf-fin-team');}
-    else showToast('Save failed','error');
-  });
-}
-
-function finRemoveMember(id){
-  if(!confirm('Remove this Finance team member?'))return;
-  db.ref('admin/finance_staff/'+id).remove(function(err){
-    if(!err){showToast('Removed','success');closeModalForce();navTo('hrf-fin-team');}
-  });
-}
-
-function finShowAddMemberModal(){
-  var roleOpts=FIN_ROLES.map(function(r){return '<option>'+hxe(r)+'</option>';}).join('');
-  var html='<div class="modal-head"><h2>Add Finance Team Member</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="finadd-name" placeholder="Full name"></div>'+
-    '<div class="form-group"><label class="form-label">Role</label><select class="form-input form-select" id="finadd-role">'+roleOpts+'</select></div></div>';
-  html+='<div class="form-row"><div class="form-group"><label class="form-label">Email</label><input class="form-input" id="finadd-email" placeholder="email@alfa.co"></div>'+
-    '<div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="finadd-phone" placeholder="+966..."></div></div>';
-  html+='<div class="modal-actions"><button class="btn" onclick="closeModalForce()">Cancel</button><button class="btn btn-primary" onclick="finAddMember()">Add Member</button></div>';
-  openModal(html);
-}
-
-function finAddMember(){
-  var name=document.getElementById('finadd-name')&&document.getElementById('finadd-name').value.trim();
-  var role=document.getElementById('finadd-role')&&document.getElementById('finadd-role').value;
-  var email=document.getElementById('finadd-email')&&document.getElementById('finadd-email').value.trim();
-  var phone=document.getElementById('finadd-phone')&&document.getElementById('finadd-phone').value.trim();
-  if(!name){showToast('Name required','error');return;}
-  var id='fins_'+Date.now();
-  db.ref('admin/finance_staff/'+id).set({id:id,name:name,role:role,email:email,phone:phone,status:'active',branchIds:[],tasks:[],lastLogin:null},function(err){
-    if(!err){showToast('Added \u2713','success');closeModalForce();navTo('hrf-fin-team');}
-    else showToast('Save failed','error');
+function bmAcceptTransfer(transferId) {
+  var t = (BS._bmTransfers||[]).find(function(x){return x.id===transferId;});
+  if(!t)return;
+  var s = NX.session||{};
+  if(!confirm('Accept '+t.qty+' '+bxe(t.unit||'units')+' of "'+bxe(t.name||t.code)+'" from '+bxe(t.fromBranchName||t.fromBranch)+'?'))return;
+  // Update transfer status
+  db.ref('branches/'+s.branchId+'/transfer_requests/'+transferId).update({status:'accepted',acceptedAt:Date.now(),acceptedBy:s.entityName||'Branch Manager'},function(err){
+    if(err){showToast('Failed: '+err.message,'error');return;}
+    // Add stock to this branch
+    var item = bfindItem(t.code);
+    if(item){
+      item.qty = parseFloat(item.qty||0)+parseFloat(t.qty||0);
+      bSaveStock(t.code,item.qty);
+    }
+    bLogs.push({code:t.code,name:t.name||t.code,type:'transfer-in',qty:t.qty,
+      note:'Transfer accepted from '+bxe(t.fromBranchName||t.fromBranch),date:TODAY_BS});
+    bSaveLogs();
+    t.status='accepted';
+    bmUpdateBadges();
+    showToast('Transfer accepted \u2713 Stock updated','success');
+    navTo('bm-transfers');
   });
 }
 
-// ── M5: Cash Flow ──
-function pHrfCashFlow(){
-  var done=0;function check(){if(++done>=3)renderCashFlow();}
-  hrfLoadAll('sales','sales',check);
-  hrfLoadAll('pc','pc',check);
-  hrfLoadAll('invoices','invoices',check);
-  return hrfLoading('Building cash flow...');
-}
-function renderCashFlow(){
-  var branches=hrfBranches();
-  var now=new Date(new Date().getTime()+3*3600000);
-  var monthKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  var totalCashIn=0,totalCashOut=0;
-  var h=hrfHeader('Cash Flow','Monthly cash position \u2014 '+monthKey);
-  var rows=branches.map(function(b){
-    var cashIn=(HRF.sales[b.id]||[]).filter(function(s){return s.date&&s.date.startsWith(monthKey);})
-      .reduce(function(a,s){return a+parseFloat(s.cash||s.serverDrop||0);},0);
-    var pcOut=(HRF.pc[b.id]||[]).filter(function(p){return p.date&&p.date.startsWith(monthKey);})
-      .reduce(function(a,p){return a+parseFloat(p.amount||0);},0);
-    var invCash=(HRF.invoices[b.id]||[]).filter(function(i){return i.invoiceDate&&i.invoiceDate.startsWith(monthKey)&&i.paymentMethod==='Cash';})
-      .reduce(function(a,i){return a+parseFloat(i.amount||0);},0);
-    var cashOut=pcOut+invCash;
-    var net=cashIn-cashOut;
-    totalCashIn+=cashIn;totalCashOut+=cashOut;
-    var netColor=net>=0?'var(--success)':'var(--danger)';
-    return '<tr>'+
-      '<td><strong>'+hxe(b.name||b.id)+'</strong></td>'+
-      '<td>'+cashIn.toLocaleString()+' SAR</td>'+
-      '<td>'+cashOut.toLocaleString()+' SAR</td>'+
-      '<td><span style="color:'+netColor+';font-weight:700">'+(net>=0?'+':'')+net.toLocaleString()+' SAR</span></td>'+
-      '</tr>';
-  }).join('');
-  var totalNet=totalCashIn-totalCashOut;
-  var netColor=totalNet>=0?'var(--success)':'var(--danger)';
-  h+='<div class="hrf-kpi-grid">';
-  h+=hrfKpi('\ud83d\udcb0','Total Cash In',Math.round(totalCashIn).toLocaleString()+' SAR','Cash sales MTD','var(--success)');
-  h+=hrfKpi('\ud83d\udcb8','Total Cash Out',Math.round(totalCashOut).toLocaleString()+' SAR','PC + invoice cash','var(--danger)');
-  h+=hrfKpi('\ud83d\udcca','Net Position',Math.round(totalNet).toLocaleString()+' SAR','MTD net cash',netColor);
-  h+='</div>';
-  h+='<div class="hrf-section">'+hrfTable(['Branch','Cash In','Cash Out','Net Position'],rows)+'</div>';
-  // Petty cash reconciliation
-  h+='<div class="hrf-section"><div style="font-size:13px;font-weight:700;margin-bottom:12px">\ud83e\udfe7 Petty Cash Reconciliation</div>';
-  var pcRows=branches.map(function(b){
-    var pcEntries=(HRF.pc[b.id]||[]).filter(function(p){return p.date&&p.date.startsWith(monthKey);});
-    var total=pcEntries.reduce(function(a,p){return a+parseFloat(p.amount||0);},0);
-    var flag=total>2000?'<span style="color:var(--danger)">\u26a0\ufe0f Spike</span>':total<500&&pcEntries.length>0?'<span style="color:var(--amber)">Low balance</span>':'<span style="color:var(--success)">\u2713 OK</span>';
-    return '<tr><td><strong>'+hxe(b.name||b.id)+'</strong></td><td>'+pcEntries.length+'</td><td>'+total.toLocaleString()+' SAR</td><td>'+flag+'</td></tr>';
-  }).join('');
-  h+=hrfTable(['Branch','Transactions','Total Spend','Status'],pcRows)+'</div>';
-  var area=document.getElementById('page-area');
-  if(area)area.innerHTML=h;
-}
-
-// ── M3: Budget Config & Variance ──
-function pHrfBudgetConfig(){
-  var branches=hrfBranches();
-  var now=new Date(new Date().getTime()+3*3600000);
-  var monthKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  if(!db){
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=hrfHeader('Budget Config','Set monthly budgets per branch')+'<div style="text-align:center;padding:40px;color:var(--text-secondary)">Offline.</div>';
-    return;
-  }
-  db.ref('admin/budgets').once('value',function(snap){
-    var allBudgets=snap.val()||{};
-    var h=hrfHeader('Budget Config','Monthly budget targets \u2014 '+monthKey,
-      '<button class="btn btn-primary" onclick="finSaveAllBudgets(\''+hxe(monthKey)+'\')">Save All</button>');
-    h+='<div style="overflow-x:auto"><table class="hrf-table"><thead><tr><th>Branch</th><th>Revenue Target</th><th>Food Cost Budget</th><th>Labor Budget</th><th>OpEx Budget</th></tr></thead><tbody>';
-    branches.forEach(function(b){
-      var budg=(allBudgets[b.id]||{})[monthKey]||{};
-      var key=hxe(b.id);
-      h+='<tr>'+
-        '<td><strong>'+hxe(b.name||b.id)+'</strong></td>'+
-        '<td><input class="form-input" style="width:120px" id="bgt-rev-'+key+'" type="number" value="'+(budg.revenue&&budg.revenue.amount||0)+'"></td>'+
-        '<td><input class="form-input" style="width:120px" id="bgt-fc-'+key+'" type="number" value="'+(budg.foodCost&&budg.foodCost.amount||0)+'"></td>'+
-        '<td><input class="form-input" style="width:120px" id="bgt-lab-'+key+'" type="number" value="'+(budg.labor&&budg.labor.amount||0)+'"></td>'+
-        '<td><input class="form-input" style="width:120px" id="bgt-opex-'+key+'" type="number" value="'+(budg.opex&&budg.opex.amount||0)+'"></td>'+
-        '</tr>';
-    });
-    h+='</tbody></table></div>';
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-  return hrfLoading('Loading budgets...');
-}
-
-function finSaveAllBudgets(monthKey){
-  var branches=hrfBranches();
-  var saved=0;
-  branches.forEach(function(b){
-    var key=b.id;
-    var rev=parseFloat(document.getElementById('bgt-rev-'+key)&&document.getElementById('bgt-rev-'+key).value)||0;
-    var fc=parseFloat(document.getElementById('bgt-fc-'+key)&&document.getElementById('bgt-fc-'+key).value)||0;
-    var lab=parseFloat(document.getElementById('bgt-lab-'+key)&&document.getElementById('bgt-lab-'+key).value)||0;
-    var opex=parseFloat(document.getElementById('bgt-opex-'+key)&&document.getElementById('bgt-opex-'+key).value)||0;
-    var path='admin/budgets/'+key+'/'+monthKey;
-    var actor=NX.session.entityName||'Finance';
-    db.ref(path).set({
-      revenue:{amount:rev,setBy:actor,setAt:Date.now()},
-      foodCost:{amount:fc,setBy:actor,setAt:Date.now()},
-      labor:{amount:lab,setBy:actor,setAt:Date.now()},
-      opex:{amount:opex,setBy:actor,setAt:Date.now()}
-    },function(err){
-      if(!err&&++saved===branches.length)showToast('All budgets saved \u2713','success');
-    });
-  });
-}
-
-function pHrfVariance(){
-  var done=0;function check(){if(++done>=3)renderVariance();}
-  hrfLoadAll('sales','sales',check);
-  hrfLoadAll('invoices','invoices',check);
-  hrfLoadAll('pc','pc',check);
-  return hrfLoading('Building variance report...');
-}
-
-function renderVariance(){
-  var branches=hrfBranches();
-  var now=new Date(new Date().getTime()+3*3600000);
-  var monthKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  var daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
-  var daysElapsed=now.getDate();
-  if(!db){
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=hrfHeader('Variance Tracker','Budget vs Actuals')+'<div style="text-align:center;padding:40px;color:var(--text-secondary)">Offline.</div>';
-    return;
-  }
-  db.ref('admin/budgets').once('value',function(snap){
-    var allBudgets=snap.val()||{};
-    var h=hrfHeader('Variance Tracker','Budget vs Actuals \u2014 '+monthKey);
-    var rows=branches.map(function(b){
-      var budg=(allBudgets[b.id]||{})[monthKey]||{};
-      var actualRev=(HRF.sales[b.id]||[]).filter(function(s){return s.date&&s.date.startsWith(monthKey);})
-        .reduce(function(a,s){return a+parseFloat(s.actual||s.total||0);},0);
-      var actualFC=finCalcFoodCostPct(b.id,monthKey).totalFC;
-      var actualOpex=(HRF.invoices[b.id]||[]).filter(function(i){return i.invoiceDate&&i.invoiceDate.startsWith(monthKey)&&(i.category||'').toLowerCase().indexOf('food')<0;})
-        .reduce(function(a,i){return a+parseFloat(i.amount||0);},0);
-      var actualPc=(HRF.pc[b.id]||[]).filter(function(p){return p.date&&p.date.startsWith(monthKey);})
-        .reduce(function(a,p){return a+parseFloat(p.amount||0);},0);
-      var budgRev=(budg.revenue&&budg.revenue.amount)||0;
-      var budgFC=(budg.foodCost&&budg.foodCost.amount)||0;
-      var budgOpex=(budg.opex&&budg.opex.amount)||0;
-      var revVar=finCalcVariance(actualRev,budgRev);
-      var fcVar=finCalcVariance(actualFC,budgFC);
-      // Forecast
-      var forecast=daysElapsed>0?Math.round((actualRev/daysElapsed)*daysInMonth):0;
-      var revVarColor=revVar.status==='over'?'var(--success)':revVar.status==='under'?'var(--danger)':'var(--text-secondary)';
-      var fcVarColor=fcVar.status==='over'?'var(--danger)':fcVar.status==='under'?'var(--success)':'var(--text-secondary)';
-      return '<tr>'+
-        '<td><strong>'+hxe(b.name||b.id)+'</strong></td>'+
-        '<td>'+Math.round(actualRev).toLocaleString()+'</td>'+
-        '<td>'+Math.round(budgRev).toLocaleString()+'</td>'+
-        '<td><span style="color:'+revVarColor+';font-weight:700">'+(revVar.pct>0?'+':'')+revVar.pct+'%</span></td>'+
-        '<td style="color:var(--text-secondary);font-style:italic">'+forecast.toLocaleString()+'</td>'+
-        '<td>'+Math.round(actualFC).toLocaleString()+'</td>'+
-        '<td><span style="color:'+fcVarColor+';font-weight:700">'+(fcVar.pct>0?'+':'')+fcVar.pct+'%</span></td>'+
-        '</tr>';
-    }).join('');
-    h+='<div class="hrf-section">'+hrfTable(['Branch','Rev Actual','Rev Budget','\u0394 Rev','Forecast','FC Actual','\u0394 FC'],rows)+'</div>';
-    h+='<div style="font-size:11px;color:var(--text-secondary);padding:8px 0">\u2139\ufe0f Forecast = MTD run rate projected to month-end. \u0394 = variance vs budget.</div>';
-    var area=document.getElementById('page-area');
-    if(area)area.innerHTML=h;
-  });
-}
-
-// ── M6: Payroll Release (Finance) ──
-function pHrfPayrollRelease(){
-  var branches=hrfBranches();
-  var now=new Date(new Date().getTime()+3*3600000);
-  var monthKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  var h=hrfHeader('Payroll Release','Finance approval gate \u2014 '+monthKey);
-  h+='<div id="prl-content">'+hrfLoading('Loading payroll queue...')+'</div>';
-  var area=document.getElementById('page-area');
-  if(area)area.innerHTML=h;
-  if(!db){document.getElementById('prl-content').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-secondary)">Offline.</div>';return;}
-  var results={};var done=0;
-  branches.forEach(function(b){
-    db.ref('branches/'+b.id+'/payroll/'+monthKey).once('value',function(snap){
-      results[b.id]={branch:b,emps:snap.val()||{}};
-      if(++done===branches.length)renderPayrollRelease(results,monthKey);
-    });
-  });
-}
-
-function renderPayrollRelease(results,monthKey){
-  var rows='';var pendingCount=0;
-  Object.keys(results).forEach(function(bid){
-    var r=results[bid];
-    var empArr=Object.values(r.emps).filter(Boolean);
-    if(!empArr.length)return;
-    var gross=empArr.reduce(function(a,e){return a+parseFloat(e.grossPay||0);},0);
-    var net=empArr.reduce(function(a,e){return a+parseFloat(e.netPay||0);},0);
-    var status=empArr[0].status||'draft';
-    var isPending=status==='pending_finance';
-    if(isPending)pendingCount++;
-    var statusColor={draft:'var(--text-muted)',pending_hr:'var(--amber)',pending_finance:'var(--blue)',released:'var(--success)'}[status]||'var(--text-muted)';
-    var rev=(HRF.sales[bid]||[]).reduce(function(a,s){return a+parseFloat(s.actual||s.total||0);},0);
-    var laborPct=rev>0?(net/rev*100).toFixed(1):0;
-    var laborColor=parseFloat(laborPct)>30?'var(--danger)':parseFloat(laborPct)>25?'var(--amber)':'var(--success)';
-    rows+='<tr>'+
-      '<td><strong>'+hxe(r.branch.name||bid)+'</strong></td>'+
-      '<td>'+empArr.length+'</td>'+
-      '<td>'+Math.round(gross).toLocaleString()+' SAR</td>'+
-      '<td>'+Math.round(net).toLocaleString()+' SAR</td>'+
-      '<td><span style="color:'+laborColor+';font-weight:700">'+laborPct+'%</span></td>'+
-      '<td><span style="color:'+statusColor+';font-weight:700">'+hxe(status)+'</span></td>'+
-      '<td>'+(isPending?'<button class="btn btn-sm btn-primary" onclick="finReleasePayroll(\''+hxe(bid)+'\',\''+hxe(monthKey)+'\')">Release \u2713</button>':'')+'</td>'+
-      '</tr>';
-  });
-  var container=document.getElementById('prl-content');if(!container)return;
-  if(!rows){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-secondary)">No payroll data for '+hxe(monthKey)+'.</div>';return;}
-  var pending=pendingCount>0?'<div class="hrf-kpi-grid"><div class="hrf-kpi-card" style="--kpi-color:var(--blue)"><div style="font-size:24px;font-weight:800;color:var(--blue)">'+pendingCount+'</div><div style="font-size:11px;color:var(--text-secondary);margin-top:4px">Pending Release</div></div></div>':'';
-  container.innerHTML=pending+hrfTable(['Branch','Staff','Gross','Net Pay','Labor %','Status','Action'],rows);
-}
-
-function finReleasePayroll(branchId,monthKey){
-  if(!db||!NX.session)return;
-  if(!confirm('Release payroll for this branch?'))return;
-  var path='branches/'+branchId+'/payroll/'+monthKey;
-  db.ref(path).once('value',function(snap){
-    var emps=snap.val()||{};
-    var updates={};var count=0;
-    Object.keys(emps).forEach(function(empId){
-      if((emps[empId]||{}).status!=='pending_finance')return;
-      updates[empId+'/status']='released';
-      updates[empId+'/approvedByFinance']=NX.session.entityName||'Finance';
-      updates[empId+'/releasedAt']=Date.now();
-      count++;
-    });
-    if(!count){showToast('No payroll pending Finance approval','info');return;}
-    db.ref(path).update(updates,function(err){
-      if(err){showToast('Release failed','error');return;}
-      showToast(count+' employees payroll released \u2713','success');
-      finAuditLog('payroll_released',monthKey,branchId,{count:count});
-      navTo('hrf-payroll-rel');
-    });
-  });
-}
-
-// ── M4: Invoice Approval Workflow enhancement ──
-function finApproveInvoice(branchId,invoiceKey){
-  if(!db||!NX.session)return;
-  db.ref('branches/'+branchId+'/invoices/'+invoiceKey).update({
-    status:'approved',approvedBy:NX.session.entityName||'Finance',approvedAt:Date.now()
-  },function(err){
+function bmRejectTransfer(transferId) {
+  var t = (BS._bmTransfers||[]).find(function(x){return x.id===transferId;});
+  if(!t)return;
+  var s = NX.session||{};
+  if(!confirm('Reject this transfer request?'))return;
+  db.ref('branches/'+s.branchId+'/transfer_requests/'+transferId).update({status:'rejected',rejectedAt:Date.now()},function(err){
     if(!err){
-      showToast('Invoice approved \u2713','success');
-      finAuditLog('invoice_approved',invoiceKey,branchId,{});
-      navTo('hrf-invoices');
-    } else showToast('Approval failed','error');
+      t.status='rejected';
+      bmUpdateBadges();
+      showToast('Transfer rejected','success');
+      navTo('bm-transfers');
+    }
   });
 }
 
-function finMarkInvoicePaid(branchId,invoiceKey,method){
-  if(!db||!NX.session)return;
-  db.ref('branches/'+branchId+'/invoices/'+invoiceKey).update({
-    status:'paid',paidAt:Date.now(),paymentMethod:method
-  },function(err){
-    if(!err){showToast('Invoice marked as paid ('+method+') \u2713','success');navTo('hrf-invoices');}
-    else showToast('Update failed','error');
+// ── 5. ANNOUNCEMENTS ─────────────────────────────────────────
+function pBmAnnouncements() {
+  attachBranchListeners();
+  var s = NX.session||{};
+  bmLoadAnnouncements(function(){
+    var area = document.getElementById('page-area');
+    if(!area)return;
+    var anns = BS._bmAnns||[];
+    var acks = BS._bmAcks||{};
+    var unread = anns.filter(function(a){return !acks[a.id];});
+    var h = '<div class="page-header"><h1>&#x1F4E2; Announcements</h1><p>'+anns.length+' total &mdash; '+unread.length+' unread</p></div>';
+    h += '<div class="bgrid-3" style="margin-bottom:16px">';
+    h += '<div class="bsc"><div class="bsc-lbl">Total</div><div class="bsc-val bca">'+anns.length+'</div></div>';
+    h += '<div class="bsc"><div class="bsc-lbl">Unread</div><div class="bsc-val" style="color:#f87171">'+unread.length+'</div></div>';
+    h += '<div class="bsc"><div class="bsc-lbl">Acknowledged</div><div class="bsc-val" style="color:#34d399">'+Object.keys(acks).length+'</div></div>';
+    h += '</div>';
+    if(!anns.length){
+      h += '<div style="text-align:center;padding:48px;color:var(--text-tertiary)"><div style="font-size:48px;margin-bottom:12px">&#x1F4EC;</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">No Announcements</div><div style="font-size:12px">HR announcements will appear here.</div></div>';
+    } else {
+      anns.forEach(function(a){
+        var isRead = !!acks[a.id];
+        var isUrgent = a.priority==='urgent';
+        var borderCol = isUrgent?'#f87171':isRead?'var(--border)':'#a78bfa';
+        h += '<div style="background:var(--surface-2);border:1px solid '+borderCol+';border-left:3px solid '+borderCol+';border-radius:0 10px 10px 0;padding:14px 16px;margin-bottom:10px;opacity:'+(isRead?0.7:1)+'">';
+        h += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">';
+        h += '<div style="flex:1">';
+        h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
+          '<strong style="font-size:13px">'+bxe(a.title||'')+'</strong>'+
+          (isUrgent?'<span style="background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.3);font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase">URGENT</span>':'')+
+          (a.requiresAck&&!isRead?'<span style="background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.3);font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase">ACK REQUIRED</span>':'')+
+          '</div>';
+        h += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;line-height:1.6">'+bxe(a.body||'')+'</div>';
+        h += '<div style="font-size:11px;color:var(--text-tertiary)">Posted by '+bxe(a.postedBy||'HR')+' &middot; '+bxe(a.date||'')+'</div>';
+        h += '</div>';
+        if(!isRead){
+          h += '<button class="btn btn-sm btn-primary" onclick="bmAcknowledge(\''+bxe(a.id)+'\')">&#x2713; Acknowledge</button>';
+        } else {
+          h += '<span style="color:#34d399;font-size:11px;font-weight:700;white-space:nowrap">&#x2713; Read</span>';
+        }
+        h += '</div></div>';
+      });
+    }
+    area.innerHTML = h;
+    bmUpdateBadges();
+  });
+  return '<div class="page-header"><h1>&#x1F4E2; Announcements</h1></div>'+
+    '<div style="display:flex;align-items:center;gap:12px;padding:32px;color:var(--text-secondary)">'+
+    '<div style="font-size:24px">&#x1F504;</div> Loading announcements...</div>';
+}
+
+function bmAcknowledge(annId) {
+  var s = NX.session||{};
+  if(!s.branchId||!db)return;
+  var ts = Date.now();
+  db.ref('branches/'+s.branchId+'/annAcks/'+annId).set(ts,function(err){
+    if(!err){
+      if(!BS._bmAcks)BS._bmAcks={};
+      BS._bmAcks[annId]=ts;
+      bmUpdateBadges();
+      showToast('Acknowledged \u2713','success');
+      navTo('bm-announcements');
+    }
   });
 }
 
-// ── M8: VAT Summary ──
-function pHrfVAT(){
-  var done=0;function check(){if(++done>=2)renderVATPage();}
-  hrfLoadAll('sales','sales',check);
-  hrfLoadAll('invoices','invoices',check);
-  return hrfLoading('Calculating VAT...');
-}
-
-function renderVATPage(){
-  var branches=hrfBranches();
-  var now=new Date(new Date().getTime()+3*3600000);
-  var year=now.getFullYear();
-  var currentQ='Q'+Math.ceil((now.getMonth()+1)/3);
-  var quarterKey=year+'-'+currentQ;
-  var qMonths={Q1:['01','02','03'],Q2:['04','05','06'],Q3:['07','08','09'],Q4:['10','11','12']};
-  var months=(qMonths[currentQ]||[]).map(function(m){return year+'-'+m;});
-  var totalOutputVAT=0,totalInputVAT=0,missingVAT=0;
-  var h=hrfHeader('VAT Summary','Saudi VAT (15%) \u2014 '+quarterKey,
-    '<button class="btn" onclick="finExportVATCSV()">&#x2b07; Export CSV</button>');
-  var rows=branches.map(function(b){
-    var rev=(HRF.sales[b.id]||[]).filter(function(s){return months.some(function(m){return s.date&&s.date.startsWith(m);});})
-      .reduce(function(a,s){return a+parseFloat(s.actual||s.total||0);},0);
-    var outputVAT=rev*0.15;
-    var inputVAT=(HRF.invoices[b.id]||[]).filter(function(i){return months.some(function(m){return i.invoiceDate&&i.invoiceDate.startsWith(m);})&&i.vatNumber&&i.vatAmount;})
-      .reduce(function(a,i){return a+parseFloat(i.vatAmount||0);},0);
-    var noVAT=(HRF.invoices[b.id]||[]).filter(function(i){return months.some(function(m){return i.invoiceDate&&i.invoiceDate.startsWith(m);})&&!i.vatNumber;}).length;
-    var netVAT=outputVAT-inputVAT;
-    totalOutputVAT+=outputVAT;totalInputVAT+=inputVAT;missingVAT+=noVAT;
-    return '<tr>'+
-      '<td><strong>'+hxe(b.name||b.id)+'</strong></td>'+
-      '<td>'+Math.round(rev).toLocaleString()+'</td>'+
-      '<td>'+Math.round(outputVAT).toLocaleString()+'</td>'+
-      '<td>'+Math.round(inputVAT).toLocaleString()+'</td>'+
-      '<td style="font-weight:700;color:var(--fin-color)">'+Math.round(netVAT).toLocaleString()+'</td>'+
-      '<td>'+(noVAT>0?'<span style="color:var(--amber)">\u26a0\ufe0f '+noVAT+'</span>':'<span style="color:var(--success)">\u2713</span>')+'</td>'+
-      '</tr>';
-  }).join('');
-  h+='<div class="hrf-kpi-grid">';
-  h+=hrfKpi('\ud83d\udcb0','Output VAT',Math.round(totalOutputVAT).toLocaleString()+' SAR','Collected from sales','var(--fin-color)');
-  h+=hrfKpi('\ud83e\udfe7','Input VAT',Math.round(totalInputVAT).toLocaleString()+' SAR','Recoverable','var(--success)');
-  h+=hrfKpi('\ud83e\udde7','Net VAT Payable',Math.round(totalOutputVAT-totalInputVAT).toLocaleString()+' SAR','To ZATCA','var(--amber)');
-  h+=hrfKpi('\u26a0\ufe0f','Missing VAT Reg',missingVAT,'Invoices without VAT no.','var(--danger)');
-  h+='</div>';
-  h+='<div class="hrf-section">'+hrfTable(['Branch','Revenue','Output VAT','Input VAT','Net Payable','Missing Reg'],rows)+'</div>';
-  h+='<div class="hrf-section" style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:20px">'+
-    '<div style="font-size:13px;font-weight:700;margin-bottom:12px">\ud83e\udfe7 VAT Return Summary \u2014 '+quarterKey+'</div>'+
-    '<div class="hrf-stat-row"><span>Period</span><strong>'+hxe(quarterKey)+'</strong></div>'+
-    '<div class="hrf-stat-row"><span>Total Sales (excl. VAT)</span><strong>'+Math.round(branches.reduce(function(a,b){return a+(HRF.sales[b.id]||[]).filter(function(s){return months.some(function(m){return s.date&&s.date.startsWith(m);});}).reduce(function(aa,s){return aa+parseFloat(s.actual||s.total||0);},0);},0)).toLocaleString()+' SAR</strong></div>'+
-    '<div class="hrf-stat-row"><span>Output VAT (15%)</span><strong style="color:var(--fin-color)">'+Math.round(totalOutputVAT).toLocaleString()+' SAR</strong></div>'+
-    '<div class="hrf-stat-row"><span>Input VAT (Recoverable)</span><strong style="color:var(--success)">'+Math.round(totalInputVAT).toLocaleString()+' SAR</strong></div>'+
-    '<div class="hrf-stat-row"><span style="font-weight:700">Net VAT Payable to ZATCA</span><strong style="color:var(--amber);font-size:16px">'+Math.round(totalOutputVAT-totalInputVAT).toLocaleString()+' SAR</strong></div></div>';
-  NX._vatData={branches:branches,rows:rows,quarterKey:quarterKey,totalOutputVAT:totalOutputVAT,totalInputVAT:totalInputVAT};
-  var area=document.getElementById('page-area');
-  if(area)area.innerHTML=h;
-}
-
-function finExportVATCSV(){
-  var d=NX._vatData;if(!d)return;
-  var headers=['Branch','Revenue','Output VAT','Input VAT','Net Payable'];
-  var rows=(d.branches||[]).map(function(b){
-    var rev=(HRF.sales[b.id]||[]).reduce(function(a,s){return a+parseFloat(s.actual||s.total||0);},0);
-    var out=rev*0.15;
-    var inp=(HRF.invoices[b.id]||[]).filter(function(i){return i.vatNumber&&i.vatAmount;}).reduce(function(a,i){return a+parseFloat(i.vatAmount||0);},0);
-    return [b.name||b.id,Math.round(rev),Math.round(out),Math.round(inp),Math.round(out-inp)];
-  });
-  finExportCSV(headers,rows,'VAT_'+d.quarterKey);
-  showToast('VAT report exported \u2713','success');
-}
-
-// ── M9: Financial Reports ──
-function pHrfFinReport(){
-  var done=0;function check(){if(++done>=4)renderFinReport();}
-  hrfLoadAll('sales','sales',check);
-  hrfLoadAll('invoices','invoices',check);
-  hrfLoadAll('pc','pc',check);
-  hrfLoadAll('waste','waste',check);
-  return hrfLoading('Building financial reports...');
-}
-
-function renderFinReport(){
-  var branches=hrfBranches();
-  var now=new Date(new Date().getTime()+3*3600000);
-  var monthKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  var h=hrfHeader('Financial Reports','Export center \u2014 '+monthKey,
-    '<button class="btn btn-primary" onclick="finExportMonthlyPack()">&#x2b07; Export Monthly Pack</button>');
-  // KPIs
-  var totalRev=0,totalCOGS=0,totalOpex=0,totalPC=0;
-  branches.forEach(function(b){
-    totalRev+=(HRF.sales[b.id]||[]).filter(function(s){return s.date&&s.date.startsWith(monthKey);}).reduce(function(a,s){return a+parseFloat(s.actual||s.total||0);},0);
-    (HRF.invoices[b.id]||[]).filter(function(i){return i.invoiceDate&&i.invoiceDate.startsWith(monthKey);}).forEach(function(i){
-      var amt=parseFloat(i.amount||0);
-      if((i.category||'').toLowerCase().indexOf('food')>=0)totalCOGS+=amt;else totalOpex+=amt;
-    });
-    totalPC+=(HRF.pc[b.id]||[]).filter(function(p){return p.date&&p.date.startsWith(monthKey);}).reduce(function(a,p){return a+parseFloat(p.amount||0);},0);
-  });
-  var gp=totalRev-totalCOGS;
-  var np=gp-totalOpex-totalPC;
-  var npPct=totalRev>0?(np/totalRev*100).toFixed(1):0;
-  var npColor=parseFloat(npPct)>=18?'var(--success)':parseFloat(npPct)>=10?'var(--amber)':'var(--danger)';
-  h+='<div class="hrf-kpi-grid">';
-  h+=hrfKpi('\ud83d\udcb0','Revenue',Math.round(totalRev).toLocaleString()+' SAR','MTD','var(--fin-color)');
-  h+=hrfKpi('\ud83d\udecd\ufe0f','COGS',Math.round(totalCOGS).toLocaleString()+' SAR','Food & Bev','var(--amber)');
-  h+=hrfKpi('\ud83d\udcc8','Gross Profit',Math.round(gp).toLocaleString()+' SAR','Rev - COGS',totalRev>0&&gp/totalRev>=0.5?'var(--success)':'var(--amber)');
-  h+=hrfKpi('\ud83d\udd35','Net Profit',Math.round(np).toLocaleString()+' SAR ('+npPct+'%)',npPct+'% margin',npColor);
-  h+='</div>';
-  // Branch table
-  var rows=branches.map(function(b){
-    var rev=(HRF.sales[b.id]||[]).filter(function(s){return s.date&&s.date.startsWith(monthKey);}).reduce(function(a,s){return a+parseFloat(s.actual||s.total||0);},0);
-    var fc=finCalcFoodCostPct(b.id,monthKey);
-    var opex=(HRF.invoices[b.id]||[]).filter(function(i){return i.invoiceDate&&i.invoiceDate.startsWith(monthKey)&&(i.category||'').toLowerCase().indexOf('food')<0;}).reduce(function(a,i){return a+parseFloat(i.amount||0);},0);
-    var pc=(HRF.pc[b.id]||[]).filter(function(p){return p.date&&p.date.startsWith(monthKey);}).reduce(function(a,p){return a+parseFloat(p.amount||0);},0);
-    var bgp=rev-fc.totalFC;var bnp=bgp-opex-pc;
-    var gpPct=rev>0?(bgp/rev*100).toFixed(1):0;
-    var npPctB=rev>0?(bnp/rev*100).toFixed(1):0;
-    return '<tr>'+
-      '<td><strong>'+hxe(b.name||b.id)+'</strong></td>'+
-      '<td>'+Math.round(rev).toLocaleString()+'</td>'+
-      '<td><span style="color:'+(fc.status==='ok'?'var(--success)':fc.status==='warning'?'var(--amber)':'var(--danger)')+'">'+fc.pct+'%</span></td>'+
-      '<td>'+gpPct+'%</td>'+
-      '<td style="color:'+(parseFloat(npPctB)>=10?'var(--success)':'var(--danger)')+'">'+npPctB+'%</td>'+
-      '<td><button class="btn btn-sm" onclick="finExportBranchCSV(\''+hxe(b.id)+'\',\''+hxe(b.name||b.id)+'\',\''+hxe(monthKey)+'\')">CSV</button></td>'+
-      '</tr>';
-  }).join('');
-  h+='<div class="hrf-section"><div style="font-size:13px;font-weight:700;margin-bottom:12px">Branch Financial Summary \u2014 '+monthKey+'</div>'+
-    hrfTable(['Branch','Revenue','FC%','GP%','NP%','Export'],rows)+'</div>';
-  // Audit log
-  h+='<div id="fin-audit-log">'+hrfLoading('Loading audit log...')+'</div>';
-  var area=document.getElementById('page-area');
-  if(area)area.innerHTML=h;
-  if(db){
-    db.ref('admin/finance/audit_log').orderByChild('ts').limitToLast(50).once('value',function(snap){
-      var raw=snap.val()||{};
-      var logs=Object.values(raw).filter(Boolean).sort(function(a,b){return b.ts-a.ts;});
-      var container=document.getElementById('fin-audit-log');
-      if(!container)return;
-      if(!logs.length){container.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-secondary)">No audit log entries yet.</div>';return;}
-      var arows=logs.map(function(l){
-        return '<tr>'+
-          '<td>'+hxe(new Date(l.ts||0).toLocaleDateString('en-GB'))+'</td>'+
-          '<td><strong>'+hxe(l.action||'')+'</strong></td>'+
-          '<td>'+hxe(l.actorId||'')+'</td>'+
-          '<td>'+hxe(l.branchId||'')+'</td>'+
-          '</tr>';
-      }).join('');
-      container.innerHTML='<div class="hrf-section"><div style="font-size:13px;font-weight:700;margin-bottom:12px">\ud83d\udd0d Audit Log (Last 50)</div>'+
-        hrfTable(['Date','Action','Actor','Branch'],arows)+'</div>';
-    });
-  }
-}
-
-function finExportMonthlyPack(){
-  var now=new Date(new Date().getTime()+3*3600000);
-  var monthKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  var branches=hrfBranches();
-  var headers=['Branch','Revenue','Food Cost','Food Cost %','OpEx','Petty Cash','Gross Profit','Net Profit','NP %'];
-  var rows=branches.map(function(b){
-    var rev=(HRF.sales[b.id]||[]).filter(function(s){return s.date&&s.date.startsWith(monthKey);}).reduce(function(a,s){return a+parseFloat(s.actual||s.total||0);},0);
-    var fc=finCalcFoodCostPct(b.id,monthKey);
-    var opex=(HRF.invoices[b.id]||[]).filter(function(i){return i.invoiceDate&&i.invoiceDate.startsWith(monthKey)&&(i.category||'').toLowerCase().indexOf('food')<0;}).reduce(function(a,i){return a+parseFloat(i.amount||0);},0);
-    var pc=(HRF.pc[b.id]||[]).filter(function(p){return p.date&&p.date.startsWith(monthKey);}).reduce(function(a,p){return a+parseFloat(p.amount||0);},0);
-    var gp=rev-fc.totalFC;var np=gp-opex-pc;
-    return [b.name||b.id,Math.round(rev),Math.round(fc.totalFC),fc.pct+'%',Math.round(opex),Math.round(pc),Math.round(gp),Math.round(np),(rev>0?(np/rev*100).toFixed(1):0)+'%'];
-  });
-  finExportCSV(headers,rows,'Finance_Monthly_Pack_'+monthKey);
-  showToast('Monthly pack exported \u2713','success');
-}
-
-function finExportBranchCSV(branchId,branchName,monthKey){
-  var headers=['Date','Type','Description','Amount (SAR)'];
-  var rows=[];
-  (HRF.sales[branchId]||[]).filter(function(s){return s.date&&s.date.startsWith(monthKey);}).forEach(function(s){
-    rows.push([s.date,'Revenue',s.description||'Daily Sales',Math.round(s.actual||s.total||0)]);
-  });
-  (HRF.invoices[branchId]||[]).filter(function(i){return i.invoiceDate&&i.invoiceDate.startsWith(monthKey);}).forEach(function(i){
-    rows.push([i.invoiceDate,'Invoice',hxe(i.supplier||'')+' - '+(i.category||''),Math.round(i.amount||0)]);
-  });
-  (HRF.pc[branchId]||[]).filter(function(p){return p.date&&p.date.startsWith(monthKey);}).forEach(function(p){
-    rows.push([p.date,'Petty Cash',p.description||p.category||'',Math.round(p.amount||0)]);
-  });
-  finExportCSV(headers,rows,branchName.replace(/\s+/g,'_')+'_'+monthKey);
-  showToast('Branch export done \u2713','success');
-}
 
 </script>
 </body>
