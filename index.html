@@ -1496,9 +1496,21 @@ function navTo(pageId) {
   if (portalMap[pageId]) { window.open(portalMap[pageId], '_blank'); return; }
 
   NX.page = pageId;
+  // Persist last page for refresh restore
+  try { localStorage.setItem('nx_last_page', pageId); } catch(e) {}
   updateTopBar(pageId);
   renderSidebar();
   window.scrollTo(0, 0);
+  // Auto-close sidebar on mobile after navigation
+  if (window.innerWidth <= 768) {
+    var sb = document.getElementById('sidebar');
+    if (sb && !sb.classList.contains('collapsed')) {
+      sb.classList.add('collapsed');
+      NX.sidebarOpen = false;
+      var mc = document.getElementById('main-content');
+      if (mc) mc.classList.add('sidebar-collapsed');
+    }
+  }
 
   // If Firebase data not yet loaded, show a spinner and retry
   var needsBranches = ['exec-dash','brand-perf','brand-dash','brand-branches',
@@ -1884,6 +1896,11 @@ function loadBranchRegistry(cb) {
 
     if (cb) cb(NX_BRANCHES);
 
+    // Load brand targets for brand-perf page
+    db.ref('admin/brandTargets').once('value', function(s2) {
+      NX.brandTargets = s2.val() || {};
+    });
+
     // Update sidebar if already logged in
     if (NX.session) {
       renderSidebar();
@@ -1893,6 +1910,29 @@ function loadBranchRegistry(cb) {
 }
 
 // Load sales for one branch into NX_BRANCH_SALES
+
+// ── OFFLINE / CONNECTION STATUS ──
+function initConnectionMonitor() {
+  if (!db) return;
+  db.ref('.info/connected').on('value', function(snap) {
+    var connected = snap.val();
+    var banner = document.getElementById('nx-offline-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'nx-offline-banner';
+      banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:20px;font-size:12px;font-weight:700;font-family:var(--font);z-index:9999;transition:all .4s;pointer-events:none;display:none';
+      document.body.appendChild(banner);
+    }
+    if (connected) {
+      banner.style.display = 'none';
+    } else {
+      banner.style.cssText += ';display:block;background:#f87171;color:#fff;box-shadow:0 4px 20px rgba(248,113,113,.4)';
+      banner.innerHTML = '&#x26A0;&#xFE0F; Offline — Firebase disconnected';
+    }
+  });
+}
+
+
 function loadBranchSalesData(branchId, cb) {
   if (!db) return;
   if (NX_LOADED_SALES[branchId]) { if (cb) cb(); return; }
@@ -2816,7 +2856,23 @@ function launchApp() {
     'regional':'region-dash','branch_mgr':'branch-dash','staff':'branch-dash',
     'hr_manager':'hrf-hr-dash','finance_dir':'hrf-fin-dash'
   };
-  navTo(defaultPages[role] || 'exec-dash');
+  // Restore last visited page if it belongs to this role
+  var lastPage = null;
+  try { lastPage = localStorage.getItem('nx_last_page'); } catch(e) {}
+  var validPages = Object.keys(PAGE_MAP || {});
+  if (lastPage && validPages.length && validPages.indexOf(lastPage) >= 0) {
+    // Only restore if the page is accessible (role check via NAV_CONFIG)
+    var roleNav = NAV_CONFIG[role] || [];
+    var allNavIds = [];
+    roleNav.forEach(function(sec){ (sec.items||[]).forEach(function(it){ allNavIds.push(it.id); }); });
+    if (allNavIds.indexOf(lastPage) >= 0) {
+      navTo(lastPage);
+    } else {
+      navTo(defaultPages[role] || 'exec-dash');
+    }
+  } else {
+    navTo(defaultPages[role] || 'exec-dash');
+  }
   NX.lastSync = Date.now();
 }
 
@@ -3091,18 +3147,53 @@ function changeSalesChart(brand, btn) {
 
 // ── PAGE: BRAND PERFORMANCE ──
 function pBrandPerf() {
-  return '<div class="page-header"><h1>Brand Performance</h1><p>Comprehensive brand-level analytics and comparison</p></div>' +
-    '<div class="header-actions"><div class="date-pills">' +
-    '<button class="date-pill active">Today</button><button class="date-pill">This Week</button>' +
-    '<button class="date-pill">This Month</button><button class="date-pill">This Quarter</button>' +
-    '</div><button class="btn" onclick="exportBrandPerf()">⬇ Export CSV</button></div>' +
-    '<div class="table-wrap section">' + buildBrandPerfTable() + '</div>' +
-    '<div class="grid-2 section">' +
-    '<div class="chart-card"><div class="chart-header"><div class="chart-title">Brand Revenue Share</div></div>' +
-    '<div style="height:260px"><canvas id="chart-brand-pie"></canvas></div></div>' +
-    '<div class="chart-card"><div class="chart-header"><div class="chart-title">Food Cost Comparison</div></div>' +
-    '<div style="height:260px"><canvas id="chart-fc-bar"></canvas></div></div>' +
-    '</div>';
+  if (!NX.bp) NX.bp = { period:'today' };
+  var s = NX.session || {};
+  var canSetTarget = (s.role==='super_admin'||s.role==='ceo');
+  var periods = [['today','Today'],['week','This Week'],['month','This Month'],['quarter','Quarter']];
+  var pills = periods.map(function(p){
+    return '<button class="date-pill'+(NX.bp.period===p[0]?' active':'')+'" onclick="NX.bp.period=\''+p[0]+'\';navTo(\'brand-perf\')">'+p[1]+'</button>';
+  }).join('');
+  var h = '<div class="page-header"><h1>Brand Performance</h1><p>Real-time brand comparison from Firebase</p></div>';
+  h += '<div class="header-actions"><div class="date-pills">'+pills+'</div>';
+  h += '<div style="display:flex;gap:8px">';
+  if (canSetTarget) h += '<button class="btn" onclick="openBrandTargetModal()">🎯 Set Targets</button>';
+  h += '<button class="btn" onclick="exportBrandPerf()">⬇ Export CSV</button>';
+  h += '</div></div>';
+  h += '<div class="table-wrap section"><table class="data-table"><thead><tr><th>Brand</th><th>Branches</th><th>Revenue</th><th>Daily Avg</th><th>Target</th><th>vs Target</th><th>YoY %</th><th>Status</th></tr></thead><tbody>';
+  h += buildBrandPerfTable();
+  h += '</tbody></table></div>';
+  h += '<div class="grid-2 section">';
+  h += '<div class="chart-card"><div class="chart-header"><div class="chart-title">Brand Revenue Share</div></div><div style="height:260px"><canvas id="chart-brand-pie"></canvas></div></div>';
+  h += '<div class="chart-card"><div class="chart-header"><div class="chart-title">Food Cost % by Branch</div></div><div style="height:260px"><canvas id="chart-fc-bar"></canvas></div></div>';
+  h += '</div>';
+  return h;
+}
+
+function openBrandTargetModal() {
+  var branches = getAccessibleBranches();
+  var brandMap = {};
+  branches.forEach(function(b){ var bn=b.brand||b.name; if(!brandMap[bn])brandMap[bn]={name:bn,id:bn.toLowerCase().replace(/\s+/g,'_')}; });
+  var fields = Object.values(brandMap).map(function(bm){
+    var stored = (NX.brandTargets||{})[bm.id] || 0;
+    return '<div class="form-group"><label class="form-label">'+xe(bm.name)+' Monthly Target (SAR)</label>'+
+      '<input class="form-input" id="bt-'+xe(bm.id)+'" type="number" value="'+stored+'" placeholder="e.g. 250000"></div>';
+  }).join('');
+  openModal('<div class="modal-head"><h2>🎯 Set Brand Targets</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>'+
+    fields+
+    '<button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBrandTargets('+JSON.stringify(Object.values(brandMap).map(function(bm){return bm.id;}))+')">Save Targets</button>');
+}
+
+function saveBrandTargets(ids) {
+  if (!NX.brandTargets) NX.brandTargets = {};
+  ids.forEach(function(id){
+    var el = document.getElementById('bt-'+id);
+    if (el) NX.brandTargets[id] = parseFloat(el.value)||0;
+  });
+  if (db) db.ref('admin/brandTargets').set(NX.brandTargets);
+  closeModalForce();
+  showToast('Targets saved','success');
+  navTo('brand-perf');
 }
 
 function buildBrandPerfTable() {
@@ -3110,28 +3201,68 @@ function buildBrandPerfTable() {
   if (!branches.length) {
     return '<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:32px">No branches loaded yet — waiting for Firebase</td></tr>';
   }
+  if (!NX.bp) NX.bp = { period:'today' };
+  var period = NX.bp.period || 'today';
   // Group branches by brand
   var brandMap = {};
   branches.forEach(function(b) {
     var bname = b.brand || b.name;
-    if (!brandMap[bname]) brandMap[bname] = { name:bname, icon:b.icon||'🍽️', color:b.color||'#f0a500', branches:[], staffTotal:0 };
+    var bid = bname.toLowerCase().replace(/\s+/g,'_');
+    if (!brandMap[bname]) brandMap[bname] = { name:bname, icon:b.icon||'🍽️', color:b.color||'#f0a500', id:bid, branches:[] };
     brandMap[bname].branches.push(b);
   });
+  var now = new Date();
+  var cy = now.getFullYear(), ly = cy-1;
+  var tm = cy+'-'+String(now.getMonth()+1).padStart(2,'0');
+  var lym = ly+'-'+String(now.getMonth()+1).padStart(2,'0');
+
   return Object.values(brandMap).map(function(bm) {
-    var today = 0, mtd = 0;
-    bm.branches.forEach(function(b) { today += branchSalesToday(b.id); mtd += branchSalesMTD(b.id); });
+    var revenue = 0, lyRevenue = 0;
+    bm.branches.forEach(function(b) {
+      var entries = NX_BRANCH_SALES[b.id] || [];
+      entries.forEach(function(e) {
+        var a = parseFloat(e.actual)||0;
+        if (period==='today') { if(e.date===TODAY_BS) revenue+=a; }
+        else if (period==='week') {
+          var ws=new Date(now); ws.setDate(now.getDate()-now.getDay()); ws.setHours(0,0,0,0);
+          var wsStr=ws.getFullYear()+'-'+String(ws.getMonth()+1).padStart(2,'0')+'-'+String(ws.getDate()).padStart(2,'0');
+          if(e.date>=wsStr&&e.date<=TODAY_BS) revenue+=a;
+        }
+        else if (period==='month') { if((e.date||'').indexOf(tm)===0) revenue+=a; }
+        else if (period==='quarter') {
+          var qm=Math.floor(now.getMonth()/3)*3;
+          var qs=cy+'-'+String(qm+1).padStart(2,'0');
+          var qe=cy+'-'+String(qm+3).padStart(2,'0')+'-31';
+          if(e.date>=qs&&e.date<=qe) revenue+=a;
+        }
+        if (period==='month'&&(e.date||'').indexOf(lym)===0) lyRevenue+=a;
+        else if (period==='today'&&e.date===(ly+'-'+TODAY_BS.slice(5))) lyRevenue+=a;
+      });
+    });
     var branchCount = bm.branches.length;
-    return '<tr>' +
-      '<td><div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">' + bm.icon + '</span>' +
-        '<div><strong style="color:var(--text-primary)">' + xe(bm.name) + '</strong>' +
-        '<div style="font-size:11px;color:var(--text-tertiary)">' + branchCount + ' branch' + (branchCount!==1?'es':'') + '</div></div></div></td>' +
-      '<td class="mono">' + formatSAR(today) + '</td>' +
-      '<td class="mono">' + formatSAR(mtd) + '</td>' +
-      '<td class="mono">' + formatSAR(mtd > 0 ? mtd/new Date().getDate() : 0) + '</td>' +
-      '<td>—</td>' +
-      '<td>—</td>' +
-      '<td>—</td>' +
-      '<td><span class="badge badge-blue">' + branchCount + ' active</span></td>' +
+    var dayNum = period==='month'?Math.max(1,now.getDate()):period==='week'?Math.max(1,now.getDay()||7):1;
+    var dayAvg = revenue / dayNum;
+    var target = ((NX.brandTargets||{})[bm.id]||0);
+    if (period==='today') target = target/30;
+    else if (period==='week') target = target*7/30;
+    else if (period==='quarter') target = target*3;
+    var vsTarget = target>0 ? ((revenue-target)/target*100).toFixed(1) : null;
+    var yoy = lyRevenue>0 ? ((revenue-lyRevenue)/lyRevenue*100).toFixed(1) : null;
+    var vsCol = vsTarget===null?'var(--text-tertiary)':parseFloat(vsTarget)>=0?'#34d399':'#f87171';
+    var yoyCol = yoy===null?'var(--text-tertiary)':parseFloat(yoy)>=0?'#34d399':'#f87171';
+    var status = revenue===0?'No Data':vsTarget===null?'No Target':parseFloat(vsTarget)>=0?'On Track':'Below Target';
+    var statBadge = status==='On Track'?'badge-green':status==='Below Target'?'badge-red':'badge-blue';
+    return '<tr>'+
+      '<td><div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">'+bm.icon+'</span>'+
+        '<div><strong style="color:var(--text-primary)">'+xe(bm.name)+'</strong>'+
+        '<div style="font-size:11px;color:var(--text-tertiary)">'+branchCount+' branch'+(branchCount!==1?'es':'')+'</div></div></div></td>'+
+      '<td style="text-align:center;font-size:13px;font-weight:700">'+branchCount+'</td>'+
+      '<td class="mono" style="color:var(--ceo);font-weight:700">'+formatSAR(revenue)+'</td>'+
+      '<td class="mono">'+formatSAR(dayAvg)+'</td>'+
+      '<td class="mono" style="color:var(--text-secondary)">'+( target>0?formatSAR(target):'<span style="color:var(--text-tertiary)">—</span>')+'</td>'+
+      '<td class="mono" style="color:'+vsCol+';font-weight:700">'+(vsTarget!==null?(parseFloat(vsTarget)>=0?'+':'')+vsTarget+'%':'<span style="color:var(--text-tertiary)">—</span>')+'</td>'+
+      '<td class="mono" style="color:'+yoyCol+';font-weight:700">'+(yoy!==null?(parseFloat(yoy)>=0?'+':'')+yoy+'%':'<span style="color:var(--text-tertiary)">—</span>')+'</td>'+
+      '<td><span class="badge '+statBadge+'">'+status+'</span></td>'+
     '</tr>';
   }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:20px">No data yet</td></tr>';
 }
@@ -3160,7 +3291,22 @@ function buildSparkline(branchId) {
   '</div>';
 }
 
-function exportBrandPerf() { showToast('Exporting brand performance CSV...', 'success'); }
+function exportBrandPerf() {
+  var branches = getAccessibleBranches();
+  var brandMap = {};
+  branches.forEach(function(b){ var bn=b.brand||b.name; if(!brandMap[bn])brandMap[bn]={name:bn,branches:[]}; brandMap[bn].branches.push(b); });
+  var rows = [['Brand','Branches','Revenue','Daily Avg','Target','vs Target %','Status']];
+  Object.values(brandMap).forEach(function(bm){
+    var rev=0; bm.branches.forEach(function(b){ rev+=branchSalesMTD(b.id); });
+    var tid=bm.name.toLowerCase().replace(/\s+/g,'_'); var tgt=(NX.brandTargets||{})[tid]||0;
+    var vs=tgt>0?((rev-tgt)/tgt*100).toFixed(1)+'%':'—';
+    rows.push([bm.name,bm.branches.length,rev.toFixed(2),(rev/Math.max(1,new Date().getDate())).toFixed(2),tgt||'—',vs,rev>=tgt&&tgt>0?'On Track':'Below Target']);
+  });
+  var csv = rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='brand-performance-'+TODAY_BS+'.csv'; a.click();
+  showToast('CSV exported','success');
+}
 
 // ── PAGE: REVENUE ANALYTICS ──
 function pRevAnalytics() {
@@ -3971,8 +4117,10 @@ function pBrandMgmt() {
       h += '<div class="card" style="border-top:3px solid '+bm.color+'">';
       h += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">';
       h += '<div style="width:44px;height:44px;border-radius:12px;background:'+bm.color+'20;display:flex;align-items:center;justify-content:center;font-size:22px">'+bm.icon+'</div>';
-      h += '<div><div style="font-size:16px;font-weight:700">'+xe(bm.name)+'</div>';
-      h += '<div style="font-size:11px;color:var(--text-tertiary)">'+bm.branches.length+' branch'+(bm.branches.length!==1?'es':'')+'</div></div></div>';
+      h += '<div style="flex:1"><div style="font-size:16px;font-weight:700">'+xe(bm.name)+'</div>';
+      h += '<div style="font-size:11px;color:var(--text-tertiary)">'+bm.branches.length+' branch'+(bm.branches.length!==1?'es':'')+'</div></div>';
+      h += '<button class="btn btn-sm" onclick="openEditBrandModal(\'' + xe(bm.name) + '\',\'' + xe(bm.color) + '\',\'' + xe(bm.icon) + '\')">&#x2699; Edit</button>';
+      h += '</div>';
       h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">';
       h += '<div style="background:var(--surface-2);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em">Today</div>';
       h += '<div class="mono" style="font-size:14px;font-weight:700;color:var(--ceo)">'+formatSAR(today)+'</div></div>';
@@ -4020,6 +4168,54 @@ function openAddBrandModal() {
     '<button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveNewBrandWithBranch()">Create Brand + Branch</button>'
   );
 }
+
+function openEditBrandModal(brandName, brandColor, brandIcon) {
+  var enc = xe(brandName);
+  openModal(
+    '<div class="modal-head"><h2>&#x2699; Edit Brand</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>' +
+    '<div class="form-group"><label class="form-label">Brand Name</label>' +
+      '<input class="form-input" id="eb-name" value="' + enc + '" placeholder="e.g. Hybrid"></div>' +
+    '<div class="form-row">' +
+      '<div class="form-group"><label class="form-label">Icon (emoji)</label>' +
+        '<input class="form-input" id="eb-icon" value="' + xe(brandIcon) + '" maxlength="4" style="font-size:20px"></div>' +
+      '<div class="form-group"><label class="form-label">Accent Color</label>' +
+        '<input class="form-input" id="eb-color" type="color" value="' + xe(brandColor||'#f0a500') + '" style="height:40px;padding:4px"></div>' +
+    '</div>' +
+    '<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px;font-size:11px;color:#f59e0b;margin-bottom:14px">' +
+      '&#x26A0;&#xFE0F; Changing brand name will rename it across all branches in Firebase.' +
+    '</div>' +
+    '<div style="display:flex;gap:8px">' +
+      '<button class="btn" style="flex:1" onclick="closeModalForce()">Cancel</button>' +
+      '<button class="btn btn-primary" style="flex:2" onclick="saveEditBrand(\'' + enc + '\')">&#x1F4BE; Save Brand</button>' +
+    '</div>'
+  );
+}
+
+function saveEditBrand(oldName) {
+  if (!db) { showToast('Not connected','error'); return; }
+  var newName = document.getElementById('eb-name').value.trim();
+  var newIcon = document.getElementById('eb-icon').value.trim();
+  var newColor = document.getElementById('eb-color').value;
+  if (!newName) { showToast('Brand name required','error'); return; }
+
+  // Update all branches that have this brand name
+  var updates = {};
+  Object.values(NX_BRANCHES).forEach(function(b) {
+    if ((b.brand || b.name) === oldName) {
+      updates['admin/branches/' + b.id + '/brand'] = newName;
+      updates['admin/branches/' + b.id + '/color'] = newColor;
+      updates['admin/branches/' + b.id + '/icon'] = newIcon;
+    }
+  });
+  if (!Object.keys(updates).length) { showToast('No branches found for this brand','error'); return; }
+  db.ref('/').update(updates, function(err) {
+    if (err) { showToast('Update failed: ' + err.message,'error'); return; }
+    closeModalForce();
+    showToast('Brand updated across ' + Object.keys(updates).length/3 + ' branches','success');
+    navTo('brand-mgmt');
+  });
+}
+
 
 function saveNewBrandWithBranch() {
   var brandName = (document.getElementById('nb2-name')||{}).value||'';
@@ -4657,7 +4853,10 @@ function openEditUserModal(userId) {
 // ── PAGE: AUDIT LOG ──
 function pAuditLog() {
   var h = '<div class="page-header"><h1>Activity Log</h1><p>System events from NXMon · ' + getAccessibleBranches().length + ' branch(es) monitored</p></div>';
-  h += '<div class="header-actions"><div></div><button class="btn" onclick="showToast(\'Exporting log…\',\'success\')">⬇ Export CSV</button></div>';
+  h += '<div class="header-actions"><div></div><div style="display:flex;gap:8px">';
+  h += '<button class="btn" onclick="auditExportCSV()">&#x2B07; Export CSV</button>';
+  if ((NX.session||{}).role === 'super_admin') h += '<button class="btn" style="color:var(--danger);border-color:rgba(248,113,113,.3)" onclick="auditClearOld()">&#x1F5D1; Clear Old (30d+)</button>';
+  h += '</div></div>';
 
   // Use real notifications as the activity feed
   var events = (NX.notifications||[]).slice(0,30);
@@ -4688,6 +4887,28 @@ function pAuditLog() {
 }
 
 // ── PAGE: BRAND DASHBOARD ──
+function auditExportCSV() {
+  var events = (NX.notifications||[]).slice(0,200);
+  var rows = [['Time','Event','Message','Branch','Type']];
+  events.forEach(function(n){
+    var ago='';
+    if(n.ts){var d=Date.now()-n.ts;ago=d<60000?'just now':d<3600000?Math.floor(d/60000)+'m ago':Math.floor(d/3600000)+'h ago';}
+    rows.push([ago,n.title||'',n.msg||'',n.branch||'',n.type||'info']);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='audit-log-'+TODAY_BS+'.csv';a.click();
+  showToast('Log exported','success');
+}
+
+function auditClearOld() {
+  if(!confirm('Remove all notifications older than 30 days? This only clears the in-memory list.'))return;
+  var cutoff=Date.now()-30*24*3600000;
+  NX.notifications=(NX.notifications||[]).filter(function(n){return (n.ts||0)>cutoff;});
+  showToast('Old entries cleared','success');
+  navTo('audit-log');
+}
+
+
 function pBrandDash() {
   var s = NX.session || {};
   var branches = getAccessibleBranches();
@@ -4743,27 +4964,78 @@ function pBrandDash() {
 // ── PAGE: BRAND BRANCHES ──
 function pBrandBranches() {
   var s = NX.session || {};
+  var canEdit = (s.role==='super_admin'||s.role==='ceo'||s.role==='brand_dir');
   var branches = getAccessibleBranches().filter(function(b) {
     return !s.brandName || (b.brand||b.name) === s.brandName;
   });
-
-  var h = '<div class="page-header"><h1>My Branches</h1><p>' + branches.length + ' branch(es) registered in Firebase</p></div>';
+  var h = '<div class="page-header"><h1>My Branches</h1><p>' + branches.length + ' branch(es)</p></div>';
   h += '<div class="table-wrap section"><table class="data-table"><thead><tr>';
-  h += '<th>Branch</th><th>Location</th><th>Manager</th><th>Today Sales</th><th>MTD Sales</th><th>Actions</th>';
+  h += '<th>Branch</th><th>Location</th><th>Manager</th><th>FC Target</th><th>Monthly Target</th><th>Today</th><th>MTD</th><th>Actions</th>';
   h += '</tr></thead><tbody>';
   branches.forEach(function(b) {
+    var mtd = branchSalesMTD(b.id); var tgt = b.monthlyTarget||0;
+    var vsT = tgt>0?((mtd/tgt)*100).toFixed(0)+'%':'—';
+    var tCol = tgt>0&&mtd>=tgt?'#34d399':tgt>0?'#f87171':'var(--text-tertiary)';
     h += '<tr>';
-    h += '<td><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">' + (b.icon||'🍽️') + '</span><strong>' + xe(b.name) + '</strong></div></td>';
+    h += '<td><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">' + (b.icon||'\u{1F374}') + '</span><strong>' + xe(b.name) + '</strong></div></td>';
     h += '<td>' + xe(b.location||'—') + '</td>';
     h += '<td>' + xe(b.manager||'—') + '</td>';
+    h += '<td class="mono">' + (b.fcTarget?b.fcTarget+'%':'—') + '</td>';
+    h += '<td class="mono" style="color:'+tCol+'">' + (tgt?formatSAR(tgt)+' ('+vsT+')':'—') + '</td>';
     h += '<td class="mono">' + formatSAR(branchSalesToday(b.id)) + '</td>';
-    h += '<td class="mono">' + formatSAR(branchSalesMTD(b.id)) + '</td>';
-    h += '<td><button class="btn btn-sm" onclick="switchBranch(\'' + xe(b.id) + '\')">View Branch</button></td>';
-    h += '</tr>';
+    h += '<td class="mono">' + formatSAR(mtd) + '</td>';
+    h += '<td><div style="display:flex;gap:4px">';
+    h += '<button class="btn btn-sm" onclick="switchBranch(\'' + xe(b.id) + '\')">View</button>';
+    if (canEdit) h += '<button class="btn btn-sm" onclick="openDirectorBranchEdit(\'' + xe(b.id) + '\')">&#x2699; Edit</button>';
+    h += '</div></td></tr>';
   });
-  if (!branches.length) h += '<tr><td colspan="6" style="text-align:center;color:var(--text-tertiary);padding:24px">No branches found in Firebase</td></tr>';
+  if (!branches.length) h += '<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:24px">No branches assigned</td></tr>';
   h += '</tbody></table></div>';
   return h;
+}
+
+function openDirectorBranchEdit(branchId) {
+  if (!db) { showToast('Not connected','error'); return; }
+  db.ref('admin/branches/' + branchId).once('value', function(snap) {
+    var b = snap.val() || {};
+    openModal(
+      '<div class="modal-head"><h2>&#x2699; Edit Branch Config</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>' +
+      '<div class="form-row"><div class="form-group"><label class="form-label">Branch Name</label>' +
+        '<input class="form-input" id="dbe-name" value="' + xe(b.name||'') + '"></div>' +
+        '<div class="form-group"><label class="form-label">Location</label>' +
+        '<input class="form-input" id="dbe-loc" value="' + xe(b.location||'') + '"></div></div>' +
+      '<div class="form-row"><div class="form-group"><label class="form-label">Manager</label>' +
+        '<input class="form-input" id="dbe-mgr" value="' + xe(b.manager||'') + '"></div>' +
+        '<div class="form-group"><label class="form-label">FC Target (%)</label>' +
+        '<input class="form-input" type="number" id="dbe-fc" value="' + (b.fcTarget||30) + '" min="0" max="100"></div></div>' +
+      '<div class="form-row"><div class="form-group"><label class="form-label">Seating Capacity</label>' +
+        '<input class="form-input" type="number" id="dbe-seats" value="' + (b.seats||0) + '"></div>' +
+        '<div class="form-group"><label class="form-label">Monthly Sales Target (SAR)</label>' +
+        '<input class="form-input" type="number" id="dbe-tgt" value="' + (b.monthlyTarget||0) + '" placeholder="0"></div></div>' +
+      '<div style="display:flex;gap:8px;margin-top:8px">' +
+        '<button class="btn" style="flex:1" onclick="closeModalForce()">Cancel</button>' +
+        '<button class="btn btn-primary" style="flex:2" onclick="saveDirectorBranchEdit(\'' + xe(branchId) + '\')">&#x1F4BE; Save Changes</button>' +
+      '</div>'
+    );
+  });
+}
+
+function saveDirectorBranchEdit(branchId) {
+  var name = document.getElementById('dbe-name').value.trim();
+  if (!name) { showToast('Name required','error'); return; }
+  var updates = {
+    name: name,
+    location: document.getElementById('dbe-loc').value.trim(),
+    manager: document.getElementById('dbe-mgr').value.trim(),
+    fcTarget: parseFloat(document.getElementById('dbe-fc').value)||30,
+    seats: parseInt(document.getElementById('dbe-seats').value)||0,
+    monthlyTarget: parseFloat(document.getElementById('dbe-tgt').value)||0
+  };
+  db.ref('admin/branches/' + branchId).update(updates, function(err) {
+    if (err) { showToast('Save failed: ' + err.message,'error'); return; }
+    closeModalForce(); showToast('Branch updated','success');
+    navTo('brand-branches');
+  });
 }
 
 // ── PAGE: REGION DASHBOARD ──
@@ -4834,26 +5106,35 @@ function pRegionDash() {
 // ── PAGE: REGION BRANCHES ──
 function pRegionBranches() {
   var s = NX.session || {};
+  var canEdit = (s.role==='super_admin'||s.role==='ceo'||s.role==='brand_dir'||s.role==='regional');
   var branches = getAccessibleBranches().filter(function(b) {
     if (s.brandName && (b.brand||b.name) !== s.brandName) return false;
     if (s.regionName && b.location !== s.regionName) return false;
     return true;
   });
-
-  var h = '<div class="page-header"><h1>Region Branches</h1><p>' + branches.length + ' branch(es)</p></div>';
+  var h = '<div class="page-header"><h1>Region Branches</h1><p>' + branches.length + ' branch(es) under supervision</p></div>';
   h += '<div class="table-wrap section"><table class="data-table"><thead><tr>';
-  h += '<th>Branch</th><th>Manager</th><th>Today Sales</th><th>MTD Sales</th><th>Actions</th>';
+  h += '<th>Branch</th><th>Manager</th><th>FC Target</th><th>Today</th><th>MTD</th><th>vs Target</th><th>Actions</th>';
   h += '</tr></thead><tbody>';
-  branches.forEach(function(b) {
+  var sorted = branches.slice().sort(function(a,b){ return branchSalesToday(b.id)-branchSalesToday(a.id); });
+  sorted.forEach(function(b, rank) {
+    var medal = rank===0?'\uD83E\uDD47':rank===1?'\uD83E\uDD48':rank===2?'\uD83E\uDD49':'';
+    var mtd = branchSalesMTD(b.id); var tgt = b.monthlyTarget||0;
+    var vsT = tgt>0?((mtd/tgt)*100).toFixed(0)+'%':'—';
+    var tCol = tgt>0&&mtd>=tgt?'#34d399':tgt>0?'#f87171':'var(--text-tertiary)';
     h += '<tr>';
-    h += '<td><div style="display:flex;align-items:center;gap:8px"><span>' + (b.icon||'🍽️') + '</span><strong>' + xe(b.name) + '</strong></div></td>';
+    h += '<td><div style="display:flex;align-items:center;gap:6px">' + medal + ' <span>' + (b.icon||'\uD83C\uDF74') + '</span><strong>' + xe(b.name) + '</strong></div></td>';
     h += '<td>' + xe(b.manager||'—') + '</td>';
-    h += '<td class="mono">' + formatSAR(branchSalesToday(b.id)) + '</td>';
-    h += '<td class="mono">' + formatSAR(branchSalesMTD(b.id)) + '</td>';
-    h += '<td><button class="btn btn-sm" onclick="switchBranch(\'' + xe(b.id) + '\')">View</button></td>';
-    h += '</tr>';
+    h += '<td class="mono">' + (b.fcTarget?b.fcTarget+'%':'—') + '</td>';
+    h += '<td class="mono" style="color:var(--ceo)">' + formatSAR(branchSalesToday(b.id)) + '</td>';
+    h += '<td class="mono">' + formatSAR(mtd) + '</td>';
+    h += '<td class="mono" style="color:'+tCol+';font-weight:600">' + (tgt?vsT+' of '+formatSAR(tgt):'<span style="color:var(--text-tertiary)">No target</span>') + '</td>';
+    h += '<td><div style="display:flex;gap:4px">';
+    h += '<button class="btn btn-sm" onclick="switchBranch(\'' + xe(b.id) + '\')">View</button>';
+    if (canEdit) h += '<button class="btn btn-sm" onclick="openDirectorBranchEdit(\'' + xe(b.id) + '\')">&#x2699; Edit</button>';
+    h += '</div></td></tr>';
   });
-  if (!branches.length) h += '<tr><td colspan="5" style="text-align:center;color:var(--text-tertiary);padding:24px">No branches found</td></tr>';
+  if (!branches.length) h += '<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:24px">No branches assigned</td></tr>';
   h += '</tbody></table></div>';
   return h;
 }
@@ -5083,6 +5364,7 @@ function attachBranchListeners() {
   db.ref(bPath('sch')).on('value', function(snap){ BS.sch=snap.val()||{}; });
   db.ref(bPath('tsAtt')).on('value', function(snap){ BS.tsAtt=snap.val()||{}; });
   db.ref(bPath('config')).on('value', function(snap){ BS._branchConfig=snap.val()||{}; });
+  db.ref(bPath('pcBudget')).once('value', function(snap){ BS.pcBudget=snap.val()||0; });
 
   // Load new BM data (transfers + announcements) once on attach, then update badges
   if(NX.session&&(NX.session.role==='branch_mgr'||NX.session.role==='staff')){
@@ -6224,8 +6506,42 @@ function pStaff() {
   setTimeout(function(){var rf=document.getElementById('bstaff-rf');if(rf)rf.onchange=function(){BS._roleFilter=this.value;navTo('staff');};},0);
   return h;
 }
-function openBranchStaffModal(id){var m=id?BS.staff.find(function(x){return x.id===id;}):null;var html='<div class="modal-head"><h2>'+(m?'Edit Staff':'Add Staff')+'</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';html+='<div class="form-row"><div class="bfg"><label class="form-label">Full Name *</label><input class="form-input" id="bst-name" value="'+bxe(m?m.name:'')+'" dir="auto"></div><div class="bfg"><label class="form-label">SAP #</label><input class="form-input" id="bst-sap" value="'+bxe(m?m.sap:'')+'"></div></div>';html+='<div class="form-row"><div class="bfg"><label class="form-label">Department *</label><select class="form-input form-select" id="bst-dept"><option value="">Select\u2026</option>'+bselOpts(DEPTS,m?m.dept:'')+'</select></div><div class="bfg"><label class="form-label">Role</label><select class="form-input form-select" id="bst-role"><option value="">Select\u2026</option>'+bselOpts(ROLES,m?m.role:'')+'</select></div></div>';html+='<div class="form-row"><div class="bfg"><label class="form-label">Status</label><select class="form-input form-select" id="bst-status"><option value="">Select\u2026</option>'+bselOpts(STATS,m?m.status:'Active')+'</select></div><div class="bfg"><label class="form-label">Phone</label><input class="form-input" type="tel" id="bst-phone" value="'+bxe(m?m.phone:'')+'" placeholder="+966\u2026"></div></div>';html+='<div class="form-row"><div class="bfg"><label class="form-label">Email</label><input class="form-input" type="email" id="bst-email" value="'+bxe(m?m.email||'':'')+'" placeholder="name@example.com"></div><div class="bfg"><label class="form-label">Default Shift</label><input class="form-input" id="bst-shift" value="'+bxe(m?m.shift:'')+'" placeholder="e.g. 9AM\u20135PM"></div></div>';html+='<button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBranchStaff(\''+bxe(id||'')+'\')">'+( m?'Save Changes':'Add Staff Member')+'</button>';openModal(html);}
-function saveBranchStaff(id){var name=bgv('bst-name'),dept=bgv('bst-dept');if(!name||!dept){showToast('Name and department required','error');return;}if(id){var m=BS.staff.find(function(x){return x.id===id;});if(m){m.name=name;m.sap=bgv('bst-sap');m.dept=dept;m.role=bgv('bst-role');m.status=bgv('bst-status')||'Active';m.phone=bgv('bst-phone');m.email=bgv('bst-email');m.shift=bgv('bst-shift');}showToast('Staff updated','success');}else{BS.staff.push({id:buid(),name:name,sap:bgv('bst-sap'),dept:dept,role:bgv('bst-role'),status:bgv('bst-status')||'Active',phone:bgv('bst-phone'),email:bgv('bst-email'),shift:bgv('bst-shift')});showToast('Staff added','success');}bSaveColl('staff',BS.staff);bsyncTSFromStaff();closeModalForce();navTo('staff');}
+function openBranchStaffModal(id){
+  var m=id?BS.staff.find(function(x){return x.id===id;}):null;
+  var now=new Date(); var mkey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  var kpi=m&&m.kpiScores&&m.kpiScores[mkey]!==undefined?m.kpiScores[mkey]:'';
+  var html='<div class="modal-head"><h2>'+(m?'Edit Staff':'Add Staff')+'</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div>';
+  html+='<div class="form-row"><div class="bfg"><label class="form-label">Full Name *</label><input class="form-input" id="bst-name" value="'+bxe(m?m.name:'')+'" dir="auto"></div><div class="bfg"><label class="form-label">SAP #</label><input class="form-input" id="bst-sap" value="'+bxe(m?m.sap||'':'')+'"></div></div>';
+  html+='<div class="form-row"><div class="bfg"><label class="form-label">Department *</label><select class="form-input form-select" id="bst-dept"><option value="">\u2026</option>'+bselOpts(DEPTS,m?m.dept:'')+'</select></div><div class="bfg"><label class="form-label">Role</label><select class="form-input form-select" id="bst-role"><option value="">\u2026</option>'+bselOpts(ROLES,m?m.role:'')+'</select></div></div>';
+  html+='<div class="form-row"><div class="bfg"><label class="form-label">Status</label><select class="form-input form-select" id="bst-status"><option value="">\u2026</option>'+bselOpts(STATS,m?m.status:'Active')+'</select></div><div class="bfg"><label class="form-label">Phone</label><input class="form-input" type="tel" id="bst-phone" value="'+bxe(m?m.phone||'':'')+'" placeholder="+966\u2026"></div></div>';
+  html+='<div class="form-row"><div class="bfg"><label class="form-label">Email</label><input class="form-input" type="email" id="bst-email" value="'+bxe(m?m.email||'':'')+'" placeholder="name@example.com"></div><div class="bfg"><label class="form-label">Default Shift</label><input class="form-input" id="bst-shift" value="'+bxe(m?m.shift||'':'')+'" placeholder="e.g. 9AM\u20135PM"></div></div>';
+  html+='<div class="form-row"><div class="bfg"><label class="form-label">Contract Type</label><select class="form-input form-select" id="bst-contract"><option value="">\u2026</option>'+bselOpts(['Full-time','Part-time','Seasonal','Trainee'],m?m.contractType||'':'')+'</select></div><div class="bfg"><label class="form-label">Join Date</label><input class="form-input" type="date" id="bst-join" value="'+bxe(m?m.joinDate||'':'')+'"></div></div>';
+  html+='<div class="form-row"><div class="bfg"><label class="form-label">KPI Score '+mkey+' (0\u2013100)</label><input class="form-input" type="number" id="bst-kpi" min="0" max="100" value="'+bxe(String(kpi))+'" placeholder="Score this month"></div><div class="bfg"><label class="form-label">Probation Status</label><select class="form-input form-select" id="bst-prob"><option value="">None</option>'+bselOpts(['On Probation','Probation Passed','Probation Failed'],m?m.probationStatus||'':'')+'</select></div></div>';
+  html+='<div class="bfg"><label class="form-label">Notes</label><input class="form-input" id="bst-notes" value="'+bxe(m?m.notes||'':'')+'" placeholder="Internal notes\u2026"></div>';
+  html+='<button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="saveBranchStaff(\''+bxe(id||'')+'\')">'+(m?'Save Changes':'Add Staff Member')+'</button>';
+  openModal(html);
+}
+function saveBranchStaff(id){
+  var name=bgv('bst-name'),dept=bgv('bst-dept');
+  if(!name||!dept){showToast('Name and department required','error');return;}
+  var now=new Date(); var mkey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  var kpiVal=bgv('bst-kpi');
+  var base={name:name,sap:bgv('bst-sap'),dept:dept,role:bgv('bst-role'),status:bgv('bst-status')||'Active',phone:bgv('bst-phone'),email:bgv('bst-email'),shift:bgv('bst-shift'),contractType:bgv('bst-contract'),joinDate:bgv('bst-join'),probationStatus:bgv('bst-prob'),notes:bgv('bst-notes')};
+  if(id){
+    var m=BS.staff.find(function(x){return x.id===id;});
+    if(m){
+      Object.assign(m,base);
+      if(kpiVal!==''){if(!m.kpiScores)m.kpiScores={};m.kpiScores[mkey]=parseFloat(kpiVal);}
+    }
+    showToast('Staff updated','success');
+  } else {
+    var entry=Object.assign({id:buid()},base);
+    if(kpiVal!==''){entry.kpiScores={};entry.kpiScores[mkey]=parseFloat(kpiVal);}
+    BS.staff.push(entry);
+    showToast('Staff added','success');
+  }
+  bSaveColl('staff',BS.staff);bsyncTSFromStaff();closeModalForce();navTo('staff');
+}
 function delBranchStaff(id){if(!confirm('Delete this staff member?'))return;BS.staff=BS.staff.filter(function(m){return m.id!==id;});bSaveColl('staff',BS.staff);showToast('Staff deleted');navTo('staff');}
 function openNXTransferStaffModal(staffId) {
   var staff = BS.staff.find(function(m){ return m.id === staffId; });
@@ -6525,9 +6841,85 @@ function delBranchLeave(id){if(!confirm('Delete this leave request?'))return;BS.
 function btsPgEmps(){var sorted=BS.tsEmps.slice().sort(function(a,b){return(a.dept||'').localeCompare(b.dept||'')||a.name.localeCompare(b.name);});var rows=sorted.map(function(e){var used=0;BS.tsLeaves.forEach(function(l){if(l.empId===e.id&&l.type==='holiday'&&l.status==='approved')used+=l.days;});var rem=(e.leaveBalance||21)-used;return '<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="bav">'+bini(e.name)+'</div><div><div style="font-weight:600;font-size:12px">'+bxe(e.name)+'</div><div class="bmono" style="font-size:10px;color:var(--text-tertiary)">'+bxe(e.id)+'</div></div></div></td><td>'+bpl(e.dept||'\u2014',bdc(e.dept||'FOH'))+'</td><td style="font-size:11px">'+(e.phone?'<a href="tel:'+bxe(e.phone)+'" style="color:var(--ceo);text-decoration:none">'+bxe(e.phone)+'</a>':'<span style="color:var(--text-tertiary)">\u2014</span>')+'</td><td class="bmono" style="font-weight:600;color:'+(rem>5?'#34d399':rem>0?'#f59e0b':'#f87171')+'">'+rem+' / '+(e.leaveBalance||21)+' days</td></tr>';}).join('');return '<div class="bcard" style="margin-bottom:16px;border-color:rgba(52,211,153,.2)"><div style="font-weight:600;color:#34d399;margin-bottom:6px">Auto-Sync with Staff Page</div><div style="font-size:11px;color:var(--text-secondary)">'+BS.tsEmps.length+' / '+BS.staff.length+' staff synced.</div></div><div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Employee</th><th>Department</th><th>Phone</th><th>Leave Balance</th></tr></thead><tbody>'+(rows||'<tr><td colspan="4" style="text-align:center;color:var(--text-tertiary);padding:24px">No employees yet</td></tr>')+'</tbody></table></div></div>';}
 
 // ── Health Cards ──────────────────────────────────────
-function pHealthCards(){attachBranchListeners();var data=BS.health.filter(function(h2){return bmatch(h2,['name','sap','cardNo']);}).slice().sort(function(a,b){var da=bdrem(a.medExp),db=bdrem(b.medExp);if(da===null)return 1;if(db===null)return -1;return da-db;});var exp=0,soon=0,ok=0;BS.health.forEach(function(h2){var d=bdrem(h2.medExp);if(d===null)return;if(d<0)exp++;else if(d<=30)soon++;else ok++;});var rows=data.map(function(h2){return '<tr><td style="font-weight:600;color:var(--text-primary)">'+bxe(h2.name)+'</td><td class="bmono" style="color:var(--text-secondary);font-size:11px">'+bxe(h2.sap||'\u2014')+'</td><td class="bmono" style="color:var(--ceo);font-weight:600">'+bxe(h2.cardNo||'\u2014')+'</td><td class="bmono" style="color:var(--text-secondary);font-size:11px">'+bfdate(h2.medExp)+'</td><td>'+bremBadge(bdrem(h2.medExp))+'</td><td class="bmono" style="color:var(--text-secondary);font-size:11px">'+bfdate(h2.trainExp)+'</td><td>'+bremBadge(bdrem(h2.trainExp))+'</td><td><div style="display:flex;gap:4px"><button class="btn btn-sm" onclick="openBranchHealthModal(\''+bxe(h2.id)+'\')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchHealth(\''+bxe(h2.id)+'\')">Del</button></div></td></tr>';}).join('');var h='<div class="page-header"><h1>Health Cards</h1></div><div class="bgrid-4" style="margin-bottom:16px">'+[['Total',BS.health.length,'var(--info)'],['Expired',exp,'#f87171'],['Expiring Soon',soon,'#f59e0b'],['Valid',ok,'#34d399']].map(function(x){return '<div class="bsc"><div class="bsc-lbl">'+x[0]+'</div><div class="bsc-val bmono" style="color:'+x[2]+'">'+x[1]+'</div></div>';}).join('')+'</div>';return h+'<div class="header-actions"><div></div><button class="btn btn-primary" onclick="openBranchHealthModal(null)">+ Add Card</button></div><div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Employee</th><th>SAP #</th><th>Card #</th><th>Med Expiry</th><th>Med Left</th><th>Train Expiry</th><th>Train Left</th><th>Actions</th></tr></thead><tbody>'+(rows||'<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:28px">No health cards yet</td></tr>')+'</tbody></table></div></div>';}
+function pHealthCards(){
+  attachBranchListeners();
+  var data=BS.health.filter(function(h2){return bmatch(h2,['name','sap','cardNo']);})
+    .slice().sort(function(a,b){var da=bdrem(a.medExp),db=bdrem(b.medExp);if(da===null)return 1;if(db===null)return -1;return da-db;});
+  var exp=0,soon=0,ok=0;
+  BS.health.forEach(function(h2){var d=bdrem(h2.medExp);if(d===null)return;if(d<0)exp++;else if(d<=30)soon++;else ok++;});
+  var rows=data.map(function(h2){
+    return '<tr>'+
+      '<td style="font-weight:600;color:var(--text-primary)">'+bxe(h2.name)+'</td>'+
+      '<td class="bmono" style="color:var(--text-secondary);font-size:11px">'+bxe(h2.sap||'\u2014')+'</td>'+
+      '<td class="bmono" style="color:var(--ceo);font-weight:600">'+bxe(h2.cardNo||'\u2014')+'</td>'+
+      '<td class="bmono" style="color:var(--text-secondary);font-size:11px">'+bfdate(h2.medExp)+'</td>'+
+      '<td>'+bremBadge(bdrem(h2.medExp))+'</td>'+
+      '<td class="bmono" style="color:var(--text-secondary);font-size:11px">'+bfdate(h2.trainExp)+'</td>'+
+      '<td>'+bremBadge(bdrem(h2.trainExp))+'</td>'+
+      '<td><div style="display:flex;gap:4px">'+
+        '<button class="btn btn-sm" onclick="openBranchHealthModal(\''+bxe(h2.id)+'\')">Edit</button>'+
+        '<button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchHealth(\''+bxe(h2.id)+'\')">Del</button>'+
+      '</div></td></tr>';
+  }).join('');
+  var h='<div class="page-header"><h1>Health Cards</h1></div>';
+  h+='<div class="bgrid-4" style="margin-bottom:16px">'+
+    [['Total',BS.health.length,'var(--info)'],['Expired',exp,'#f87171'],['Expiring Soon',soon,'#f59e0b'],['Valid',ok,'#34d399']]
+    .map(function(x){return '<div class="bsc"><div class="bsc-lbl">'+x[0]+'</div><div class="bsc-val bmono" style="color:'+x[2]+'">'+x[1]+'</div></div>';}).join('')+'</div>';
+  h+='<div class="header-actions"><div></div><div style="display:flex;gap:8px">';
+  h+='<button class="btn" onclick="openBulkHealthModal()">\u{1F4CB} Bulk Add from Staff</button>';
+  h+='<button class="btn btn-primary" onclick="openBranchHealthModal(null)">+ Add Card</button>';
+  h+='</div></div>';
+  h+='<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Employee</th><th>SAP #</th><th>Card #</th><th>Med Expiry</th><th>Med Left</th><th>Train Expiry</th><th>Train Left</th><th>Actions</th></tr></thead>'+
+    '<tbody>'+(rows||'<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:28px">\uD83D\uDCC4 No health cards yet \u2014 add one or bulk-import from staff list</td></tr>')+'</tbody></table></div></div>';
+  return h;
+}
+function openBulkHealthModal(){
+  var existing=BS.health.map(function(h){return h.name;});
+  var missing=BS.staff.filter(function(m){return !existing.includes(m.name);});
+  if(!missing.length){showToast('All staff already have health cards','success');return;}
+  var rows=missing.map(function(m){
+    return '<tr>'+
+      '<td><input type="checkbox" class="bhb-chk" value="'+bxe(m.id)+'" checked style="width:16px;height:16px"></td>'+
+      '<td style="font-weight:600">'+bxe(m.name)+'</td>'+
+      '<td class="bmono" style="font-size:11px">'+bxe(m.sap||'\u2014')+'</td>'+
+    '</tr>';
+  }).join('');
+  openModal('<div class="modal-head"><h2>\uD83D\uDCCB Bulk Add Health Cards</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>'+
+    '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">'+missing.length+' staff without health cards. Select to create records:</div>'+
+    '<div style="max-height:260px;overflow-y:auto;margin-bottom:14px"><table class="btbl"><thead><tr><th></th><th>Name</th><th>SAP</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div class="form-row"><div class="bfg"><label class="form-label">Medical Expiry (for all selected)</label><input class="form-input" type="date" id="bhb-med"></div>'+
+      '<div class="bfg"><label class="form-label">Training Expiry</label><input class="form-input" type="date" id="bhb-train"></div></div>'+
+    '<button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBulkHealth()">Create Health Cards</button>');
+}
+function saveBulkHealth(){
+  var med=document.getElementById('bhb-med').value;
+  var train=document.getElementById('bhb-train').value;
+  if(!med){showToast('Medical expiry required','error');return;}
+  var chks=document.querySelectorAll('.bhb-chk:checked');
+  var count=0;
+  chks.forEach(function(c){
+    var m=BS.staff.find(function(x){return x.id===c.value;});
+    if(m&&!BS.health.find(function(h){return h.name===m.name;})){
+      BS.health.push({id:buid(),name:m.name,sap:m.sap||'',cardNo:'',medExp:med,trainExp:train});
+      count++;
+    }
+  });
+  bSaveColl('health',BS.health);closeModalForce();
+  showToast(count+' health cards created','success');navTo('health-cards');
+}
 function openBranchHealthModal(id){var h2=id?BS.health.find(function(x){return x.id===id;}):null;var staffOpts='<option value="">Select\u2026</option>'+BS.staff.map(function(s2){return '<option value="'+bxe(s2.name)+'"'+(h2&&h2.name===s2.name?' selected':'')+'>'+bxe(s2.name)+'</option>';}).join('');var html='<div class="modal-head"><h2>'+(h2?'Edit Health Card':'Add Health Card')+'</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div><div class="bfg"><label class="form-label">Employee *</label><select class="form-input form-select" id="bhc-name">'+staffOpts+'</select></div><div class="form-row"><div class="bfg"><label class="form-label">SAP #</label><input class="form-input" id="bhc-sap" value="'+bxe(h2?h2.sap:'')+'"></div><div class="bfg"><label class="form-label">Card # *</label><input class="form-input" id="bhc-card" value="'+bxe(h2?h2.cardNo:'')+'"></div></div><div class="form-row"><div class="bfg"><label class="form-label">Medical Expiry *</label><input class="form-input" type="date" id="bhc-med" value="'+bxe(h2?h2.medExp:'')+'"></div><div class="bfg"><label class="form-label">Training Expiry</label><input class="form-input" type="date" id="bhc-train" value="'+bxe(h2?h2.trainExp:'')+'"></div></div><button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBranchHealth(\''+bxe(id||'')+'\')">Save</button>';openModal(html);}
-function saveBranchHealth(id){var name=bgv('bhc-name'),card=bgv('bhc-card'),med=bgv('bhc-med');if(!name||!card||!med){showToast('Name, card # and expiry required','error');return;}var e={id:id||buid(),name:name,sap:bgv('bhc-sap'),cardNo:card,medExp:med,trainExp:bgv('bhc-train')};if(id){var i=BS.health.findIndex(function(x){return x.id===id;});if(i>=0)BS.health[i]=e;}else BS.health.push(e);bSaveColl('health',BS.health);closeModalForce();showToast('Health card saved','success');navTo('health-cards');}
+function saveBranchHealth(id){
+  var name=bgv('bhc-name'),card=bgv('bhc-card'),med=bgv('bhc-med');
+  if(!name||!card||!med){showToast('Name, card # and expiry required','error');return;}
+  // Duplicate guard — prevent same name added twice
+  if(!id && BS.health.find(function(h){return h.name===name;})){
+    showToast('Health card already exists for '+name,'error');return;
+  }
+  var e={id:id||buid(),name:name,sap:bgv('bhc-sap'),cardNo:card,medExp:med,trainExp:bgv('bhc-train')};
+  if(id){var i=BS.health.findIndex(function(x){return x.id===id;});if(i>=0)BS.health[i]=e;}
+  else BS.health.push(e);
+  bSaveColl('health',BS.health);closeModalForce();showToast('Health card saved','success');navTo('health-cards');
+}
 function delBranchHealth(id){if(!confirm('Delete this health card?'))return;BS.health=BS.health.filter(function(x){return x.id!==id;});bSaveColl('health',BS.health);showToast('Deleted');navTo('health-cards');}
 
 // ── Sales ─────────────────────────────────────────────
@@ -6680,10 +7072,96 @@ function saveBranchSales(id){var dt=bgv('bsl-date'),a=bgv('bsl-actual'),t=bgv('b
 function delBranchSales(id){if(!confirm('Delete this sales entry?'))return;BS.sales=BS.sales.filter(function(x){return x.id!==id;});bSaveColl('sales',BS.sales);showToast('Deleted');navTo('sales');}
 
 // ── Petty Cash ────────────────────────────────────────
-function pPettyCash(){attachBranchListeners();var tot=0,mTot=0,tm=bmthKey(0);BS.pc.forEach(function(p){tot+=(+p.amount||0);if(p.date&&p.date.indexOf(tm)===0)mTot+=(+p.amount||0);});var rows=BS.pc.filter(function(p){return bmatch(p,['description','forwhat','category']);}).slice().sort(function(a,b){return(b.date||'').localeCompare(a.date||'');}).map(function(p){return '<tr><td class="bmono" style="color:var(--text-tertiary);font-size:11px">'+bfdate(p.date)+'</td><td style="font-weight:600;color:var(--text-primary)">'+bxe(p.description)+'</td><td style="color:var(--text-secondary)">'+bxe(p.forwhat||'\u2014')+'</td><td style="color:var(--text-secondary)">'+bxe(p.remarks||'\u2014')+'</td><td>'+bpl(p.category||'\u2014','#f0c040')+'</td><td class="bmono" style="color:#f87171;font-weight:600">'+bfsar(p.amount)+'</td><td><button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchPC(\''+bxe(p.id)+'\')">Del</button></td></tr>';}).join('');return '<div class="page-header"><h1>Petty Cash</h1></div><div class="bgrid-3" style="margin-bottom:16px"><div class="bsc"><div class="bsc-lbl">Total Spent</div><div class="bsc-val bcr" style="font-size:22px">'+bfsar(tot)+'</div></div><div class="bsc"><div class="bsc-lbl">This Month</div><div class="bsc-val" style="font-size:22px;color:#f59e0b">'+bfsar(mTot)+'</div><div class="bsc-sub">'+bxe(tm)+'</div></div><div class="bsc"><div class="bsc-lbl">Total Entries</div><div class="bsc-val bca">'+BS.pc.length+'</div></div></div><div class="header-actions"><div></div><button class="btn btn-primary" onclick="openBranchPCModal()">+ Add Entry</button></div><div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th>Item Purchased</th><th>For Who</th><th>Remarks</th><th>Cost Center</th><th>Amount</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:24px">No entries yet</td></tr>')+'</tbody></table></div></div>';}
-function openBranchPCModal(){var html='<div class="modal-head"><h2>Add Petty Cash Entry</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div><div class="bfg"><label class="form-label">Date *</label><input class="form-input" type="date" id="bpc-date" value="'+TODAY_BS+'"></div><div class="bfg"><label class="form-label">Item Purchased *</label><input class="form-input" id="bpc-desc" maxlength="28" placeholder="max 28 chars"></div><div class="form-row"><div class="bfg"><label class="form-label">For Who / Dept *</label><input class="form-input" id="bpc-for"></div><div class="bfg"><label class="form-label">Cost Center</label><select class="form-input form-select" id="bpc-cat"><option value="">\u2014</option>'+PCC.map(function(c){return '<option>'+bxe(c)+'</option>';}).join('')+'</select></div></div><div class="form-row"><div class="bfg"><label class="form-label">Remarks</label><input class="form-input" id="bpc-rem"></div><div class="bfg"><label class="form-label">Amount (SAR) *</label><input class="form-input" type="number" step="0.01" id="bpc-amt" placeholder="0.00"></div></div><button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBranchPC()">Save Entry</button>';openModal(html);}
-function saveBranchPC(){var dt=bgv('bpc-date'),desc=bgv('bpc-desc'),forw=bgv('bpc-for'),amt=bgv('bpc-amt');if(!dt||!desc||!forw||!amt){showToast('Required fields missing','error');return;}BS.pc.push({id:buid(),date:dt,description:desc,forwhat:forw,category:bgv('bpc-cat'),remarks:bgv('bpc-rem'),amount:parseFloat(amt)||0});bSaveColl('pc',BS.pc);closeModalForce();showToast('Entry saved','success');navTo('petty-cash');}
+function pPettyCash(){
+  attachBranchListeners();
+  var tot=0,mTot=0,tm=bmthKey(0);
+  BS.pc.forEach(function(p){tot+=(+p.amount||0);if(p.date&&p.date.indexOf(tm)===0)mTot+=(+p.amount||0);});
+  var budget=BS.pcBudget||0;
+  var rows=BS.pc.filter(function(p){return bmatch(p,['description','forwhat','category']);})
+    .slice().sort(function(a,b){return(b.date||'').localeCompare(a.date||'');})
+    .map(function(p){
+      return '<tr>'+
+        '<td class="bmono" style="color:var(--text-tertiary);font-size:11px">'+bfdate(p.date)+'</td>'+
+        '<td style="font-weight:600;color:var(--text-primary)">'+bxe(p.description)+'</td>'+
+        '<td style="color:var(--text-secondary)">'+bxe(p.forwhat||'\u2014')+'</td>'+
+        '<td style="color:var(--text-secondary)">'+bxe(p.remarks||'\u2014')+'</td>'+
+        '<td>'+bpl(p.category||'\u2014','#f0c040')+'</td>'+
+        '<td class="bmono" style="color:#f87171;font-weight:600">'+bfsar(p.amount)+'</td>'+
+        '<td><div style="display:flex;gap:4px">'+
+          '<button class="btn btn-sm" onclick="openBranchPCModal(\''+bxe(p.id)+'\')">Edit</button>'+
+          '<button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchPC(\''+bxe(p.id)+'\')">Del</button>'+
+        '</div></td></tr>';
+    }).join('');
+  var budgetBanner='';
+  if(budget>0){
+    var pctUsed=Math.min(100,mTot/budget*100);
+    var bc=pctUsed>=90?'#f87171':pctUsed>=70?'#f59e0b':'#34d399';
+    budgetBanner='<div style="background:var(--surface-1);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px">'+
+      '<span style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap">Monthly Budget</span>'+
+      '<div style="flex:1;height:8px;background:var(--surface-3);border-radius:4px;overflow:hidden">'+
+        '<div style="height:100%;width:'+pctUsed.toFixed(1)+'%;background:'+bc+';border-radius:4px;transition:width .5s"></div>'+
+      '</div>'+
+      '<span class="mono" style="font-size:13px;font-weight:700;color:'+bc+'">'+bfsar(mTot)+' / '+bfsar(budget)+'</span>'+
+      '<span style="font-size:10px;color:var(--text-tertiary)">'+pctUsed.toFixed(0)+'%</span>'+
+    '</div>';
+  }
+  return '<div class="page-header"><h1>Petty Cash</h1></div>'+
+    '<div class="bgrid-3" style="margin-bottom:16px">'+
+      '<div class="bsc"><div class="bsc-lbl">Total Spent</div><div class="bsc-val bcr" style="font-size:22px">'+bfsar(tot)+'</div></div>'+
+      '<div class="bsc"><div class="bsc-lbl">This Month</div><div class="bsc-val" style="font-size:22px;color:#f59e0b">'+bfsar(mTot)+'</div><div class="bsc-sub">'+bxe(tm)+'</div></div>'+
+      '<div class="bsc"><div class="bsc-lbl">Total Entries</div><div class="bsc-val bca">'+BS.pc.length+'</div></div>'+
+    '</div>'+
+    budgetBanner+
+    '<div class="header-actions"><div></div><div style="display:flex;gap:8px">'+
+      '<button class="btn" onclick="openPCBudgetModal()">\uD83D\uDCB0 Set Budget</button>'+
+      '<button class="btn btn-primary" onclick="openBranchPCModal(null)">+ Add Entry</button>'+
+    '</div></div>'+
+    '<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th>Item Purchased</th><th>For Who</th><th>Remarks</th><th>Cost Center</th><th>Amount</th><th></th></tr></thead>'+
+    '<tbody>'+(rows||'<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:28px">\uD83E\uDDFE No entries yet \u2014 click \u201c+ Add Entry\u201d to start</td></tr>')+'</tbody></table></div></div>';
+}
+function openPCBudgetModal(){
+  var cur=BS.pcBudget||0;
+  openModal('<div class="modal-head"><h2>\uD83D\uDCB0 Monthly Budget Cap</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>'+
+    '<div class="bfg"><label class="form-label">Monthly Petty Cash Budget (SAR)</label>'+
+      '<input class="form-input" type="number" id="pcb-val" value="'+cur+'" placeholder="e.g. 5000" step="100"></div>'+
+    '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:14px">A warning banner appears at 70% and 90% of this limit.</div>'+
+    '<button class="btn btn-primary" style="width:100%" onclick="savePCBudget()">\uD83D\uDCBE Save Budget</button>');
+}
+function savePCBudget(){
+  var v=parseFloat(document.getElementById('pcb-val').value)||0;
+  BS.pcBudget=v;
+  if(db&&NX.session&&NX.session.branchId) db.ref('branches/'+NX.session.branchId+'/pcBudget').set(v);
+  closeModalForce();showToast('Budget saved','success');navTo('petty-cash');
+}
+function openBranchPCModal(id){
+  var p=id?BS.pc.find(function(x){return x.id===id;}):null;
+  var html='<div class="modal-head"><h2>'+(p?'Edit Petty Cash':'Add Petty Cash')+'</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>';
+  html+='<div class="bfg"><label class="form-label">Date *</label><input class="form-input" type="date" id="bpc-date" value="'+(p?p.date:TODAY_BS)+'"></div>';
+  html+='<div class="bfg"><label class="form-label">Item Purchased *</label><input class="form-input" id="bpc-desc" maxlength="80" value="'+bxe(p?p.description||'':'')+'" placeholder="What was purchased?"></div>';
+  html+='<div class="form-row"><div class="bfg"><label class="form-label">For Who / Dept *</label><input class="form-input" id="bpc-for" value="'+bxe(p?p.forwhat||'':'')+'"></div>'+
+    '<div class="bfg"><label class="form-label">Cost Center</label><select class="form-input form-select" id="bpc-cat"><option value="">\u2014</option>'+PCC.map(function(c){return '<option'+(p&&p.category===c?' selected':'')+'>'+bxe(c)+'</option>';}).join('')+'</select></div></div>';
+  html+='<div class="form-row"><div class="bfg"><label class="form-label">Remarks</label><input class="form-input" id="bpc-rem" value="'+bxe(p?p.remarks||'':'')+'"></div>'+
+    '<div class="bfg"><label class="form-label">Amount (SAR) *</label><input class="form-input" type="number" step="0.01" id="bpc-amt" value="'+(p?p.amount:'')+'" placeholder="0.00"></div></div>';
+  html+='<button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBranchPC(\\\''+bxe(id||'')+'\\\')">'+(p?'Save Changes':'Save Entry')+'</button>';
+  openModal(html);
+}
+function saveBranchPC(id){
+  var dt=bgv('bpc-date'),desc=bgv('bpc-desc'),forw=bgv('bpc-for'),amt=bgv('bpc-amt');
+  if(!dt||!desc||!forw||!amt){showToast('Required fields missing','error');return;}
+  if(id){
+    var i=BS.pc.findIndex(function(x){return x.id===id;});
+    if(i>=0){BS.pc[i].date=dt;BS.pc[i].description=desc;BS.pc[i].forwhat=forw;BS.pc[i].category=bgv('bpc-cat');BS.pc[i].remarks=bgv('bpc-rem');BS.pc[i].amount=parseFloat(amt)||0;}
+  } else {
+    // Duplicate guard — same date + same description
+    if(BS.pc.find(function(p){return p.date===dt&&p.description.toLowerCase()===desc.toLowerCase();})){
+      if(!confirm('A similar entry exists for this date. Add anyway?'))return;
+    }
+    BS.pc.push({id:buid(),date:dt,description:desc,forwhat:forw,category:bgv('bpc-cat'),remarks:bgv('bpc-rem'),amount:parseFloat(amt)||0});
+  }
+  bSaveColl('pc',BS.pc);closeModalForce();showToast('Entry saved','success');navTo('petty-cash');
+}
 function delBranchPC(id){if(!confirm('Delete this petty cash entry?'))return;BS.pc=BS.pc.filter(function(x){return x.id!==id;});bSaveColl('pc',BS.pc);showToast('Deleted');navTo('petty-cash');}
+
 
 function pDSR(){
   attachBranchListeners();
@@ -9284,25 +9762,42 @@ function pHrfHealth(){
 // ── PAYROLL ──
 function pHrfPayroll(){
   var branches=hrfBranches();
+  if(!NX._hrfPayMonth){var d=new Date(new Date().getTime()+3*3600000);NX._hrfPayMonth=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+  var payMonth=NX._hrfPayMonth;
+
   function renderPayroll(){
-    var allStaff=[],deptTotals={},branchTotals={},grandTotal=0;
+    var allStaff=[],deptTotals={},branchTotals={},grandTotal=0,pendingCount=0,releasedCount=0;
     branches.forEach(function(b){
+      var payData=(HRF.payroll&&HRF.payroll[b.id]&&HRF.payroll[b.id][payMonth])||{};
       (HRF.staff[b.id]||[]).forEach(function(m){
         m._branchName=(NX_BRANCHES[b.id]||{}).name||b.id;
+        m._branchId=b.id;
+        var pay=payData[m.id]||{};
+        m._payStatus=pay.status||'draft';
+        m._basic=parseFloat(pay.basicSalary||m.salary||m.basicSalary||0);
+        m._allow=parseFloat(pay.allowances||0);
+        m._ded=parseFloat(pay.deductions||0);
+        m._net=m._basic+m._allow-m._ded;
         allStaff.push(m);
-        var sal=parseFloat(m.salary||m.basicSalary||0);
-        grandTotal+=sal;
-        deptTotals[m.dept||'Other']=(deptTotals[m.dept||'Other']||0)+sal;
-        branchTotals[m._branchName]=(branchTotals[m._branchName]||0)+sal;
+        grandTotal+=m._net;
+        deptTotals[m.dept||'Other']=(deptTotals[m.dept||'Other']||0)+m._net;
+        branchTotals[m._branchName]=(branchTotals[m._branchName]||0)+m._net;
+        if(m._payStatus==='pending_finance'||m._payStatus==='pending_hr')pendingCount++;
+        if(m._payStatus==='released')releasedCount++;
       });
     });
-    var d=new Date(new Date().getTime()+3*3600000);
-    var curMonth=HRF_MONTHS[d.getMonth()]+' '+d.getFullYear();
-    var h=hrfHeader('Payroll Overview',curMonth+' \u00b7 '+allStaff.length+' employees','');
-    h+='<div class="hrf-kpi-grid" style="grid-template-columns:repeat(3,1fr)">';
-    h+=hrfKpi('&#x1F4B8;','Total Payroll',hfsar(grandTotal),'Gross salaries','var(--payroll-color)');
-    h+=hrfKpi('&#x1F465;','Headcount',allStaff.length,curMonth,'var(--hr-color)');
-    h+=hrfKpi('&#x1F4CA;','Avg Salary',hfsar(allStaff.length?grandTotal/allStaff.length:0),'Per employee','var(--info)');
+    var h=hrfHeader('Payroll Overview',payMonth+' \u00b7 '+allStaff.length+' employees','');
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:10px 14px;background:var(--surface-1);border:1px solid var(--border);border-radius:10px">';
+    h+='<span style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em">Payroll Month</span>';
+    h+='<input type="month" value="'+payMonth+'" onchange="NX._hrfPayMonth=this.value;navTo(\'hrf-payroll\')" style="background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:5px 10px;color:var(--text-primary);font-size:13px;font-family:var(--font);outline:none;cursor:pointer">';
+    h+='<button class="btn btn-sm btn-primary" onclick="hrfRunPayroll(\''+payMonth+'\')">&#x25B6; Process All</button>';
+    h+='<button class="btn btn-sm" onclick="hrfExportPayroll(\''+payMonth+'\')">&#x2B07; Export CSV</button>';
+    h+='</div>';
+    h+='<div class="hrf-kpi-grid" style="grid-template-columns:repeat(4,1fr)">';
+    h+=hrfKpi('&#x1F4B8;','Total Net',hfsar(grandTotal),'All branches','var(--payroll-color)');
+    h+=hrfKpi('&#x1F465;','Headcount',allStaff.length,payMonth,'var(--hr-color)');
+    h+=hrfKpi('&#x23F3;','Pending',pendingCount,'Awaiting approval','#f59e0b');
+    h+=hrfKpi('&#x2705;','Released',releasedCount,'Paid out','#34d399');
     h+='</div>';
     h+='<div class="hrf-grid-2">';
     h+='<div class="hrf-chart-card"><div style="font-size:13px;font-weight:700;margin-bottom:14px">By Department</div>';
@@ -9324,24 +9819,104 @@ function pHrfPayroll(){
     });
     h+='</div></div>';
     var rows='';
-    allStaff.filter(function(m){return parseFloat(m.salary||m.basicSalary||0)>0;})
-      .sort(function(a,b){return parseFloat(b.salary||0)-parseFloat(a.salary||0);}).slice(0,30)
+    allStaff.filter(function(m){return m._basic>0||m._net>0;})
+      .sort(function(a,b){return b._net-a._net;})
       .forEach(function(m){
-        rows+='<tr><td><strong>'+hxe(m.name)+'</strong></td><td>'+hxe(m.dept||'—')+'</td>'+
-          '<td>'+hxe(m.role||'—')+'</td><td>'+hxe(m._branchName)+'</td>'+
-          '<td style="font-family:var(--mono);color:var(--payroll-color)">'+hfsar(m.salary||m.basicSalary||0)+'</td></tr>';
+        var sc=m._payStatus==='released'?'#34d399':m._payStatus.indexOf('pending')===0?'#f59e0b':'var(--text-tertiary)';
+        rows+='<tr>'+
+          '<td><strong>'+hxe(m.name)+'</strong><div style="font-size:10px;color:var(--text-tertiary)">'+hxe(m._branchName)+'</div></td>'+
+          '<td>'+hxe(m.dept||'\u2014')+'</td>'+
+          '<td class="mono">'+hfsar(m._basic)+'</td>'+
+          '<td class="mono" style="color:#34d399">+'+hfsar(m._allow)+'</td>'+
+          '<td class="mono" style="color:#f87171">-'+hfsar(m._ded)+'</td>'+
+          '<td class="mono" style="font-weight:700;color:var(--payroll-color)">'+hfsar(m._net)+'</td>'+
+          '<td><span style="font-size:11px;font-weight:600;color:'+sc+'">'+m._payStatus.replace(/_/g,' ')+'</span></td>'+
+          '<td><button class="btn btn-sm" onclick="hrfEditPayRow(\''+hxe(m._branchId)+'\',\''+hxe(m.id)+'\',\''+payMonth+'\')">Edit</button></td>'+
+        '</tr>';
       });
-    h+='<div class="hrf-section" style="margin-top:20px"><div style="font-size:13px;font-weight:700;margin-bottom:12px">Staff Salaries</div>';
-    if(rows)h+=hrfTable(['Name','Dept','Role','Branch','Basic Salary'],rows);
-    else h+='<div class="empty-state"><div class="es-icon">&#x1F4B8;</div><h3>No salary data in Firebase</h3><p>Add salary field to staff records</p></div>';
+    h+='<div class="hrf-section" style="margin-top:20px">';
+    h+='<div style="font-size:13px;font-weight:700;margin-bottom:12px">Staff Payroll Detail</div>';
+    if(rows)h+=hrfTable(['Name','Dept','Basic','Allowances','Deductions','Net','Status',''],rows);
+    else h+='<div class="empty-state"><div class="es-icon">&#x1F4B8;</div><h3>No payroll data for '+payMonth+'</h3><p>Click \u201cProcess All\u201d to generate from staff salary records</p></div>';
     h+='</div>';
     return h;
   }
+
   var cached=branches.filter(function(b){return HRF.staff[b.id];});
   if(cached.length===branches.length)return renderPayroll();
   hrfLoadAll('staff','staff',function(){navTo('hrf-payroll');});
   return hrfLoading('Loading payroll data\u2026');
 }
+
+function hrfRunPayroll(month){
+  if(!db){showToast('Not connected','error');return;}
+  var branches=hrfBranches();var count=0;
+  branches.forEach(function(b){
+    (HRF.staff[b.id]||[]).forEach(function(m){
+      var sal=parseFloat(m.salary||m.basicSalary||0);if(!sal)return;
+      var path='branches/'+b.id+'/payroll/'+month+'/'+m.id;
+      db.ref(path).once('value',function(snap){
+        if(!snap.val()){
+          db.ref(path).set({basicSalary:sal,allowances:0,deductions:0,status:'pending_hr',processedAt:Date.now()});
+          count++;
+        }
+      });
+    });
+  });
+  setTimeout(function(){showToast('Payroll processed','success');navTo('hrf-payroll');},900);
+}
+
+function hrfEditPayRow(branchId,empId,month){
+  if(!db){showToast('Not connected','error');return;}
+  db.ref('branches/'+branchId+'/payroll/'+month+'/'+empId).once('value',function(snap){
+    var pay=snap.val()||{};
+    var staff=(HRF.staff[branchId]||[]).find(function(m){return m.id===empId;})||{};
+    openModal('<div class="modal-head"><h2>Edit Payroll \u2014 '+hxe(staff.name||empId)+'</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>'+
+      '<div class="form-row">'+
+        '<div class="form-group"><label class="form-label">Basic Salary (SAR)</label><input class="form-input" type="number" id="hpe-basic" value="'+(pay.basicSalary||staff.salary||0)+'"></div>'+
+        '<div class="form-group"><label class="form-label">Allowances (SAR)</label><input class="form-input" type="number" id="hpe-allow" value="'+(pay.allowances||0)+'"></div>'+
+      '</div>'+
+      '<div class="form-row">'+
+        '<div class="form-group"><label class="form-label">Deductions (SAR)</label><input class="form-input" type="number" id="hpe-ded" value="'+(pay.deductions||0)+'"></div>'+
+        '<div class="form-group"><label class="form-label">Status</label><select class="form-input form-select" id="hpe-status">'+
+          ['draft','pending_hr','pending_finance','released'].map(function(s2){return '<option value="'+s2+'"'+(pay.status===s2?' selected':'')+'>'+s2.replace(/_/g,' ')+'</option>';}).join('')+
+        '</select></div>'+
+      '</div>'+
+      '<div class="form-group"><label class="form-label">Notes</label><input class="form-input" id="hpe-notes" value="'+hxe(pay.notes||'')+'"></div>'+
+      '<button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="hrfSavePayRow(\''+hxe(branchId)+'\',\''+hxe(empId)+'\',\''+hxe(month)+'\')">Save Changes</button>');
+  });
+}
+
+function hrfSavePayRow(branchId,empId,month){
+  var basic=parseFloat(document.getElementById('hpe-basic').value)||0;
+  var allow=parseFloat(document.getElementById('hpe-allow').value)||0;
+  var ded=parseFloat(document.getElementById('hpe-ded').value)||0;
+  db.ref('branches/'+branchId+'/payroll/'+month+'/'+empId).update({
+    basicSalary:basic,allowances:allow,deductions:ded,net:basic+allow-ded,
+    status:document.getElementById('hpe-status').value,
+    notes:document.getElementById('hpe-notes').value,
+    updatedAt:Date.now()
+  },function(err){
+    if(err){showToast('Save failed','error');return;}
+    closeModalForce();showToast('Payroll updated','success');navTo('hrf-payroll');
+  });
+}
+
+function hrfExportPayroll(month){
+  var rows=[['Name','Branch','Dept','Role','Basic','Allowances','Deductions','Net','Status']];
+  hrfBranches().forEach(function(b){
+    (HRF.staff[b.id]||[]).forEach(function(m){
+      var pay=(HRF.payroll&&HRF.payroll[b.id]&&HRF.payroll[b.id][month]&&HRF.payroll[b.id][month][m.id])||{};
+      var basic=parseFloat(pay.basicSalary||m.salary||0);if(!basic)return;
+      var allow=parseFloat(pay.allowances||0),ded=parseFloat(pay.deductions||0);
+      rows.push([m.name,(NX_BRANCHES[b.id]||{}).name||b.id,m.dept||'',m.role||'',basic,allow,ded,basic+allow-ded,pay.status||'draft']);
+    });
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='payroll-'+month+'.csv';a.click();
+  showToast('CSV exported','success');
+}
+
 
 // ── PETTY CASH (cross-branch) ──
 function pHrfPettyCash(){
@@ -10231,6 +10806,7 @@ function pBmLeave() {
 function saveBmLeaveRequest() {
   var eid = bgv('bmlv-emp'), type = bgv('bmlv-type'), from = bgv('bmlv-from'), to = bgv('bmlv-to');
   if(!eid||!from||!to){showToast('Select employee and dates','error');return;}
+  if(from > to){showToast('Start date cannot be after end date','error');return;}
   var days = Math.max(1,Math.ceil((new Date(to+'T00:00:00')-new Date(from+'T00:00:00'))/86400000)+1);
   var s = NX.session||{};
   var rec = {id:buid(),empId:eid,type:type,start:from,from:from,end:to,to:to,days:days,
