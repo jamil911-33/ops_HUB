@@ -8857,38 +8857,194 @@ function pHrfEmployees(){
 // ── ATTENDANCE ──
 function pHrfAttendance(){
   var branches=hrfBranches();
-  var todayKey=(function(){var d=new Date(new Date().getTime()+3*3600000);return d.toISOString().slice(0,10);})();
-  var viewDate=NX._hrfAttDate||todayKey;
+  var now=new Date(new Date().getTime()+3*3600000);
+  var curYear=now.getFullYear();
+  var curMonth=now.getMonth()+1;
+  var selMonth=NX._hrfAttMonth||(curYear+'-'+(curMonth<10?'0':'')+curMonth);
+  var filterMode=NX._hrfAttFilter||'deductions'; // 'deductions' = absent+late only, 'all' = everyone
+
+  function daysInMonth(ym){var p=ym.split('-');return new Date(parseInt(p[0]),parseInt(p[1]),0).getDate();}
+  function dayLabel(ym,d){var p=ym.split('-');var day=new Date(parseInt(p[0]),parseInt(p[1]-1),d);return ['Su','Mo','Tu','We','Th','Fr','Sa'][day.getDay()];}
+
   function renderAtt(){
-    var rows='',totP=0,totL=0,totA=0,totOff=0;
+    var moLabel=(function(){var p=selMonth.split('-');var mn=['January','February','March','April','May','June','July','August','September','October','November','December'];return mn[parseInt(p[1])-1]+' '+p[0];})();
+    var totalDays=daysInMonth(selMonth);
     var SC={present:'#00e5ff',late:'#ffd166',absent:'#f87171',sick:'#f97316',holiday:'#a78bfa',dayoff:'#34d399'};
+    var SLAB={present:'P',late:'L',absent:'A',sick:'S',holiday:'H',dayoff:'D'};
+
+    // Collect all staff with their monthly data
+    var empRows=[];
     branches.forEach(function(b){
-      var staff=HRF.staff[b.id]||[],att=HRF.att[b.id]||{},dayAtt=att[viewDate]||{};
+      var staff=HRF.staff[b.id]||[],att=HRF.att[b.id]||{};
       var bname=(NX_BRANCHES[b.id]||{}).name||b.id;
       staff.forEach(function(m){
-        var rec=dayAtt[String(m.id)]||dayAtt[m.name]||{};
-        var st=rec.status||'absent';
-        var col=SC[st]||'#94a3b8';
-        if(st==='present')totP++;else if(st==='late')totL++;else if(st==='dayoff'||st==='holiday')totOff++;else totA++;
-        rows+='<tr><td><strong>'+hxe(m.name)+'</strong></td><td>'+hxe(m.dept||'—')+'</td>'+
-          '<td>'+hxe(bname)+'</td><td>'+hrfBadge(st.charAt(0).toUpperCase()+st.slice(1),col)+'</td>'+
-          '<td style="font-family:var(--mono);font-size:12px">'+hxe(rec.in||'—')+'</td>'+
-          '<td style="font-family:var(--mono);font-size:12px">'+hxe(rec.out||'—')+'</td></tr>';
+        var dayMap={};
+        // tsAtt structure: att[empId][YYYY-MM] = [{date,status,...}]
+        var empAtt=att[String(m.id)]||att[m.name]||{};
+        var moRecs=empAtt[selMonth]||[];
+        moRecs.forEach(function(r){if(r.date)dayMap[r.date.slice(-2)]=r;});
+        // Also check flat day keys under att[YYYY-MM][empId]
+        var dayKeys=att[selMonth]||{};
+        var flatRec=dayKeys[String(m.id)]||dayKeys[m.name];
+        if(flatRec&&flatRec.status){var dd=selMonth+'-01';dayMap['01']=flatRec;}
+
+        var totP=0,totL=0,totA=0,totAbsent=0,totSick=0,totHol=0,totOff=0;
+        for(var di=1;di<=totalDays;di++){
+          var ds=String(di<10?'0'+di:di);
+          var r=dayMap[ds];
+          var st=r?r.status:'';
+          if(st==='present')totP++;
+          else if(st==='late')totL++;
+          else if(st==='absent')totAbsent++;
+          else if(st==='sick')totSick++;
+          else if(st==='holiday')totHol++;
+          else if(st==='dayoff')totOff++;
+        }
+        var totalRecorded=totP+totL+totAbsent+totSick+totHol+totOff;
+        var deductDays=totAbsent+totL; // days to potentially deduct
+        empRows.push({m:m,bname:bname,branchId:b.id,dayMap:dayMap,totP:totP,totL:totL,totAbsent:totAbsent,totSick:totSick,totHol:totHol,totOff:totOff,totalRecorded:totalRecorded,deductDays:deductDays});
       });
     });
+
+    // Summary totals
+    var grandP=0,grandL=0,grandA=0,grandS=0,grandOff=0;
+    empRows.forEach(function(r){grandP+=r.totP;grandL+=r.totL;grandA+=r.totAbsent;grandS+=r.totSick;grandOff+=r.totOff+r.totHol;});
+    var deductionList=empRows.filter(function(r){return r.totAbsent>0||r.totL>0;});
+
     var INP='padding:7px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:var(--font);font-size:13px;outline:none';
-    var h=hrfHeader('Attendance','All branches \u00b7 '+viewDate,
-      '<input type="date" value="'+hxe(viewDate)+'" style="'+INP+'" onchange="NX._hrfAttDate=this.value;navTo(\'hrf-attendance\')">');
-    h+='<div class="hrf-kpi-grid" style="grid-template-columns:repeat(4,1fr)">';
-    h+=hrfKpi('&#x2705;','Present',totP,viewDate,'#00e5ff');
-    h+=hrfKpi('&#x23F0;','Late',totL,'Clocked in late','#ffd166');
-    h+=hrfKpi('&#x274C;','Absent',totA,'No check-in','#f87171');
-    h+=hrfKpi('&#x1F535;','Day Off',totOff,'Holiday/Day off','#a78bfa');
+
+    // Build month picker options (last 12 months)
+    var moOpts='';
+    for(var mi=0;mi<12;mi++){
+      var d2=new Date(curYear,curMonth-1-mi,1);
+      var ym=d2.getFullYear()+'-'+(d2.getMonth()+1<10?'0':'')+(d2.getMonth()+1);
+      var lbl=['January','February','March','April','May','June','July','August','September','October','November','December'][d2.getMonth()]+' '+d2.getFullYear();
+      moOpts+='<option value="'+ym+'"'+(ym===selMonth?' selected':'')+'>'+lbl+'</option>';
+    }
+    var h=hrfHeader('Attendance \u2014 Monthly Report',moLabel+' \u00b7 All branches',
+      '<select style="'+INP+'" onchange="NX._hrfAttMonth=this.value;navTo(\'hrf-attendance\')">'+moOpts+'</select>');
+
+    // KPI row
+    h+='<div class="hrf-kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px">';
+    h+=hrfKpi('\u2705','Present',grandP,'Days worked','#00e5ff');
+    h+=hrfKpi('\u23f0','Late',grandL,'Late arrivals','#ffd166');
+    h+=hrfKpi('\u274c','Absent',grandA,'Unexcused absent','#f87171');
+    h+=hrfKpi('\ud83e\udd12','Sick Leave',grandS,'Medical leave','#f97316');
+    h+=hrfKpi('\ud83d\udcb8','For Deduction',deductionList.length,'Staff with cuts','#e879f9');
     h+='</div>';
-    if(!rows)h+='<div class="empty-state"><div class="es-icon">&#x1F4C5;</div><h3>No data for '+hxe(viewDate)+'</h3></div>';
-    else h+=hrfTable(['Name','Dept','Branch','Status','Check-In','Check-Out'],rows);
+
+    // View toggle tabs
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">';
+    h+='<div class="hrf-tab-bar" style="margin-bottom:0">';
+    h+='<button class="hrf-tab-btn hr-tab'+(filterMode==='deductions'?' active':'')+'" onclick="NX._hrfAttFilter=\'deductions\';navTo(\'hrf-attendance\')">&#x1F4B8; Deductions Only ('+deductionList.length+')</button>';
+    h+='<button class="hrf-tab-btn hr-tab'+(filterMode==='all'?' active':'')+'" onclick="NX._hrfAttFilter=\'all\';navTo(\'hrf-attendance\')">&#x1F4CB; All Staff ('+empRows.length+')</button>';
+    h+='</div>';
+
+    // Send to Finance button
+    if(filterMode==='deductions'&&deductionList.length>0){
+      h+='<button class="btn btn-primary" style="background:linear-gradient(135deg,#7c3aed,#a855f7);border-color:#7c3aed" onclick="hrfSendPayrollToFinance(\''+hxe(selMonth)+'\',\''+hxe(moLabel)+'\')">&#x1F4E4; Send to Finance</button>';
+    }
+    h+='</div>';
+
+    var displayRows=filterMode==='deductions'?deductionList:empRows;
+
+    if(!displayRows.length){
+      h+='<div class="empty-state"><div class="es-icon">'+(filterMode==='deductions'?'\u2705':'\ud83d\udcc5')+'</div><h3>'+(filterMode==='deductions'?'No deductions this month \u2014 all staff present!':'No attendance data for '+moLabel)+'</h3></div>';
+      return h;
+    }
+
+    // ── DEDUCTIONS VIEW: clean payroll-cut table ──
+    if(filterMode==='deductions'){
+      h+='<div style="background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.2);border-radius:12px;padding:16px;margin-bottom:16px">';
+      h+='<div style="font-size:11px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">&#x26A0;&#xFE0F; Payroll Deduction Summary \u2014 '+hxe(moLabel)+'</div>';
+      h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+      h+='<thead><tr style="background:rgba(248,113,113,.1)">';
+      ['#','Employee','Department','Branch','Absent Days','Late Days','Total Days to Review','Salary (if set)','Deduction Basis'].forEach(function(col,i){
+        h+='<th style="padding:9px 10px;text-align:'+(i>3?'center':'left')+';font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-secondary);border-bottom:1px solid rgba(248,113,113,.2);white-space:nowrap">'+col+'</th>';
+      });
+      h+='</tr></thead><tbody>';
+      deductionList.forEach(function(row,idx){
+        var salary=row.m.salary||row.m.basicSalary||0;
+        var perDay=salary?Math.round(salary/30):0;
+        var deductAmt=perDay?(row.totAbsent+row.totL)*perDay:0;
+        var evenRow=idx%2===0;
+        h+='<tr style="background:'+(evenRow?'transparent':'rgba(248,113,113,.03)')+';transition:background .15s" onmouseover="this.style.background=\'rgba(248,113,113,.08)\'" onmouseout="this.style.background=\''+(evenRow?'transparent':'rgba(248,113,113,.03)')+'\'">'+
+          '<td style="padding:9px 10px;color:var(--text-tertiary);font-size:11px">'+( idx+1)+'</td>'+
+          '<td style="padding:9px 10px"><strong style="color:var(--text-primary)">'+hxe(row.m.name)+'</strong></td>'+
+          '<td style="padding:9px 10px;color:var(--text-secondary)">'+hxe(row.m.dept||'\u2014')+'</td>'+
+          '<td style="padding:9px 10px;color:var(--text-secondary)">'+hxe(row.bname)+'</td>'+
+          '<td style="padding:9px 10px;text-align:center">'+(row.totAbsent>0?'<span style="display:inline-flex;align-items:center;justify-content:center;background:rgba(248,113,113,.15);color:#f87171;font-family:var(--mono);font-weight:700;font-size:13px;border-radius:6px;min-width:28px;height:26px;padding:0 6px">'+row.totAbsent+'</span>':'<span style="color:var(--text-tertiary)">\u2014</span>')+'</td>'+
+          '<td style="padding:9px 10px;text-align:center">'+(row.totL>0?'<span style="display:inline-flex;align-items:center;justify-content:center;background:rgba(255,209,102,.15);color:#ffd166;font-family:var(--mono);font-weight:700;font-size:13px;border-radius:6px;min-width:28px;height:26px;padding:0 6px">'+row.totL+'</span>':'<span style="color:var(--text-tertiary)">\u2014</span>')+'</td>'+
+          '<td style="padding:9px 10px;text-align:center"><span style="display:inline-flex;align-items:center;justify-content:center;background:rgba(232,121,249,.12);color:#e879f9;font-family:var(--mono);font-weight:700;font-size:14px;border-radius:6px;min-width:28px;height:26px;padding:0 8px">'+(row.totAbsent+row.totL)+'</span></td>'+
+          '<td style="padding:9px 10px;text-align:center;font-family:var(--mono);color:var(--payroll-color);font-size:12px">'+(salary?hfsar(salary):'\u2014')+'</td>'+
+          '<td style="padding:9px 10px;text-align:center">'+(deductAmt?'<span style="color:#f87171;font-family:var(--mono);font-weight:700">-'+hfsar(deductAmt)+'</span>':'<span style="color:var(--text-tertiary);font-size:11px">Review needed</span>')+'</td>'+
+          '</tr>';
+      });
+      h+='</tbody></table></div>';
+      h+='<div style="margin-top:10px;font-size:11px;color:var(--text-tertiary)">&#x2139;&#xFE0F; Deduction amounts are estimates based on salary \u00f7 30 per day. Final payroll amounts must be confirmed by HR before sending to Finance.</div>';
+      h+='</div>';
+
+      // HR Approval + send section
+      h+='<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">';
+      h+='<div><div style="font-weight:700;color:var(--text-primary);margin-bottom:3px">Ready for Payroll Processing?</div><div style="font-size:12px;color:var(--text-tertiary)">Review the deductions above, then send to Finance to process salary deposits.</div></div>';
+      h+='<div style="display:flex;gap:8px">';
+      h+='<button class="btn" onclick="hrfPrintPayrollReport(\''+hxe(selMonth)+'\',\''+hxe(moLabel)+'\')" style="gap:6px">&#x1F5A8;&#xFE0F; Print Report</button>';
+      h+='<button class="btn btn-primary" style="background:linear-gradient(135deg,#7c3aed,#a855f7);border-color:#7c3aed;gap:6px" onclick="hrfSendPayrollToFinance(\''+hxe(selMonth)+'\',\''+hxe(moLabel)+'\')">&#x1F4E4; Send to Finance</button>';
+      h+='</div></div>';
+      return h;
+    }
+
+    // ── ALL STAFF VIEW: monthly calendar grid ──
+    // Header row with day numbers
+    var colW=Math.max(22,Math.floor(480/totalDays));
+    h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px;min-width:700px">';
+    h+='<thead><tr style="background:var(--surface-2)">';
+    h+='<th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);border-bottom:1px solid var(--border);white-space:nowrap;min-width:140px">Employee</th>';
+    h+='<th style="padding:9px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);border-bottom:1px solid var(--border);white-space:nowrap">Branch</th>';
+    for(var di=1;di<=totalDays;di++){
+      var ds=String(di<10?'0'+di:di);
+      var dl=dayLabel(selMonth,di);
+      var isWknd=(dl==='Fr'||dl==='Sa');
+      h+='<th style="padding:5px 2px;text-align:center;font-size:9px;color:'+(isWknd?'var(--text-secondary)':'var(--text-tertiary)')+';border-bottom:1px solid var(--border);width:'+colW+'px;min-width:'+colW+'px">'+
+        '<div style="font-weight:700;line-height:1.1">'+di+'</div><div style="font-size:8px;opacity:.7">'+dl+'</div></th>';
+    }
+    h+='<th style="padding:9px 6px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#00e5ff;border-bottom:1px solid var(--border);white-space:nowrap">P</th>';
+    h+='<th style="padding:9px 6px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#ffd166;border-bottom:1px solid var(--border);white-space:nowrap">L</th>';
+    h+='<th style="padding:9px 6px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#f87171;border-bottom:1px solid var(--border);white-space:nowrap">A</th>';
+    h+='</tr></thead><tbody>';
+
+    displayRows.forEach(function(row,idx){
+      var evenRow=idx%2===0;
+      h+='<tr style="background:'+(evenRow?'transparent':'rgba(255,255,255,.02)')+'" onmouseover="this.style.background=\'rgba(255,255,255,.05)\'" onmouseout="this.style.background=\''+(evenRow?'transparent':'rgba(255,255,255,.02)')+'\'">'+
+        '<td style="padding:7px 12px;border-bottom:1px solid var(--border)"><div style="font-weight:600;color:var(--text-primary);white-space:nowrap">'+hxe(row.m.name)+'</div><div style="font-size:9px;color:var(--text-tertiary)">'+hxe(row.m.dept||'')+'</div></td>'+
+        '<td style="padding:7px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text-secondary);white-space:nowrap">'+hxe(row.bname)+'</td>';
+      for(var di=1;di<=totalDays;di++){
+        var ds=String(di<10?'0'+di:di);
+        var r=row.dayMap[ds];
+        var st=r?r.status:'';
+        var dl2=dayLabel(selMonth,di);
+        var isWknd2=(dl2==='Fr'||dl2==='Sa');
+        var cellBg=isWknd2?'rgba(255,255,255,.03)':'transparent';
+        if(st){var col=SC[st]||'#94a3b8';var lbl=SLAB[st]||'?';
+          h+='<td style="padding:3px 2px;text-align:center;border-bottom:1px solid var(--border);background:'+cellBg+'"><span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;background:'+col+'22;color:'+col+';font-size:9px;font-weight:800">'+lbl+'</span></td>';
+        }else{
+          h+='<td style="padding:3px 2px;text-align:center;border-bottom:1px solid var(--border);background:'+cellBg+';color:var(--text-tertiary);font-size:9px">\u2013</td>';
+        }
+      }
+      h+='<td style="padding:7px 6px;text-align:center;border-bottom:1px solid var(--border);font-family:var(--mono);color:#00e5ff;font-weight:700;font-size:11px">'+row.totP+'</td>';
+      h+='<td style="padding:7px 6px;text-align:center;border-bottom:1px solid var(--border);font-family:var(--mono);color:#ffd166;font-weight:700;font-size:11px">'+(row.totL||'\u2014')+'</td>';
+      h+='<td style="padding:7px 6px;text-align:center;border-bottom:1px solid var(--border);font-family:var(--mono);color:#f87171;font-weight:700;font-size:11px">'+(row.totAbsent||'\u2014')+'</td>';
+      h+='</tr>';
+    });
+    h+='</tbody></table></div>';
+    h+='<div style="margin-top:10px;display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--text-tertiary)">';
+    [{l:'P = Present',c:'#00e5ff'},{l:'L = Late',c:'#ffd166'},{l:'A = Absent',c:'#f87171'},{l:'S = Sick',c:'#f97316'},{l:'H = Holiday',c:'#a78bfa'},{l:'D = Day Off',c:'#34d399'}].forEach(function(x){
+      h+='<span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+x.c+'44;border:1px solid '+x.c+'66"></span>'+x.l+'</span>';
+    });
+    h+='</div>';
     return h;
   }
+
   var cSt=branches.filter(function(b){return HRF.staff[b.id];}).length;
   var cAt=branches.filter(function(b){return HRF.att[b.id];}).length;
   if(cSt===branches.length&&cAt===branches.length)return renderAtt();
@@ -8896,6 +9052,51 @@ function pHrfAttendance(){
   if(cSt<branches.length)hrfLoadAll('staff','staff',check);else check();
   if(cAt<branches.length)hrfLoadAll('tsAtt','att',check);else check();
   return hrfLoading('Loading attendance\u2026');
+}
+
+function hrfSendPayrollToFinance(month,moLabel){
+  var branches=hrfBranches();
+  var deductions=[];
+  branches.forEach(function(b){
+    var staff=HRF.staff[b.id]||[],att=HRF.att[b.id]||{};
+    var bname=(NX_BRANCHES[b.id]||{}).name||b.id;
+    staff.forEach(function(m){
+      var empAtt=att[String(m.id)]||att[m.name]||{};
+      var moRecs=empAtt[month]||[];
+      var totL=0,totA=0;
+      moRecs.forEach(function(r){if(r.status==='absent')totA++;else if(r.status==='late')totL++;});
+      if(totA>0||totL>0)deductions.push({name:m.name,dept:m.dept||'',branch:bname,absent:totA,late:totL,salary:m.salary||m.basicSalary||0});
+    });
+  });
+  var payload={month:month,label:moLabel,submittedBy:NX.session&&NX.session.userName||'HR',submittedAt:new Date().toISOString(),deductions:deductions,status:'pending_finance'};
+  var db=firebase.database();
+  db.ref('admin/payrollReports/'+month).set(payload).then(function(){
+    showToast('\u2705 Payroll report sent to Finance for '+moLabel,'success');
+  }).catch(function(e){showToast('Error: '+e.message,'error');});
+}
+
+function hrfPrintPayrollReport(month,moLabel){
+  var branches=hrfBranches();
+  var deductions=[];
+  branches.forEach(function(b){
+    var staff=HRF.staff[b.id]||[],att=HRF.att[b.id]||{};
+    var bname=(NX_BRANCHES[b.id]||{}).name||b.id;
+    staff.forEach(function(m){
+      var empAtt=att[String(m.id)]||att[m.name]||{};
+      var moRecs=empAtt[month]||[];
+      var totL=0,totA=0;
+      moRecs.forEach(function(r){if(r.status==='absent')totA++;else if(r.status==='late')totL++;});
+      if(totA>0||totL>0){var sal=m.salary||m.basicSalary||0;var perDay=sal?Math.round(sal/30):0;deductions.push({name:m.name,dept:m.dept||'',branch:bname,absent:totA,late:totL,salary:sal,est:perDay?(totA+totL)*perDay:0});}
+    });
+  });
+  var rows=deductions.map(function(r,i){return '<tr style="background:'+(i%2===0?'#fff':'#f8fafc')+'"><td style="padding:8px 10px">'+i+1+'</td><td style="padding:8px 10px;font-weight:600">'+r.name+'</td><td style="padding:8px 10px">'+r.dept+'</td><td style="padding:8px 10px">'+r.branch+'</td><td style="padding:8px 10px;text-align:center;color:#dc2626;font-weight:700">'+r.absent+'</td><td style="padding:8px 10px;text-align:center;color:#d97706;font-weight:700">'+r.late+'</td><td style="padding:8px 10px;text-align:center;font-weight:700;color:#7c3aed">'+(r.absent+r.late)+'</td><td style="padding:8px 10px;font-family:monospace">'+( r.salary?'SAR '+r.salary.toLocaleString():'\u2014')+'</td><td style="padding:8px 10px;color:#dc2626;font-weight:700;font-family:monospace">'+(r.est?'-SAR '+r.est.toLocaleString():'Review')+'</td></tr>';}).join('');
+  var sess=NX.session||{};
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Payroll Deduction Report \u2014 '+moLabel+'</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}body{background:#fff;color:#111;font-size:12px}table{width:100%;border-collapse:collapse}th{background:#1a2340;color:#fff;padding:8px 10px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:1px}.c{text-align:center}.foot{margin-top:24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px}.foot-cell{border-top:1px solid #333;padding-top:6px;text-align:center;font-size:9px;color:#64748b}</style></head><body>';
+  html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10px;margin-bottom:18px;border-bottom:3px solid #1a2340"><div><div style="font-size:22px;font-weight:900;color:#1a2340">ALFA.CO</div><div style="font-size:11px;color:#64748b">Human Resources</div></div><div style="text-align:center"><h1 style="font-size:18px;font-weight:900;color:#dc2626">PAYROLL DEDUCTION REPORT</h1><p style="font-size:12px;color:#64748b;margin-top:3px">'+moLabel+' \u00b7 Submitted by '+sess.userName+'</p></div><div style="text-align:right;font-size:10px;color:#64748b"><div>Printed: '+new Date().toLocaleDateString('en-GB')+'</div><div style="margin-top:3px;color:#dc2626;font-weight:700">CONFIDENTIAL</div></div></div>';
+  html+='<table><thead><tr><th>#</th><th>Employee</th><th>Dept</th><th>Branch</th><th class="c">Absent Days</th><th class="c">Late Days</th><th class="c">Total</th><th>Basic Salary</th><th>Est. Deduction</th></tr></thead><tbody>'+(rows||'<tr><td colspan="9" style="padding:20px;text-align:center;color:#94a3b8">No deductions this month</td></tr>')+'</tbody></table>';
+  html+='<div class="foot"><div class="foot-cell">HR Manager Signature &amp; Date</div><div class="foot-cell">Finance Director Signature &amp; Date</div><div class="foot-cell">CEO Approval</div></div>';
+  html+='<div style="text-align:center;margin-top:20px"><button onclick="window.print()" style="background:#1a2340;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer">Print / Save PDF</button></div></body></html>';
+  var w=window.open('','_blank','width=1050,height=700');if(w){w.document.write(html);w.document.close();}else showToast('Allow pop-ups to print','error');
 }
 
 // ── LEAVE MANAGEMENT ──
@@ -9032,7 +9233,7 @@ function pHrfHealth(){
         '<td>'+hxe(exp||'—')+'</td><td>'+badge+'</td></tr>';
     });
     if(!rows)h+='<div class="empty-state"><div class="es-icon">&#x1F4B3;</div><h3>No health cards</h3></div>';
-    else h+=hrfTable(['Name','Branch','Dept','Card No.','Expiry','Status'],rows);
+    else h+=hrfTable(['Name','Branch','Dept','Card No.','Expiry Date','Days Left'],rows);
     return h;
   }
   var cached=branches.filter(function(b){return HRF.health[b.id];});
