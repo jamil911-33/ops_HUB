@@ -5111,7 +5111,7 @@ function attachBranchListeners() {
       merged.push({code:c.code||k,name:c.name,unit:c.unit||'EA',location:c.location||'Dry Storage',min:parseFloat(c.min)||0,price:parseFloat(c.price)||0,supplier:c.supplier||'',qty:parseFloat(s.qty)||0});
     });
     bItems=merged;
-    if(NX.page==='inv-items'||NX.page==='branch-dash'||NX.page==='low-stock'||NX.page==='inv-report') {
+    if(NX.page==='inv-items'||NX.page==='branch-dash'||NX.page==='low-stock'||NX.page==='inv-report'||NX.page==='inv-orders') {
       var area=document.getElementById('page-area');if(area){area.innerHTML=renderPage_(NX.page);setTimeout(function(){initPageCharts(NX.page);},50);}
     }
   }
@@ -5993,8 +5993,12 @@ function pOrdersMarketNX() {
     return true;
   }).sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
 
+  if (!bItems.length) {
+    h += '<div style="text-align:center;padding:60px;color:var(--text-tertiary)"><div style="font-size:36px;margin-bottom:10px">&#x23F3;</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Loading inventory catalog…</div><div style="font-size:11px">Items will appear once the catalog loads from Firebase</div></div>';
+    return h;
+  }
   if (!filtered.length) {
-    h += '<div style="text-align:center;padding:60px;color:var(--text-tertiary)"><div style="font-size:36px;margin-bottom:10px">🛒</div><div>No items match filters</div></div>';
+    h += '<div style="text-align:center;padding:60px;color:var(--text-tertiary)"><div style="font-size:36px;margin-bottom:10px">&#x1F6D2;</div><div>No items match your filters. Try clearing the search or supplier filter.</div></div>';
     return h;
   }
 
