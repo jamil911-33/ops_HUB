@@ -2859,20 +2859,17 @@ function launchApp() {
   // Restore last visited page if it belongs to this role
   var lastPage = null;
   try { lastPage = localStorage.getItem('nx_last_page'); } catch(e) {}
-  var validPages = Object.keys(PAGE_MAP || {});
-  if (lastPage && validPages.length && validPages.indexOf(lastPage) >= 0) {
-    // Only restore if the page is accessible (role check via NAV_CONFIG)
+  var restored = false;
+  if (lastPage) {
     var roleNav = NAV_CONFIG[role] || [];
     var allNavIds = [];
     roleNav.forEach(function(sec){ (sec.items||[]).forEach(function(it){ allNavIds.push(it.id); }); });
     if (allNavIds.indexOf(lastPage) >= 0) {
       navTo(lastPage);
-    } else {
-      navTo(defaultPages[role] || 'exec-dash');
+      restored = true;
     }
-  } else {
-    navTo(defaultPages[role] || 'exec-dash');
   }
+  if (!restored) navTo(defaultPages[role] || 'exec-dash');
   NX.lastSync = Date.now();
 }
 
