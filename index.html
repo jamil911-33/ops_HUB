@@ -1725,9 +1725,6 @@ var NAV_CONFIG = {
       { id:'bm-invoices',       icon:'📄', label:'Invoices' },
       { id:'bm-leave',          icon:'🏖️', label:'Leave Management', badge:'bm-leave-pending' }
     ]},
-    { section:'PAYROLL', items:[
-      { id:'bm-payroll',        icon:'💸', label:'Payroll Submit' }
-    ]},
     { section:'COMMUNICATIONS', items:[
       { id:'bm-announcements',  icon:'📢', label:'Announcements', badge:'bm-ann-unread' }
     ]}
@@ -6273,7 +6270,14 @@ function pOrdersMarketNX() {
   }).sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
 
   if (!bItems.length) {
-    h += '<div style="text-align:center;padding:60px;color:var(--text-tertiary)"><div style="font-size:36px;margin-bottom:10px">&#x23F3;</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Loading inventory catalog…</div><div style="font-size:11px">Items will appear once the catalog loads from Firebase</div></div>';
+    h += '<div style="text-align:center;padding:60px 20px;color:var(--text-tertiary)">';
+    h += '<div style="font-size:36px;margin-bottom:10px">&#x1F4E6;</div>';
+    h += '<div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text-primary)">No inventory items available</div>';
+    h += '<div style="font-size:12px;line-height:1.6;max-width:420px;margin:0 auto 16px">The shared inventory catalog (<code style="background:var(--surface-2);padding:2px 6px;border-radius:4px;font-family:var(--mono)">shared/inv_items</code>) is empty or still loading. Items are populated from OpsHub. If you just logged in, wait a few seconds and refresh.</div>';
+    h += '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">';
+    h += '<button onclick="navTo(\'inv-orders\')" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-primary);font-size:12px;font-weight:600;cursor:pointer">&#x21BB; Reload</button>';
+    h += '<button onclick="navTo(\'inv-items\')" style="padding:8px 18px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#000;font-size:12px;font-weight:700;cursor:pointer">+ Add Items</button>';
+    h += '</div></div>';
     return h;
   }
   if (!filtered.length) {
@@ -6480,6 +6484,8 @@ function delBranchWaste(id){if(!confirm('Delete this wastage entry?'))return;BS.
 // ── Staff ─────────────────────────────────────────────
 function pStaff() {
   attachBranchListeners();
+  var sess=NX.session||{};
+  var canEdit=(sess.role==='hr_manager'||sess.role==='super_admin'||sess.role==='ceo');
   var now=new Date(),todayName=DAYS_WEEK[now.getDay()];
   var act=0,lv=0,oth=0;BS.staff.forEach(function(m){if(m.status==='Active')act++;else if(m.status==='On Leave')lv++;else oth++;});
   var dbt='';['All'].concat(DEPTS).forEach(function(d){dbt+='<button class="bfbt'+(BS.fd===d?' on':'')+'" onclick="BS.fd=\''+d+'\';navTo(\'staff\')">'+bxe(d)+'</button>';});
@@ -6492,18 +6498,33 @@ function pStaff() {
     var wk2=bweekKey(),sc2=BS.sch[wk2]||{},ms=sc2[m.id]||{};
     var todayShift=ms[todayName]||m.shift||'\u2014';
     var shCol=todayShift.toUpperCase()==='OFF'||todayShift.toUpperCase()==='DAY OFF'?'var(--text-tertiary)':'var(--ceo)';
-    rows+='<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="bav">'+bini(m.name)+'</div><div><div style="font-weight:600;font-size:12px">'+bxe(m.name)+'</div><div style="font-size:10px;color:var(--text-tertiary)">'+bxe(m.role||'No role')+'</div></div></div></td><td>'+bpl(m.dept||'\u2014',bdc(m.dept||'FOH'))+'</td><td class="bmono" style="color:'+shCol+';font-size:12px;font-weight:600">'+bxe(todayShift)+'</td><td>'+bpl(m.status,sc)+'</td><td class="bmono" style="color:var(--text-tertiary);font-size:11px">'+bxe(m.sap||'\u2014')+'</td><td style="font-size:11px">'+(m.phone?'<a href="tel:'+bxe(m.phone)+'" style="color:var(--ceo);text-decoration:none">'+bxe(m.phone)+'</a>':'<span style="color:var(--text-tertiary)">\u2014</span>')+'</td><td><div style="display:flex;gap:4px"><button class="btn btn-sm" onclick="openBranchStaffModal(\''+bxe(m.id)+'\')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchStaff(\''+bxe(m.id)+'\')">Del</button><button class="btn btn-sm" style="color:#c084fc" data-staffid="'+bxe(m.id)+'" onclick="openNXTransferStaffModal(this.dataset.staffid)">Transfer</button></div></td></tr>';
+    var actionsHtml;
+    if(canEdit){
+      actionsHtml='<div style="display:flex;gap:4px"><button class="btn btn-sm" onclick="openBranchStaffModal(\''+bxe(m.id)+'\')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchStaff(\''+bxe(m.id)+'\')">Del</button><button class="btn btn-sm" style="color:#c084fc" data-staffid="'+bxe(m.id)+'" onclick="openNXTransferStaffModal(this.dataset.staffid)">Transfer</button></div>';
+    } else {
+      // Branch Manager: read-only + transfer request only
+      actionsHtml='<div style="display:flex;gap:4px"><button class="btn btn-sm" style="color:#c084fc" data-staffid="'+bxe(m.id)+'" onclick="openNXTransferStaffModal(this.dataset.staffid)">Transfer</button></div>';
+    }
+    rows+='<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="bav">'+bini(m.name)+'</div><div><div style="font-weight:600;font-size:12px">'+bxe(m.name)+'</div><div style="font-size:10px;color:var(--text-tertiary)">'+bxe(m.role||'No role')+'</div></div></div></td><td>'+bpl(m.dept||'\u2014',bdc(m.dept||'FOH'))+'</td><td class="bmono" style="color:'+shCol+';font-size:12px;font-weight:600">'+bxe(todayShift)+'</td><td>'+bpl(m.status,sc)+'</td><td class="bmono" style="color:var(--text-tertiary);font-size:11px">'+bxe(m.sap||'\u2014')+'</td><td style="font-size:11px">'+(m.phone?'<a href="tel:'+bxe(m.phone)+'" style="color:var(--ceo);text-decoration:none">'+bxe(m.phone)+'</a>':'<span style="color:var(--text-tertiary)">\u2014</span>')+'</td><td>'+actionsHtml+'</td></tr>';
   });
   var h='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap"><span style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.1em">Dept</span><div style="display:flex;gap:4px">'+dbt+'</div>';
   h+='<select class="bfi" style="width:auto" id="bstaff-rf"><option value="All">All Roles</option>'+ROLES.map(function(r){return '<option value="'+bxe(r)+'"'+(BS._roleFilter===r?' selected':'')+'>'+bxe(r)+'</option>';}).join('')+'</select>';
   h+='<button class="btn btn-sm" onclick="BS._roleFilter=\'All\';navTo(\'staff\')">Clear</button></div>';
   h+='<div class="bgrid-4" style="margin-bottom:14px"><div class="bsc"><div class="bsc-lbl">Total</div><div class="bsc-val bca">'+BS.staff.length+'</div></div><div class="bsc"><div class="bsc-lbl">Active</div><div class="bsc-val bcg">'+act+'</div></div><div class="bsc"><div class="bsc-lbl">On Leave</div><div class="bsc-val bcr">'+lv+'</div></div><div class="bsc"><div class="bsc-lbl">Other</div><div class="bsc-val" style="color:var(--text-secondary)">'+oth+'</div></div></div>';
-  h+='<div class="header-actions"><div></div><button class="btn btn-primary" onclick="openBranchStaffModal(null)">+ Add Staff</button></div>';
+  if(canEdit){
+    h+='<div class="header-actions"><div></div><button class="btn btn-primary" onclick="openBranchStaffModal(null)">+ Add Staff</button></div>';
+  } else {
+    h+='<div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.25);border-radius:9px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:10px"><span style="font-size:16px">&#x1F512;</span><div>Adding, editing, and removing staff is managed by HR. Use <strong>Transfer</strong> to request a staff move between branches.</div></div>';
+  }
   h+='<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Name / Role</th><th>Dept</th><th>Shift ('+bxe(todayName)+')</th><th>Status</th><th>SAP #</th><th>Phone</th><th>Actions</th></tr></thead><tbody>'+(rows||'<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:28px">No staff found</td></tr>')+'</tbody></table></div></div>';
   setTimeout(function(){var rf=document.getElementById('bstaff-rf');if(rf)rf.onchange=function(){BS._roleFilter=this.value;navTo('staff');};},0);
   return h;
 }
 function openBranchStaffModal(id){
+  var sess=NX.session||{};
+  if(sess.role!=='hr_manager'&&sess.role!=='super_admin'&&sess.role!=='ceo'){
+    showToast('Only HR can add or edit staff','error');return;
+  }
   var m=id?BS.staff.find(function(x){return x.id===id;}):null;
   var now=new Date(); var mkey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   var kpi=m&&m.kpiScores&&m.kpiScores[mkey]!==undefined?m.kpiScores[mkey]:'';
@@ -6519,6 +6540,10 @@ function openBranchStaffModal(id){
   openModal(html);
 }
 function saveBranchStaff(id){
+  var sess=NX.session||{};
+  if(sess.role!=='hr_manager'&&sess.role!=='super_admin'&&sess.role!=='ceo'){
+    showToast('Only HR can save staff changes','error');closeModalForce();return;
+  }
   var name=bgv('bst-name'),dept=bgv('bst-dept');
   if(!name||!dept){showToast('Name and department required','error');return;}
   var now=new Date(); var mkey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
@@ -6539,7 +6564,7 @@ function saveBranchStaff(id){
   }
   bSaveColl('staff',BS.staff);bsyncTSFromStaff();closeModalForce();navTo('staff');
 }
-function delBranchStaff(id){if(!confirm('Delete this staff member?'))return;BS.staff=BS.staff.filter(function(m){return m.id!==id;});bSaveColl('staff',BS.staff);showToast('Staff deleted');navTo('staff');}
+function delBranchStaff(id){var sess=NX.session||{};if(sess.role!=='hr_manager'&&sess.role!=='super_admin'&&sess.role!=='ceo'){showToast('Only HR can delete staff','error');return;}if(!confirm('Delete this staff member?'))return;BS.staff=BS.staff.filter(function(m){return m.id!==id;});bSaveColl('staff',BS.staff);showToast('Staff deleted');navTo('staff');}
 function openNXTransferStaffModal(staffId) {
   var staff = BS.staff.find(function(m){ return m.id === staffId; });
   if (!staff) { showToast('Staff not found','error'); return; }
@@ -7196,6 +7221,7 @@ function pDSR(){
     tabBar+='<button onclick="dsrNav(\''+t[0]+'\')" style="padding:6px 14px;border-radius:8px;border:1px solid '+(act?'var(--accent)':'var(--border)')+';background:'+(act?'var(--accent)':'transparent')+';color:'+(act?'#000':'var(--text-secondary)')+';font-size:11px;font-weight:'+(act?'700':'500')+';cursor:pointer;font-family:var(--font)">'+t[1]+'</button>';
   });
   tabBar+='<button onclick="dsrSave()" style="margin-left:auto;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);font-size:11px;cursor:pointer">💾 Save</button>';
+  tabBar+='<button onclick="dsrEndShift()" style="padding:6px 14px;border-radius:8px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.08);color:#f59e0b;font-size:11px;font-weight:700;cursor:pointer">🌙 End Shift</button>';
   tabBar+='<button onclick="dsrClear()" style="padding:6px 14px;border-radius:8px;border:1px solid rgba(248,113,113,.3);background:transparent;color:var(--danger);font-size:11px;cursor:pointer">⊗ Clear</button>';
   tabBar+='</div>';
 
@@ -7462,9 +7488,9 @@ function pDSR(){
       var qty=parseFloat((D.denoms||{})[dk])||0;
       var sub=qty*parseFloat(d.v);
       body+='<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:10px;text-align:center">';
-      body+='<div style="font-size:9px;color:var(--text-tertiary);margin-bottom:6px">SAR '+d.l+'</div>';
-      body+='<input type="number" min="0" value="'+(qty||'')+'" placeholder="0" oninput="dsrUpdDenom(\''+dk+'\',this.value)" style="'+fi+'text-align:center;font-size:14px;font-weight:700;margin-bottom:4px">';
-      body+='<div style="font-size:10px;color:var(--ceo);font-family:var(--mono)">='+sub.toFixed(2)+'</div>';
+      body+='<div style="font-size:12px;color:var(--text-primary);margin-bottom:6px;font-weight:700">SAR '+d.l+'</div>';
+      body+='<input type="number" min="0" value="'+(qty||'')+'" placeholder="0" oninput="dsrUpdDenom(\''+dk+'\',this.value)" style="'+fi+'text-align:center;font-size:15px;font-weight:700;margin-bottom:5px">';
+      body+='<div style="font-size:12px;color:var(--ceo);font-family:var(--mono);font-weight:700">='+sub.toFixed(2)+'</div>';
       body+='</div>';
     });
     body+='</div></div>';
@@ -7536,7 +7562,7 @@ function pDSR(){
     var DENOMS_MF={have:[{v:'500',l:'500'},{v:'200',l:'200'},{v:'100',l:'100'},{v:'50',l:'50'},{v:'20',l:'20'},{v:'10',l:'10'},{v:'5',l:'5'},{v:'1',l:'1.00'},{v:'0.5',l:'0.50'},{v:'0.25',l:'0.25'}],change:[{v:'100',l:'100'},{v:'50',l:'50'},{v:'20',l:'20'},{v:'10',l:'10'},{v:'5',l:'5'},{v:'1',l:'1.00'}],drawer:[{v:'500',l:'500'},{v:'200',l:'200'},{v:'100',l:'100'},{v:'50',l:'50'},{v:'20',l:'20'},{v:'10',l:'10'},{v:'5',l:'5'},{v:'1',l:'1.00'},{v:'0.5',l:'0.50'},{v:'0.25',l:'0.25'}]};
     function denomGrid(type,denoms){
       var ht='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px">';
-      denoms.forEach(function(d){var dk=type+'_'+d.v.replace('.','_');var qty=parseFloat((D.denoms||{})[dk])||0;var sub=qty*parseFloat(d.v);ht+='<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:var(--text-tertiary);margin-bottom:4px">SAR '+d.l+'</div><input type="number" min="0" value="'+(qty||'')+'" placeholder="0" oninput="dsrUpdDenom(\''+dk+'\',this.value)" style="'+fi+'text-align:center;font-size:13px;font-weight:700;margin-bottom:3px"><div style="font-size:10px;color:var(--ceo);font-family:var(--mono)">='+sub.toFixed(2)+'</div></div>';});
+      denoms.forEach(function(d){var dk=type+'_'+d.v.replace('.','_');var qty=parseFloat((D.denoms||{})[dk])||0;var sub=qty*parseFloat(d.v);ht+='<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center"><div style="font-size:12px;color:var(--text-primary);margin-bottom:6px;font-weight:700">SAR '+d.l+'</div><input type="number" min="0" value="'+(qty||'')+'" placeholder="0" oninput="dsrUpdDenom(\''+dk+'\',this.value)" style="'+fi+'text-align:center;font-size:15px;font-weight:700;margin-bottom:5px"><div style="font-size:12px;color:var(--ceo);font-family:var(--mono);font-weight:700">='+sub.toFixed(2)+'</div></div>';});
       return ht+'</div>';
     }
     var haveTotal=DENOMS_MF.have.reduce(function(a,d){return a+(parseFloat((D.denoms||{})['mfh_'+d.v.replace('.','_')])||0)*parseFloat(d.v);},0);
@@ -7653,17 +7679,55 @@ function dsrUpdDenom(k,v){var D=_dsrD();if(!D.denoms)D.denoms={};D.denoms[k]=v;n
 function dsrSave(){var D=_dsrD();var activeDate=_dsrActiveDate();if(db&&NX.session&&NX.session.branchId){db.ref(dsrFbPath(activeDate)).set(D,function(err){if(err)showToast('Save failed','error');else showToast('DSR saved to Firebase ✓','success');});}else{try{localStorage.setItem('dsr_nexus_'+activeDate,JSON.stringify(D));showToast('DSR saved locally ✓','success');}catch(e){showToast('Save failed','error');}}}
 function dsrClear(){
   var activeDate=_dsrActiveDate();
-  if(!confirm('Clear ALL DSR data for '+activeDate+'?\nThis will also delete from Firebase.'))return;
+  if(!confirm('Clear DSR data for '+activeDate+'?\n\nThis will reset all tabs EXCEPT Master File.\nMaster File company info will be preserved.'))return;
   var s=NX.session||{};
-  var blank={date:activeDate,restName:s.branchName||'',food:'',bev:'',misc:'',vat:'',vatAlfa:'',guests:'',mfCompany:'',discounts:[],payments:[{id:'p1',method:'Cash',amount:''},{id:'p2',method:'MADA',amount:''},{id:'p3',method:'VISA',amount:''},{id:'p4',method:'Qlub',amount:''}],delivery:[],servers:[],closedPetty:[],ongoingPetty:[],safeItems:[],denoms:{},tab:'overview'};
+  var current=BS.dsrState[activeDate]||{};
+  // Preserve Master File data
+  var preservedMF=current.mfCompany||'';
+  var preservedRestName=current.restName||s.branchName||'';
+  var blank={date:activeDate,restName:preservedRestName,food:'',bev:'',misc:'',vat:'',vatAlfa:'',guests:'',mfCompany:preservedMF,discounts:[],payments:[{id:'p1',method:'Cash',amount:''},{id:'p2',method:'MADA',amount:''},{id:'p3',method:'VISA',amount:''},{id:'p4',method:'Qlub',amount:''}],delivery:[],servers:[],closedPetty:[],ongoingPetty:[],safeItems:[],denoms:{},tab:'overview'};
   BS.dsrState[activeDate]=blank;
   if(db&&NX.session&&NX.session.branchId){
-    db.ref(dsrFbPath(activeDate)).remove(function(err){
-      if(err)showToast('Firebase delete failed: '+err.message,'error');
-      else showToast('DSR cleared & deleted from Firebase ✓','success');
+    db.ref(dsrFbPath(activeDate)).set(blank,function(err){
+      if(err)showToast('Firebase save failed: '+err.message,'error');
+      else showToast('DSR cleared (Master File preserved) ✓','success');
     });
   }
   navTo('dsr');
+}
+function dsrEndShift(){
+  var activeDate=_dsrActiveDate();
+  var D=BS.dsrState[activeDate]||{};
+  if(!confirm('End shift for '+activeDate+'?\n\nThis will:\n• Save current DSR to Firebase\n• Mark shift as closed\n• Advance the active date to the next day\n• Carry forward Master File data\n\nNo data will be deleted.'))return;
+  // Mark shift as closed
+  D.shiftClosed=true;
+  D.shiftClosedAt=new Date().toISOString();
+  D.shiftClosedBy=(NX.session&&NX.session.userName)||(NX.session&&NX.session.entityName)||'';
+  BS.dsrState[activeDate]=D;
+  // Save to Firebase
+  if(db&&NX.session&&NX.session.branchId){
+    db.ref(dsrFbPath(activeDate)).set(D,function(err){
+      if(err){showToast('End shift save failed: '+err.message,'error');return;}
+      // Advance to next day
+      var nextDate=new Date(activeDate+'T00:00:00');
+      nextDate.setDate(nextDate.getDate()+1);
+      var nextStr=nextDate.getFullYear()+'-'+String(nextDate.getMonth()+1).padStart(2,'0')+'-'+String(nextDate.getDate()).padStart(2,'0');
+      // Initialize next day with Master File carry-over
+      var s=NX.session||{};
+      BS.dsrState[nextStr]={
+        date:nextStr,restName:D.restName||s.branchName||'',food:'',bev:'',misc:'',vat:'',vatAlfa:'',guests:'',
+        mfCompany:D.mfCompany||'',
+        discounts:[],payments:[{id:'p1',method:'Cash',amount:''},{id:'p2',method:'MADA',amount:''},{id:'p3',method:'VISA',amount:''},{id:'p4',method:'Qlub',amount:''}],
+        delivery:[],servers:[],closedPetty:[],ongoingPetty:[],safeItems:[],denoms:{},tab:'overview'
+      };
+      BS.dsrActiveDate=nextStr;
+      BS._dsrDateChanged=true;
+      showToast('Shift ended. Now editing '+nextStr,'success');
+      navTo('dsr');
+    });
+  } else {
+    showToast('Firebase not connected','error');
+  }
 }
 function dsrPrintFull(){var D=_dsrD();var food=parseFloat(D.food)||0,bev=parseFloat(D.bev)||0,misc=parseFloat(D.misc)||0,vat=parseFloat(D.vat)||0;var totalDisc=(D.discounts||[]).reduce(function(a,d){return a+(parseFloat(d.amount)||0);},0);var netSales=(food+bev+misc)-totalDisc;var totalSales=netSales+vat;var serverCash=(D.servers||[]).reduce(function(a,s){return a+(parseFloat(s.cashSales)||0);},0);var approvedTips=(D.servers||[]).reduce(function(a,s){return a+(s.tips||[]).filter(function(t){return t.status==='approved';}).reduce(function(b,t){return b+(parseFloat(t.amount)||0);},0);},0);var toDeposit=serverCash-approvedTips;var guests=parseInt(D.guests)||0;var checkAvg=guests>0?netSales/guests:0;var dateStr=new Date(D.date+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});var payRows=(D.payments||[]).map(function(p){return '<tr><td>'+bxe(p.method)+'</td><td style="text-align:right">'+(parseFloat(p.amount||0)).toFixed(2)+'</td></tr>';}).join('');var delivRows=(D.delivery||[]).map(function(d){return '<tr><td>'+bxe(d.platform||'—')+'</td><td>'+(d.orders||0)+' orders</td><td style="text-align:right">'+(parseFloat(d.amount||0)).toFixed(2)+'</td></tr>';}).join('');var discRows=(D.discounts||[]).map(function(d){return '<tr><td>'+bxe(d.type||'—')+'</td><td style="text-align:right">'+(parseFloat(d.amount||0)).toFixed(2)+'</td></tr>';}).join('');var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>DSR - '+(D.restName||'')+'</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;padding:20px;color:#111;font-size:11px}@page{size:A4;margin:8mm}@media print{button{display:none!important}}h2{font-size:18px;font-weight:800;color:#1a2340}table{width:100%;border-collapse:collapse;margin-bottom:10px}th{background:#1a2340;color:#fff;padding:6px 8px;text-align:left;font-size:9px;text-transform:uppercase}td{padding:6px 8px;border-bottom:1px solid #eee}.amt{text-align:right;font-family:monospace;font-weight:600}.sig-row{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin-top:24px}.sig-box{border-top:1px solid #333;padding-top:4px;text-align:center;font-size:9px;color:#666}</style></head><body>';html+='<div style="display:flex;justify-content:space-between;border-bottom:3px solid #1a2340;padding-bottom:10px;margin-bottom:16px"><div><div style="font-size:20px;font-weight:900;color:#1a2340">ALFA.CO</div><div style="font-size:11px;color:#888">'+bxe(D.restName||'')+'</div></div><div style="text-align:right"><div style="font-size:16px;font-weight:800;color:#1a2340">DAILY SALES REPORT</div><div style="font-size:10px;color:#666">'+dateStr+'</div></div></div>';html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px"><table><thead><tr><th colspan="2">Sales Summary</th></tr></thead><tbody><tr><td>Food + Bev + MISC</td><td class="amt">'+(food+bev+misc).toFixed(2)+'</td></tr><tr><td>(-) Discounts</td><td class="amt">('+totalDisc.toFixed(2)+')</td></tr><tr style="font-weight:700;background:#f5f5f5"><td>= Net Sales</td><td class="amt">'+netSales.toFixed(2)+'</td></tr><tr><td>+ System VAT</td><td class="amt">'+vat.toFixed(2)+'</td></tr><tr style="font-weight:700;background:#e8f0fe"><td>= Total Sales</td><td class="amt">'+totalSales.toFixed(2)+'</td></tr></tbody></table>';html+='<table><thead><tr><th colspan="2">Cash Reconciliation</th></tr></thead><tbody><tr><td>Guest Count</td><td class="amt">'+guests+'</td></tr><tr><td>Check Average</td><td class="amt">'+checkAvg.toFixed(2)+'</td></tr><tr><td>Server Cash Total</td><td class="amt">'+serverCash.toFixed(2)+'</td></tr><tr><td>(-) Credit Tips Paid</td><td class="amt">('+approvedTips.toFixed(2)+')</td></tr><tr style="font-weight:700;background:#e8f5e9"><td>Amount to Deposit</td><td class="amt">'+toDeposit.toFixed(2)+'</td></tr></tbody></table></div>';html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px"><table><thead><tr><th colspan="2">Payment Methods</th></tr></thead><tbody>'+(payRows||'<tr><td colspan="2">None</td></tr>')+'</tbody></table><table><thead><tr><th colspan="3">Delivery</th></tr></thead><tbody>'+(delivRows||'<tr><td colspan="3">None</td></tr>')+'</tbody></table><table><thead><tr><th colspan="2">Discounts</th></tr></thead><tbody>'+(discRows||'<tr><td colspan="2">None</td></tr>')+'</tbody></table></div>';html+='<div class="sig-row"><div class="sig-box">Manager</div><div class="sig-box">Cashier / Supervisor</div><div class="sig-box">Date & Stamp</div></div>';html+='<div style="text-align:center;margin-top:16px"><button onclick="window.print()" style="background:#1a2340;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer">Print / Save PDF</button></div></body></html>';var w=window.open('','_blank','width=900,height=700');if(w){w.document.write(html);w.document.close();}else showToast('Allow pop-ups to print','error');}
 function dsrPrintVR(){var D=_dsrD();var rows=[];(D.servers||[]).forEach(function(s){(s.voids||[]).filter(function(v){return v.status==='approved';}).forEach(function(v){rows.push({server:s.name,sap:s.sap,type:'Void',item:v.item,check:v.check,reason:v.reason,manager:v.manager,amount:v.amount});});(s.returns||[]).filter(function(v){return v.status==='approved';}).forEach(function(v){rows.push({server:s.name,sap:s.sap,type:'Return',item:v.item,check:v.check,reason:v.reason,manager:v.manager,amount:v.amount});});});var tot=rows.reduce(function(a,v){return a+(parseFloat(v.amount)||0);},0);var dateStr=new Date(D.date+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Voids & Returns</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;padding:20px;color:#111;font-size:11px}@media print{button{display:none!important}@page{size:A4;margin:8mm}}table{width:100%;border-collapse:collapse}th{background:#1a2340;color:#fff;padding:6px 8px;text-align:left;font-size:9px;text-transform:uppercase}td{padding:7px 8px;border-bottom:1px solid #eee}.amt{text-align:right;font-family:monospace;font-weight:600}</style></head><body><div style="display:flex;justify-content:space-between;border-bottom:3px solid #1a2340;padding-bottom:10px;margin-bottom:16px"><div><div style="font-size:18px;font-weight:900;color:#1a2340">ALFA.CO</div><div>'+bxe(D.restName||'')+'</div></div><div style="text-align:right"><div style="font-size:16px;font-weight:700">VOIDS & RETURNS REPORT</div><div style="font-size:10px;color:#666">'+dateStr+'</div></div></div><table><thead><tr><th>Server</th><th>SAP</th><th>Type</th><th>Item</th><th>Check #</th><th>Reason</th><th>Manager</th><th class="amt">Amount SAR</th></tr></thead><tbody>'+(rows.length?rows.map(function(v){return '<tr><td>'+bxe(v.server||'—')+'</td><td>'+bxe(v.sap||'—')+'</td><td>'+v.type+'</td><td>'+bxe(v.item||'—')+'</td><td>'+bxe(v.check||'—')+'</td><td>'+bxe(v.reason||'—')+'</td><td>'+bxe(v.manager||'—')+'</td><td class="amt">'+(parseFloat(v.amount||0)).toFixed(2)+'</td></tr>';}).join(''):'<tr><td colspan="8" style="text-align:center;padding:16px;color:#999">No approved voids or returns</td></tr>')+'<tr style="font-weight:700;background:#f5f5f5"><td colspan="7">TOTAL</td><td class="amt">'+tot.toFixed(2)+'</td></tr></tbody></table><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:30px;margin-top:24px"><div style="border-top:1px solid #333;padding-top:4px;text-align:center;font-size:9px;color:#666">Manager</div><div style="border-top:1px solid #333;padding-top:4px;text-align:center;font-size:9px;color:#666">Date</div><div style="border-top:1px solid #333;padding-top:4px;text-align:center;font-size:9px;color:#666">Verified By</div></div><div style="text-align:center;margin-top:14px"><button onclick="window.print()" style="background:#1a2340;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:700;cursor:pointer">Print</button></div></body></html>';var w=window.open('','_blank','width=900,height=600');if(w){w.document.write(html);w.document.close();}else showToast('Allow pop-ups','error');}
@@ -9067,6 +9131,16 @@ launchApp = function() {
     // Update alert badge
     var nb = document.getElementById('nb-alerts');
     if (nb) { nb.style.display = 'flex'; nb.textContent = '3'; }
+    // ── Defensive: ensure page-area has content; if empty, force re-render ──
+    var _pa = document.getElementById('page-area');
+    if (_pa && (!_pa.innerHTML || _pa.innerHTML.trim().length < 20) && NX.page) {
+      try { renderPage(NX.page); } catch(e) { console.error('Forced re-render failed:', e); }
+    }
+    // Also: ensure login screen is fully hidden and app fully visible
+    var _ls = document.getElementById('login-screen');
+    var _ap = document.getElementById('app');
+    if (_ls && _ls.style.display !== 'none') _ls.style.display = 'none';
+    if (_ap) { _ap.style.display = ''; _ap.classList.add('visible'); }
   }, 200);
 };
 
