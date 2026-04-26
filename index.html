@@ -1722,7 +1722,6 @@ var NAV_CONFIG = {
       { id:'sales',             icon:'💰', label:'Sales' },
       { id:'petty-cash',        icon:'🧾', label:'Petty Cash' },
       { id:'dsr',               icon:'📋', label:'DSR' },
-      { id:'bm-invoices',       icon:'📄', label:'Invoices' },
       { id:'bm-leave',          icon:'🏖️', label:'Leave Management', badge:'bm-leave-pending' }
     ]},
     { section:'COMMUNICATIONS', items:[
@@ -1736,9 +1735,10 @@ var NAV_CONFIG = {
       { id:'qr-checkin',  icon:'📱', label:'Check-In' }
     ]},
     { section:'PORTALS', items:[
-      { id:'_staff-portal',      icon:'🏃', label:'Staff Portal' },
+      { id:'_staff-portal',      icon:'🏃', label:'Check-In' },
       { id:'_leave-portal',      icon:'📝', label:'Leave Request' },
-      { id:'_checklist-portal',  icon:'📋', label:'Checklist App' }
+      { id:'_checklist-portal',  icon:'📋', label:'Checklist App' },
+      { id:'_server-drop',       icon:'💰', label:'Server Drop' }
     ]}
   ],
   hr_manager: [
@@ -1750,7 +1750,6 @@ var NAV_CONFIG = {
       { id:'hrf-employees',   icon:'👥', label:'All Employees' },
       { id:'hrf-attendance',  icon:'⏱️', label:'Attendance' },
       { id:'hrf-leave',       icon:'🏖️', label:'Leave Management' },
-      { id:'hrf-schedule',    icon:'📅', label:'Work Schedules' },
       { id:'hrf-health',      icon:'💳', label:'Health Cards' }
     ]},
     { section:'PAYROLL', items:[
@@ -5359,6 +5358,10 @@ function attachBranchListeners() {
   db.ref(bPath('tsAtt')).on('value', function(snap){ BS.tsAtt=snap.val()||{}; });
   db.ref(bPath('config')).on('value', function(snap){ BS._branchConfig=snap.val()||{}; });
   db.ref(bPath('pcBudget')).once('value', function(snap){ BS.pcBudget=snap.val()||0; });
+  db.ref(bPath('pcCostCenters')).on('value', function(snap){ var v=snap.val(); if(v&&v.length)BS.pcCostCenters=v; });
+  db.ref(bPath('pcGLs')).on('value', function(snap){ var v=snap.val(); if(v&&v.length)BS.pcGLs=v; });
+  db.ref(bPath('pcCycleNo')).on('value', function(snap){ var v=snap.val(); if(v!==null&&v!==undefined)BS.pcCycleNo=v; });
+  db.ref(bPath('pcArchive')).on('value', function(snap){ BS.pcArchive=snap.val()||[]; });
 
   // Load new BM data (transfers + announcements) once on attach, then update badges
   if(NX.session&&(NX.session.role==='branch_mgr'||NX.session.role==='staff')){
@@ -5501,25 +5504,29 @@ function pBranchDash() {
   if (isStaff) {
     var h = '<div class="page-header"><h1>' + (b.icon||'\ud83c\udfea') + ' ' + xe(branchName) + '</h1>';
     h += '<p>' + xe(b.brand||'') + (b.location?' \xb7 '+xe(b.location):'') + ' \xb7 ' + fmtDate(now2) + '</p></div>';
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">';
-    h += '<div class="card" style="text-align:center;padding:24px;cursor:pointer;border:1px solid rgba(52,211,153,.3)" onclick="navTo(\'_staff-portal\')">';
-    h += '<div style="font-size:48px;margin-bottom:12px">\ud83d\udcf1</div>';
-    h += '<div style="font-size:15px;font-weight:700;margin-bottom:6px">Daily Task Portal</div>';
-    h += '<div style="font-size:12px;color:var(--text-secondary)">Check-in, checklist & tasks</div></div>';
-    h += '<div class="card" style="text-align:center;padding:24px;cursor:pointer" onclick="navTo(\'_leave-portal\')">';
-    h += '<div style="font-size:48px;margin-bottom:12px">\ud83d\udcdd</div>';
-    h += '<div style="font-size:15px;font-weight:700;margin-bottom:6px">Leave Request</div>';
-    h += '<div style="font-size:12px;color:var(--text-secondary)">Submit leave or view status</div></div>';
-    h += '</div>';
-    h += '<div class="card section"><h3 style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Staff Portals</h3>';
-    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
-    [['staff.html','Staff Portal'],['leave.html','Leave Request'],['checklists.html','Checklists']].forEach(function(p){
-      h += '<a href="'+p[0]+'" target="_blank" style="text-decoration:none">';
-      h += '<div class="card" style="text-align:center;padding:14px 10px;cursor:pointer">';
-      h += '<div style="font-size:28px;margin-bottom:8px">\ud83d\udcce</div>';
-      h += '<div style="font-size:11px;font-weight:600">'+p[1]+'</div></div></a>';
+    // Hero quick actions — 4 cards
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px">';
+    var heroes = [
+      {icon:'\ud83d\udcf1', label:'Check-In', sub:'Clock in / out', accent:'#34d399', href:'staff.html'},
+      {icon:'\u2705', label:'Checklists', sub:'Today\'s tasks',  accent:'#60a5fa', href:'checklists.html'},
+      {icon:'\ud83d\udcb0', label:'Server Drop', sub:'Submit drops',  accent:'#f0c040', href:'server-drop.html'},
+      {icon:'\ud83d\udcdd', label:'Leave Request', sub:'Submit / view', accent:'#a78bfa', href:'leave.html'}
+    ];
+    heroes.forEach(function(c){
+      h += '<a href="'+c.href+'" target="_blank" style="text-decoration:none;color:inherit"><div class="card" style="text-align:center;padding:20px 14px;cursor:pointer;border:1px solid var(--border);transition:all .15s;border-top:3px solid '+c.accent+'">';
+      h += '<div style="font-size:36px;margin-bottom:10px">'+c.icon+'</div>';
+      h += '<div style="font-size:14px;font-weight:700;margin-bottom:4px">'+c.label+'</div>';
+      h += '<div style="font-size:11px;color:var(--text-secondary)">'+c.sub+'</div>';
+      h += '</div></a>';
     });
-    h += '</div></div>';
+    h += '</div>';
+    // Quick info row — branch info
+    h += '<div class="card" style="padding:14px 18px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;background:var(--surface-1)">';
+    h += '<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary)">Branch</span><span style="font-size:13px;font-weight:600">'+xe(branchName)+'</span></div>';
+    h += '<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary)">Brand</span><span style="font-size:13px;font-weight:600">'+xe(b.brand||'\u2014')+'</span></div>';
+    h += '<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary)">Location</span><span style="font-size:13px;font-weight:600">'+xe(b.location||'\u2014')+'</span></div>';
+    h += '<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary)">Today</span><span style="font-size:13px;font-weight:600">'+fmtDate(now2)+'</span></div>';
+    h += '</div>';
     return h;
   }
 
@@ -5626,7 +5633,7 @@ function pBranchDash() {
   h += '<div style="font-size:11px;color:var(--text-secondary)">'+BS.waste.filter(function(w){return w.date===todayStr;}).length+' entries</div></div>';
   h += '<div class="card"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary);margin-bottom:4px">Stock Value</div>';
   h += '<div class="mono" style="font-size:22px;font-weight:300;color:#60a5fa">'+fsar(invValue)+'</div>';
-  h += '<div style="font-size:11px;color:var(--text-secondary)">'+(hExp>0?'<span style="color:#f87171">'+hExp+' cards expired</span>':'All cards valid')+'</div></div>';
+  h += '<div style="font-size:11px;color:var(--text-secondary)">'+bItems.length+' items</div></div>';
   h += '</div>';
 
   // FOOD COST PANEL
@@ -5789,13 +5796,16 @@ function pBranchDash() {
     var pc=r.priority==='high'?'#f87171':r.priority==='medium'?'#f59e0b':'#34d399';
     return '<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);align-items:center">'+
       '<div style="width:3px;background:'+pc+';border-radius:2px;align-self:stretch;flex-shrink:0"></div>'+
-      '<div style="flex:1"><div style="font-size:12px;font-weight:600">'+xe(r.text)+'</div>'+
-      '<div class="mono" style="font-size:10px;color:var(--text-tertiary)">'+xe(r.date||'')+'</div></div></div>';
+      '<div style="flex:1;min-width:0;cursor:pointer" data-rid="'+xe(r.id||'')+'" onclick="openReminderModal(this.dataset.rid)"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis">'+xe(r.text)+'</div>'+
+      '<div class="mono" style="font-size:10px;color:var(--text-tertiary)">'+xe(r.date||'')+'</div></div>'+
+      '<button class="btn btn-sm" style="padding:2px 6px;font-size:10px" data-rid="'+xe(r.id||'')+'" onclick="toggleReminder(this.dataset.rid)" title="Mark done">\u2713</button>'+
+      '<button class="btn btn-sm" style="padding:2px 6px;font-size:10px;color:var(--danger)" data-rid="'+xe(r.id||'')+'" onclick="delReminder(this.dataset.rid)" title="Delete">\u2715</button>'+
+      '</div>';
   }).join(''):'<div style="color:var(--text-tertiary);font-size:11px;font-style:italic;padding:8px 0">No pending reminders</div>';
   h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">';
   h += '<div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)"><span style="font-size:13px;font-weight:700">Recent Orders</span><button class="btn btn-sm" onclick="navTo(\'inv-orders\')">All \u2192</button></div><div style="padding:2px 14px">'+ordH+'</div></div>';
   h += '<div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)"><span style="font-size:13px;font-weight:700">Recent Activity</span><button class="btn btn-sm" onclick="navTo(\'inv-moves\')">All \u2192</button></div><div style="padding:2px 14px">'+logH+'</div></div>';
-  h += '<div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 14px;border-bottom:1px solid var(--border)"><span style="font-size:13px;font-weight:700">Reminders</span></div><div style="padding:2px 14px">'+remR+'</div></div>';
+  h += '<div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)"><span style="font-size:13px;font-weight:700">Reminders</span><button class="btn btn-sm" onclick="openReminderModal()">+ Add</button></div><div style="padding:2px 14px">'+remR+'</div></div>';
   h += '</div>';
 
   // Quick Actions
@@ -5811,14 +5821,13 @@ function pBranchDash() {
   // Staff Portals
   var _bid=encodeURIComponent(s.branchId||'');
   var _portals=[
-    ['staff.html','🏃','Staff Portal','staff.html'],
+    ['staff.html','📱','Check-In','staff.html'],
     ['leave.html','📝','Leave Request','leave.html'],
     ['checklists.html','✅','Checklists','checklists.html'],
-    ['server-drop.html','💰','Server Drop','server-drop.html'],
-    ['staff.html','🔑','Staff Login','staff.html']
+    ['server-drop.html','💰','Server Drop','server-drop.html']
   ];
   h += '<div class="card section"><h3 style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Staff Portals (Standalone)</h3>';
-  h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">';
+  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">';
   _portals.forEach(function(p){
     var url=p[0]+(s.branchId?'?branch='+_bid:'');
     h += '<a href="'+url+'" target="_blank" style="text-decoration:none">';
@@ -7096,10 +7105,15 @@ function delBranchSales(id){if(!confirm('Delete this sales entry?'))return;BS.sa
 // ── Petty Cash ────────────────────────────────────────
 function pPettyCash(){
   attachBranchListeners();
+  // Ensure cost centers and GL accounts are arrays in BS
+  if(!BS.pcCostCenters||!BS.pcCostCenters.length) BS.pcCostCenters = (typeof PCC!=='undefined'&&PCC.slice)?PCC.slice():['Kitchen','FOH','Bar','Management','Maintenance','Transport','Office','Miscellaneous'];
+  if(!BS.pcGLs||!BS.pcGLs.length) BS.pcGLs = ['Food Cost','Beverage Cost','Cleaning Supplies','Office Supplies','Repairs & Maintenance','Transportation','Utilities','Marketing','Staff Welfare','Other'];
+  // Ensure current cycle number exists
+  if(!BS.pcCycleNo) BS.pcCycleNo = 1;
   var tot=0,mTot=0,tm=bmthKey(0);
   BS.pc.forEach(function(p){tot+=(+p.amount||0);if(p.date&&p.date.indexOf(tm)===0)mTot+=(+p.amount||0);});
   var budget=BS.pcBudget||0;
-  var rows=BS.pc.filter(function(p){return bmatch(p,['description','forwhat','category']);})
+  var rows=BS.pc.filter(function(p){return bmatch(p,['description','forwhat','category','gl']);})
     .slice().sort(function(a,b){return(b.date||'').localeCompare(a.date||'');})
     .map(function(p){
       return '<tr>'+
@@ -7108,10 +7122,11 @@ function pPettyCash(){
         '<td style="color:var(--text-secondary)">'+bxe(p.forwhat||'\u2014')+'</td>'+
         '<td style="color:var(--text-secondary)">'+bxe(p.remarks||'\u2014')+'</td>'+
         '<td>'+bpl(p.category||'\u2014','#f0c040')+'</td>'+
+        '<td>'+bpl(p.gl||'\u2014','#a78bfa')+'</td>'+
         '<td class="bmono" style="color:#f87171;font-weight:600">'+bfsar(p.amount)+'</td>'+
         '<td><div style="display:flex;gap:4px">'+
-          '<button class="btn btn-sm" onclick="openBranchPCModal(\''+bxe(p.id)+'\')">Edit</button>'+
-          '<button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchPC(\''+bxe(p.id)+'\')">Del</button>'+
+          '<button class="btn btn-sm" data-pcid="'+bxe(p.id)+'" onclick="openBranchPCModal(this.dataset.pcid)">Edit</button>'+
+          '<button class="btn btn-sm" style="color:var(--danger)" data-pcid="'+bxe(p.id)+'" onclick="delBranchPC(this.dataset.pcid)">Del</button>'+
         '</div></td></tr>';
     }).join('');
   var budgetBanner='';
@@ -7127,19 +7142,31 @@ function pPettyCash(){
       '<span style="font-size:10px;color:var(--text-tertiary)">'+pctUsed.toFixed(0)+'%</span>'+
     '</div>';
   }
+  // Petty Cash # banner at top
+  var pcNoBanner='<div style="display:flex;align-items:center;gap:14px;background:var(--surface-1);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;flex-wrap:wrap">'+
+    '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em">Petty Cash #</span>'+
+    '<input id="pc-cycle-no" type="text" value="'+bxe(String(BS.pcCycleNo||1))+'" oninput="BS.pcCycleNo=this.value;if(db&&NX.session&&NX.session.branchId)db.ref(\'branches/\'+NX.session.branchId+\'/pcCycleNo\').set(this.value)" style="background:var(--surface-3);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--accent);font-family:var(--mono);font-weight:700;font-size:14px;width:90px;outline:none"></div>'+
+    '<div style="display:flex;align-items:center;gap:8px;color:var(--text-tertiary);font-size:11px"><span style="width:6px;height:6px;border-radius:50%;background:#34d399"></span>Active cycle</div>'+
+    '<div style="flex:1"></div>'+
+    '<button class="btn" onclick="pcStartNewCycle()">\uD83D\uDD04 New Petty Cash</button>'+
+    '<button class="btn" onclick="pcPrintCycle()">\uD83D\uDDA8\uFE0F Print</button>'+
+  '</div>';
   return '<div class="page-header"><h1>Petty Cash</h1></div>'+
+    pcNoBanner+
     '<div class="bgrid-3" style="margin-bottom:16px">'+
       '<div class="bsc"><div class="bsc-lbl">Total Spent</div><div class="bsc-val bcr" style="font-size:22px">'+bfsar(tot)+'</div></div>'+
       '<div class="bsc"><div class="bsc-lbl">This Month</div><div class="bsc-val" style="font-size:22px;color:#f59e0b">'+bfsar(mTot)+'</div><div class="bsc-sub">'+bxe(tm)+'</div></div>'+
       '<div class="bsc"><div class="bsc-lbl">Total Entries</div><div class="bsc-val bca">'+BS.pc.length+'</div></div>'+
     '</div>'+
     budgetBanner+
-    '<div class="header-actions"><div></div><div style="display:flex;gap:8px">'+
+    '<div class="header-actions"><div></div><div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button class="btn" onclick="openPCCostCenterMgr()">\u2699\uFE0F Cost Centers</button>'+
+      '<button class="btn" onclick="openPCGLMgr()">\u2699\uFE0F GL Accounts</button>'+
       '<button class="btn" onclick="openPCBudgetModal()">\uD83D\uDCB0 Set Budget</button>'+
       '<button class="btn btn-primary" onclick="openBranchPCModal(null)">+ Add Entry</button>'+
     '</div></div>'+
-    '<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th>Item Purchased</th><th>For Who</th><th>Remarks</th><th>Cost Center</th><th>Amount</th><th></th></tr></thead>'+
-    '<tbody>'+(rows||'<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:28px">\uD83E\uDDFE No entries yet \u2014 click \u201c+ Add Entry\u201d to start</td></tr>')+'</tbody></table></div></div>';
+    '<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th>Item Purchased</th><th>For Who</th><th>Remarks</th><th>Cost Center</th><th>GL</th><th>Amount</th><th></th></tr></thead>'+
+    '<tbody>'+(rows||'<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:28px">\uD83E\uDDFE No entries yet \u2014 click \u201c+ Add Entry\u201d to start</td></tr>')+'</tbody></table></div></div>';
 }
 function openPCBudgetModal(){
   var cur=BS.pcBudget||0;
@@ -7157,14 +7184,17 @@ function savePCBudget(){
 }
 function openBranchPCModal(id){
   var p=id?BS.pc.find(function(x){return x.id===id;}):null;
+  var ccList=BS.pcCostCenters||PCC||[];
+  var glList=BS.pcGLs||[];
   var html='<div class="modal-head"><h2>'+(p?'Edit Petty Cash':'Add Petty Cash')+'</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>';
   html+='<div class="bfg"><label class="form-label">Date *</label><input class="form-input" type="date" id="bpc-date" value="'+(p?p.date:TODAY_BS)+'"></div>';
   html+='<div class="bfg"><label class="form-label">Item Purchased *</label><input class="form-input" id="bpc-desc" maxlength="80" value="'+bxe(p?p.description||'':'')+'" placeholder="What was purchased?"></div>';
   html+='<div class="form-row"><div class="bfg"><label class="form-label">For Who / Dept *</label><input class="form-input" id="bpc-for" value="'+bxe(p?p.forwhat||'':'')+'"></div>'+
-    '<div class="bfg"><label class="form-label">Cost Center</label><select class="form-input form-select" id="bpc-cat"><option value="">\u2014</option>'+PCC.map(function(c){return '<option'+(p&&p.category===c?' selected':'')+'>'+bxe(c)+'</option>';}).join('')+'</select></div></div>';
-  html+='<div class="form-row"><div class="bfg"><label class="form-label">Remarks</label><input class="form-input" id="bpc-rem" value="'+bxe(p?p.remarks||'':'')+'"></div>'+
+    '<div class="bfg"><label class="form-label">Cost Center</label><select class="form-input form-select" id="bpc-cat"><option value="">\u2014</option>'+ccList.map(function(c){return '<option'+(p&&p.category===c?' selected':'')+'>'+bxe(c)+'</option>';}).join('')+'</select></div></div>';
+  html+='<div class="form-row"><div class="bfg"><label class="form-label">Choose the Proper GL</label><select class="form-input form-select" id="bpc-gl"><option value="">\u2014</option>'+glList.map(function(g){return '<option'+(p&&p.gl===g?' selected':'')+'>'+bxe(g)+'</option>';}).join('')+'</select></div>'+
     '<div class="bfg"><label class="form-label">Amount (SAR) *</label><input class="form-input" type="number" step="0.01" id="bpc-amt" value="'+(p?p.amount:'')+'" placeholder="0.00"></div></div>';
-  html+='<button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBranchPC(\\\''+bxe(id||'')+'\\\')">'+(p?'Save Changes':'Save Entry')+'</button>';
+  html+='<div class="bfg"><label class="form-label">Remarks</label><input class="form-input" id="bpc-rem" value="'+bxe(p?p.remarks||'':'')+'"></div>';
+  html+='<button class="btn btn-primary" style="width:100%;margin-top:8px" data-pcid="'+bxe(id||'')+'" onclick="saveBranchPC(this.dataset.pcid)">'+(p?'Save Changes':'Save Entry')+'</button>';
   openModal(html);
 }
 function saveBranchPC(id){
@@ -7172,17 +7202,161 @@ function saveBranchPC(id){
   if(!dt||!desc||!forw||!amt){showToast('Required fields missing','error');return;}
   if(id){
     var i=BS.pc.findIndex(function(x){return x.id===id;});
-    if(i>=0){BS.pc[i].date=dt;BS.pc[i].description=desc;BS.pc[i].forwhat=forw;BS.pc[i].category=bgv('bpc-cat');BS.pc[i].remarks=bgv('bpc-rem');BS.pc[i].amount=parseFloat(amt)||0;}
+    if(i>=0){BS.pc[i].date=dt;BS.pc[i].description=desc;BS.pc[i].forwhat=forw;BS.pc[i].category=bgv('bpc-cat');BS.pc[i].gl=bgv('bpc-gl');BS.pc[i].remarks=bgv('bpc-rem');BS.pc[i].amount=parseFloat(amt)||0;BS.pc[i].cycleNo=BS.pcCycleNo||1;}
   } else {
     // Duplicate guard — same date + same description
-    if(BS.pc.find(function(p){return p.date===dt&&p.description.toLowerCase()===desc.toLowerCase();})){
+    if(BS.pc.find(function(p){return p.date===dt&&(p.description||'').toLowerCase()===desc.toLowerCase();})){
       if(!confirm('A similar entry exists for this date. Add anyway?'))return;
     }
-    BS.pc.push({id:buid(),date:dt,description:desc,forwhat:forw,category:bgv('bpc-cat'),remarks:bgv('bpc-rem'),amount:parseFloat(amt)||0});
+    BS.pc.push({id:buid(),date:dt,description:desc,forwhat:forw,category:bgv('bpc-cat'),gl:bgv('bpc-gl'),remarks:bgv('bpc-rem'),amount:parseFloat(amt)||0,cycleNo:BS.pcCycleNo||1});
   }
   bSaveColl('pc',BS.pc);closeModalForce();showToast('Entry saved','success');navTo('petty-cash');
 }
 function delBranchPC(id){if(!confirm('Delete this petty cash entry?'))return;BS.pc=BS.pc.filter(function(x){return x.id!==id;});bSaveColl('pc',BS.pc);showToast('Deleted');navTo('petty-cash');}
+
+// ── Cost Center CRUD ──
+function openPCCostCenterMgr(){
+  var list=BS.pcCostCenters||[];
+  var rows=list.map(function(c,i){return '<tr><td style="font-weight:600">'+bxe(c)+'</td><td style="text-align:right"><button class="btn btn-sm" data-cc="'+bxe(c)+'" onclick="renamePCCostCenter(this.dataset.cc)">Edit</button> <button class="btn btn-sm" style="color:var(--danger)" data-cc="'+bxe(c)+'" onclick="deletePCCostCenter(this.dataset.cc)">Del</button></td></tr>';}).join('');
+  openModal('<div class="modal-head"><h2>\u2699\uFE0F Cost Centers</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>'+
+    '<div class="bfg"><label class="form-label">Add new cost center</label><div style="display:flex;gap:8px"><input class="form-input" id="cc-new" placeholder="e.g. Marketing"><button class="btn btn-primary" onclick="addPCCostCenter()">+ Add</button></div></div>'+
+    '<table class="btbl" style="margin-top:10px"><thead><tr><th>Cost Center</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="2" style="text-align:center;color:var(--text-tertiary);padding:18px">No cost centers yet</td></tr>')+'</tbody></table>');
+}
+function addPCCostCenter(){
+  var v=bgv('cc-new');if(!v){showToast('Enter a name','error');return;}
+  if(!BS.pcCostCenters)BS.pcCostCenters=[];
+  if(BS.pcCostCenters.indexOf(v)>=0){showToast('Already exists','error');return;}
+  BS.pcCostCenters.push(v);
+  if(db&&NX.session&&NX.session.branchId)db.ref('branches/'+NX.session.branchId+'/pcCostCenters').set(BS.pcCostCenters);
+  showToast('Cost center added','success');openPCCostCenterMgr();
+}
+function renamePCCostCenter(cc){
+  var v=prompt('Rename cost center "'+cc+'" to:',cc);if(!v||v===cc)return;
+  var i=BS.pcCostCenters.indexOf(cc);if(i<0)return;
+  BS.pcCostCenters[i]=v;
+  // Update existing entries
+  BS.pc.forEach(function(p){if(p.category===cc)p.category=v;});
+  if(db&&NX.session&&NX.session.branchId){
+    db.ref('branches/'+NX.session.branchId+'/pcCostCenters').set(BS.pcCostCenters);
+    bSaveColl('pc',BS.pc);
+  }
+  showToast('Renamed','success');openPCCostCenterMgr();
+}
+function deletePCCostCenter(cc){
+  var inUse=BS.pc.filter(function(p){return p.category===cc;}).length;
+  if(inUse>0){if(!confirm(cc+' is used by '+inUse+' entries. Delete anyway? (entries will keep the name)'))return;}
+  BS.pcCostCenters=BS.pcCostCenters.filter(function(x){return x!==cc;});
+  if(db&&NX.session&&NX.session.branchId)db.ref('branches/'+NX.session.branchId+'/pcCostCenters').set(BS.pcCostCenters);
+  showToast('Deleted','success');openPCCostCenterMgr();
+}
+
+// ── GL Account CRUD ──
+function openPCGLMgr(){
+  var list=BS.pcGLs||[];
+  var rows=list.map(function(g){return '<tr><td style="font-weight:600">'+bxe(g)+'</td><td style="text-align:right"><button class="btn btn-sm" data-gl="'+bxe(g)+'" onclick="renamePCGL(this.dataset.gl)">Edit</button> <button class="btn btn-sm" style="color:var(--danger)" data-gl="'+bxe(g)+'" onclick="deletePCGL(this.dataset.gl)">Del</button></td></tr>';}).join('');
+  openModal('<div class="modal-head"><h2>\u2699\uFE0F GL Accounts</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>'+
+    '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:10px">General Ledger accounts used in the \u201cChoose the Proper GL\u201d dropdown.</div>'+
+    '<div class="bfg"><label class="form-label">Add new GL account</label><div style="display:flex;gap:8px"><input class="form-input" id="gl-new" placeholder="e.g. Repairs & Maintenance"><button class="btn btn-primary" onclick="addPCGL()">+ Add</button></div></div>'+
+    '<table class="btbl" style="margin-top:10px"><thead><tr><th>GL Account</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="2" style="text-align:center;color:var(--text-tertiary);padding:18px">No GL accounts yet</td></tr>')+'</tbody></table>');
+}
+function addPCGL(){
+  var v=bgv('gl-new');if(!v){showToast('Enter a name','error');return;}
+  if(!BS.pcGLs)BS.pcGLs=[];
+  if(BS.pcGLs.indexOf(v)>=0){showToast('Already exists','error');return;}
+  BS.pcGLs.push(v);
+  if(db&&NX.session&&NX.session.branchId)db.ref('branches/'+NX.session.branchId+'/pcGLs').set(BS.pcGLs);
+  showToast('GL account added','success');openPCGLMgr();
+}
+function renamePCGL(gl){
+  var v=prompt('Rename GL "'+gl+'" to:',gl);if(!v||v===gl)return;
+  var i=BS.pcGLs.indexOf(gl);if(i<0)return;
+  BS.pcGLs[i]=v;
+  BS.pc.forEach(function(p){if(p.gl===gl)p.gl=v;});
+  if(db&&NX.session&&NX.session.branchId){
+    db.ref('branches/'+NX.session.branchId+'/pcGLs').set(BS.pcGLs);
+    bSaveColl('pc',BS.pc);
+  }
+  showToast('Renamed','success');openPCGLMgr();
+}
+function deletePCGL(gl){
+  var inUse=BS.pc.filter(function(p){return p.gl===gl;}).length;
+  if(inUse>0){if(!confirm(gl+' is used by '+inUse+' entries. Delete anyway? (entries will keep the name)'))return;}
+  BS.pcGLs=BS.pcGLs.filter(function(x){return x!==gl;});
+  if(db&&NX.session&&NX.session.branchId)db.ref('branches/'+NX.session.branchId+'/pcGLs').set(BS.pcGLs);
+  showToast('Deleted','success');openPCGLMgr();
+}
+
+// ── New Cycle / Print ──
+function pcStartNewCycle(){
+  var curNo=BS.pcCycleNo||1;
+  var entries=(BS.pc||[]).filter(function(p){return (p.cycleNo||1)===curNo;});
+  if(!entries.length){
+    if(!confirm('No entries in cycle #'+curNo+'. Start a new cycle anyway?'))return;
+  } else {
+    if(!confirm('Close cycle #'+curNo+' with '+entries.length+' entries ('+bfsar(entries.reduce(function(s,p){return s+(+p.amount||0);},0))+')?\n\nThe current cycle will be archived and a new cycle # will start.\nClosed cycle will appear in DSR Closed Petty Cash.'))return;
+  }
+  // Archive current cycle
+  if(!BS.pcArchive)BS.pcArchive=[];
+  var total=entries.reduce(function(s,p){return s+(+p.amount||0);},0);
+  var archived={cycleNo:curNo,closedAt:new Date().toISOString(),total:total,entries:entries.slice(),status:'closed',closedBy:(NX.session&&NX.session.userName)||(NX.session&&NX.session.entityName)||''};
+  BS.pcArchive.push(archived);
+  // Bump cycle number
+  var nextNo=parseInt(curNo,10);if(isNaN(nextNo))nextNo=1;nextNo++;
+  BS.pcCycleNo=nextNo;
+  // Persist
+  if(db&&NX.session&&NX.session.branchId){
+    var br='branches/'+NX.session.branchId;
+    db.ref(br+'/pcCycleNo').set(nextNo);
+    db.ref(br+'/pcArchive').set(BS.pcArchive);
+  }
+  showToast('Cycle #'+curNo+' archived. Now editing #'+nextNo,'success');
+  navTo('petty-cash');
+}
+function pcPrintCycle(){
+  var curNo=BS.pcCycleNo||1;
+  var entries=(BS.pc||[]).filter(function(p){return (p.cycleNo||1)===curNo;}).slice().sort(function(a,b){return (a.date||'').localeCompare(b.date||'');});
+  if(!entries.length){showToast('No entries in current cycle','error');return;}
+  var s=NX.session||{};
+  var w=window.open('','_blank','width=900,height=700');
+  if(!w){showToast('Popup blocked','error');return;}
+  var total=entries.reduce(function(sm,p){return sm+(+p.amount||0);},0);
+  var rowsHtml=entries.map(function(p,i){return '<tr><td>'+(i+1)+'</td><td>'+bxe(p.date||'')+'</td><td>'+bxe(p.description||'')+'</td><td>'+bxe(p.forwhat||'')+'</td><td>'+bxe(p.category||'')+'</td><td>'+bxe(p.gl||'')+'</td><td>'+bxe(p.remarks||'')+'</td><td style="text-align:right;font-family:monospace">'+(+p.amount||0).toFixed(2)+'</td></tr>';}).join('');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Petty Cash #'+curNo+' \u2014 '+bxe(s.branchName||'')+'</title><style>body{font-family:-apple-system,sans-serif;padding:20px;color:#111}h1{margin:0 0 4px}.h{color:#666;font-size:12px;margin-bottom:18px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f4f4f4}tfoot td{font-weight:700;background:#fafafa}.tot{text-align:right;font-family:monospace}.sig{margin-top:32px;display:flex;gap:40px;font-size:12px}.sig div{flex:1;border-top:1px solid #888;padding-top:6px;text-align:center}@media print{.np{display:none}}</style></head><body>'+
+    '<h1>Petty Cash Report \u2014 Cycle #'+curNo+'</h1>'+
+    '<div class="h">Branch: '+bxe(s.branchName||'')+' \u00b7 Generated: '+new Date().toLocaleString()+' \u00b7 Entries: '+entries.length+'</div>'+
+    '<table><thead><tr><th>#</th><th>Date</th><th>Item</th><th>For / Dept</th><th>Cost Center</th><th>GL</th><th>Remarks</th><th>Amount (SAR)</th></tr></thead>'+
+    '<tbody>'+rowsHtml+'</tbody>'+
+    '<tfoot><tr><td colspan="7" style="text-align:right">Total</td><td class="tot">'+total.toFixed(2)+'</td></tr></tfoot></table>'+
+    '<div class="sig"><div>Prepared by</div><div>Approved by</div><div>Received by</div></div>'+
+    '<div class="np" style="margin-top:18px;text-align:right"><button onclick="window.print()" style="padding:8px 18px;font-size:13px">Print</button></div>'+
+    '</body></html>');
+  w.document.close();
+}
+
+// ── Reminder CRUD ──
+function openReminderModal(id){
+  var r=id?(BS.rem||[]).find(function(x){return x.id===id;}):null;
+  var html='<div class="modal-head"><h2>'+(r?'Edit Reminder':'Add Reminder')+'</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>';
+  html+='<div class="bfg"><label class="form-label">What to remember *</label><input class="form-input" id="rem-text" value="'+bxe(r?r.text||'':'')+'" placeholder="e.g. follow up fire system" maxlength="120"></div>';
+  html+='<div class="form-row"><div class="bfg"><label class="form-label">Due Date</label><input class="form-input" type="date" id="rem-date" value="'+bxe(r?r.date||TODAY_BS:TODAY_BS)+'"></div>'+
+    '<div class="bfg"><label class="form-label">Priority</label><select class="form-input form-select" id="rem-prio"><option value="low"'+(r&&r.priority==='low'?' selected':'')+'>Low</option><option value="medium"'+(r&&r.priority==='medium'?' selected':'')+'>Medium</option><option value="high"'+(r&&r.priority==='high'?' selected':(!r?' selected':''))+'>High</option></select></div></div>';
+  html+='<button class="btn btn-primary" style="width:100%;margin-top:8px" data-rid="'+bxe(id||'')+'" onclick="saveReminder(this.dataset.rid)">'+(r?'Save Changes':'Add Reminder')+'</button>';
+  openModal(html);
+}
+function saveReminder(id){
+  var t=bgv('rem-text');if(!t){showToast('Reminder text required','error');return;}
+  if(!BS.rem)BS.rem=[];
+  if(id){
+    var i=BS.rem.findIndex(function(x){return x.id===id;});
+    if(i>=0){BS.rem[i].text=t;BS.rem[i].date=bgv('rem-date');BS.rem[i].priority=bgv('rem-prio');}
+  } else {
+    BS.rem.push({id:buid(),text:t,date:bgv('rem-date'),priority:bgv('rem-prio')||'medium',done:false,createdAt:Date.now()});
+  }
+  bSaveColl('rem',BS.rem);closeModalForce();showToast('Reminder saved','success');
+  if(NX.page==='branch-dash')navTo('branch-dash');
+}
+function delReminder(id){if(!confirm('Delete this reminder?'))return;BS.rem=(BS.rem||[]).filter(function(r){return r.id!==id;});bSaveColl('rem',BS.rem);showToast('Reminder deleted','success');if(NX.page==='branch-dash')navTo('branch-dash');}
+function toggleReminder(id){var r=(BS.rem||[]).find(function(x){return x.id===id;});if(!r)return;r.done=!r.done;bSaveColl('rem',BS.rem);if(NX.page==='branch-dash')navTo('branch-dash');}
 
 
 function pDSR(){
@@ -9415,7 +9589,8 @@ function pHrfEmployees(){
     var depOpts=depts.map(function(d){return '<option value="'+hxe(d)+'"'+(filterDept===d?' selected':'')+'>'+(d||'All Departments')+'</option>';}).join('');
     var INP='padding:7px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:var(--font);font-size:13px;outline:none';
     var h=hrfHeader('Employee Directory',filtered.length+' of '+allStaff.length+' staff',
-      '<button class="btn" onclick="hrfExportEmployees()">&#x2B07; Export CSV</button>');
+      '<button class="btn" onclick="hrfExportEmployees()">&#x2B07; Export CSV</button>'+
+      '<button class="btn btn-primary" onclick="openHrfEmpModal(null,null)">+ Add Employee</button>');
     h+='<div style="display:flex;gap:8px;padding:12px 0;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:16px">'+
       '<input style="flex:1;min-width:200px;'+INP+'" placeholder="Search name or SAP\u2026" value="'+hxe(filterQ)+'" oninput="NX._hrfQ=this.value;navTo(\'hrf-employees\')">'+
       '<select style="'+INP+'" onchange="NX._hrfBranch=this.value;navTo(\'hrf-employees\')">'+brOpts+'</select>'+
@@ -9425,21 +9600,137 @@ function pHrfEmployees(){
       var stCol=(m.status||'Active')==='Active'?'#34d399':m.status==='On Leave'?'#ffd166':'#f87171';
       rows+='<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="hrf-emp-avatar" style="width:32px;height:32px;font-size:11px">'+hini(m.name)+'</div>'+
         '<div><div style="font-weight:600;color:var(--text-primary)">'+hxe(m.name)+'</div>'+
-        '<div style="font-size:11px;color:var(--text-tertiary)">'+hxe(m.sap||m.id||'—')+'</div></div></div></td>'+
-        '<td>'+hxe(m.dept||'—')+'</td><td>'+hxe(m.role||'—')+'</td>'+
+        '<div style="font-size:11px;color:var(--text-tertiary)">'+hxe(m.sap||m.id||'\u2014')+'</div></div></div></td>'+
+        '<td>'+hxe(m.dept||'\u2014')+'</td><td>'+hxe(m.role||'\u2014')+'</td>'+
         '<td><strong>'+hxe(m._branchName)+'</strong></td>'+
         '<td>'+hrfBadge(m.status||'Active',stCol)+'</td>'+
-        '<td>'+hxe(m.phone||'—')+'</td>'+
-        '<td>'+hxe(m.nationality||'—')+'</td></tr>';
+        '<td>'+hxe(m.phone||'\u2014')+'</td>'+
+        '<td>'+hxe(m.nationality||'\u2014')+'</td>'+
+        '<td><div style="display:flex;gap:4px">'+
+          '<button class="btn btn-sm" data-eid="'+hxe(m.id||'')+'" data-bid="'+hxe(m._branchId||'')+'" onclick="openHrfEmpModal(this.dataset.eid,this.dataset.bid)">Edit</button>'+
+          '<button class="btn btn-sm" style="color:#a78bfa" data-eid="'+hxe(m.id||'')+'" data-bid="'+hxe(m._branchId||'')+'" onclick="openHrfReassignModal(this.dataset.eid,this.dataset.bid)">Move</button>'+
+          '<button class="btn btn-sm" style="color:var(--danger)" data-eid="'+hxe(m.id||'')+'" data-bid="'+hxe(m._branchId||'')+'" onclick="hrfDeleteEmp(this.dataset.eid,this.dataset.bid)">Del</button>'+
+        '</div></td></tr>';
     });
     if(!filtered.length)h+='<div class="empty-state"><div class="es-icon">&#x1F465;</div><h3>No staff found</h3><p>Try adjusting filters</p></div>';
-    else h+=hrfTable(['Name','Dept','Role','Branch','Status','Phone','Nationality'],rows);
+    else h+=hrfTable(['Name','Dept','Role','Branch','Status','Phone','Nationality','Actions'],rows);
     return h;
   }
   var cached=branches.filter(function(b){return HRF.staff[b.id];});
   if(cached.length===branches.length&&branches.length>0)return renderEmps();
   hrfLoadAll('staff','staff',function(){navTo('hrf-employees');});
   return hrfLoading('Loading staff\u2026');
+}
+
+// ── HR Employee Add/Edit Modal ──
+function openHrfEmpModal(empId,branchId){
+  var m=null;
+  if(empId&&branchId){var arr=HRF.staff[branchId]||[];m=arr.find(function(x){return x.id===empId;});}
+  var branches=hrfBranches();
+  var brOpts=branches.map(function(b){return '<option value="'+hxe(b.id)+'"'+(m&&m._branchId===b.id?' selected':(branchId===b.id?' selected':''))+'>'+hxe(b.name)+'</option>';}).join('');
+  var deps=['FOH','Kitchen','Bar','Management','Other'];
+  var depOpts=deps.map(function(d){return '<option'+(m&&m.dept===d?' selected':'')+'>'+d+'</option>';}).join('');
+  var statuses=['Active','On Leave','Resigned'];
+  var stOpts=statuses.map(function(s){return '<option'+(m&&m.status===s?' selected':(!m&&s==='Active'?' selected':''))+'>'+s+'</option>';}).join('');
+  openModal(
+    '<div class="modal-head"><h2>'+(m?'Edit Employee':'Add Employee')+'</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>'+
+    '<div class="form-row"><div class="bfg"><label class="form-label">Full Name *</label><input class="form-input" id="hrfemp-name" value="'+bxe(m?m.name||'':'')+'"></div>'+
+    '<div class="bfg"><label class="form-label">SAP #</label><input class="form-input" id="hrfemp-sap" value="'+bxe(m?m.sap||'':'')+'"></div></div>'+
+    '<div class="form-row"><div class="bfg"><label class="form-label">Branch *</label><select class="form-input form-select" id="hrfemp-branch">'+brOpts+'</select></div>'+
+    '<div class="bfg"><label class="form-label">Department</label><select class="form-input form-select" id="hrfemp-dept">'+depOpts+'</select></div></div>'+
+    '<div class="form-row"><div class="bfg"><label class="form-label">Role / Position</label><input class="form-input" id="hrfemp-role" value="'+bxe(m?m.role||'':'')+'"></div>'+
+    '<div class="bfg"><label class="form-label">Status</label><select class="form-input form-select" id="hrfemp-status">'+stOpts+'</select></div></div>'+
+    '<div class="form-row"><div class="bfg"><label class="form-label">Phone</label><input class="form-input" id="hrfemp-phone" value="'+bxe(m?m.phone||'':'')+'"></div>'+
+    '<div class="bfg"><label class="form-label">Nationality</label><input class="form-input" id="hrfemp-nat" value="'+bxe(m?m.nationality||'':'')+'"></div></div>'+
+    '<div class="form-row"><div class="bfg"><label class="form-label">Basic Salary (SAR)</label><input class="form-input" type="number" step="0.01" id="hrfemp-salary" value="'+(m?m.basicSalary||m.salary||'':'')+'"></div>'+
+    '<div class="bfg"><label class="form-label">Hire Date</label><input class="form-input" type="date" id="hrfemp-hire" value="'+bxe(m?m.hireDate||'':'')+'"></div></div>'+
+    '<button class="btn btn-primary" style="width:100%;margin-top:8px" data-eid="'+bxe(empId||'')+'" data-bid="'+bxe(branchId||'')+'" onclick="saveHrfEmp(this.dataset.eid,this.dataset.bid)">'+(m?'Save Changes':'Add Employee')+'</button>'
+  );
+}
+function saveHrfEmp(empId,oldBranchId){
+  var name=bgv('hrfemp-name'),branchId=bgv('hrfemp-branch');
+  if(!name||!branchId){showToast('Name and Branch are required','error');return;}
+  var rec={
+    id:empId||buid(),
+    name:name,
+    sap:bgv('hrfemp-sap'),
+    dept:bgv('hrfemp-dept'),
+    role:bgv('hrfemp-role'),
+    status:bgv('hrfemp-status')||'Active',
+    phone:bgv('hrfemp-phone'),
+    nationality:bgv('hrfemp-nat'),
+    basicSalary:parseFloat(bgv('hrfemp-salary'))||0,
+    hireDate:bgv('hrfemp-hire'),
+    branchId:branchId
+  };
+  if(!db){showToast('Firebase not connected','error');return;}
+  // If editing and branch changed, remove from old branch and add to new
+  if(empId&&oldBranchId&&oldBranchId!==branchId){
+    var oldArr=(HRF.staff[oldBranchId]||[]).filter(function(x){return x.id!==empId;});
+    db.ref('branches/'+oldBranchId+'/staff').set(oldArr,function(err){
+      if(err){showToast('Move-from-old failed: '+err.message,'error');return;}
+      // Now add to new branch
+      var newArr=(HRF.staff[branchId]||[]).slice();
+      newArr.push(rec);
+      db.ref('branches/'+branchId+'/staff').set(newArr,function(e2){
+        if(e2){showToast('Save to new branch failed: '+e2.message,'error');return;}
+        HRF.staff[oldBranchId]=oldArr;HRF.staff[branchId]=newArr;
+        closeModalForce();showToast('Employee moved & updated','success');navTo('hrf-employees');
+      });
+    });
+  } else {
+    var arr=(HRF.staff[branchId]||[]).slice();
+    if(empId){var i=arr.findIndex(function(x){return x.id===empId;});if(i>=0)arr[i]=rec;else arr.push(rec);}
+    else {arr.push(rec);}
+    db.ref('branches/'+branchId+'/staff').set(arr,function(err){
+      if(err){showToast('Save failed: '+err.message,'error');return;}
+      HRF.staff[branchId]=arr;
+      closeModalForce();showToast(empId?'Employee updated':'Employee added','success');navTo('hrf-employees');
+    });
+  }
+}
+function openHrfReassignModal(empId,fromBranchId){
+  var arr=HRF.staff[fromBranchId]||[];
+  var m=arr.find(function(x){return x.id===empId;});
+  if(!m){showToast('Employee not found','error');return;}
+  var branches=hrfBranches();
+  var brOpts=branches.filter(function(b){return b.id!==fromBranchId;}).map(function(b){return '<option value="'+hxe(b.id)+'">'+hxe(b.name)+'</option>';}).join('');
+  if(!brOpts){showToast('No other branches available','error');return;}
+  openModal(
+    '<div class="modal-head"><h2>Move '+hxe(m.name)+'</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>'+
+    '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px">Currently at: <strong>'+hxe((NX_BRANCHES[fromBranchId]||{}).name||fromBranchId)+'</strong></div>'+
+    '<div class="bfg"><label class="form-label">Move to Branch *</label><select class="form-input form-select" id="hrfreas-branch">'+brOpts+'</select></div>'+
+    '<button class="btn btn-primary" style="width:100%" data-eid="'+bxe(empId)+'" data-from="'+bxe(fromBranchId)+'" onclick="hrfDoReassign(this.dataset.eid,this.dataset.from)">Move Employee</button>'
+  );
+}
+function hrfDoReassign(empId,fromBranchId){
+  var toBranchId=bgv('hrfreas-branch');
+  if(!toBranchId||!db)return;
+  var oldArr=HRF.staff[fromBranchId]||[];
+  var emp=oldArr.find(function(x){return x.id===empId;});
+  if(!emp){showToast('Employee not found','error');return;}
+  var newOldArr=oldArr.filter(function(x){return x.id!==empId;});
+  emp.branchId=toBranchId;
+  var newToArr=(HRF.staff[toBranchId]||[]).slice();
+  newToArr.push(emp);
+  db.ref('branches/'+fromBranchId+'/staff').set(newOldArr,function(e1){
+    if(e1){showToast('Remove failed: '+e1.message,'error');return;}
+    db.ref('branches/'+toBranchId+'/staff').set(newToArr,function(e2){
+      if(e2){showToast('Add failed: '+e2.message,'error');return;}
+      HRF.staff[fromBranchId]=newOldArr;HRF.staff[toBranchId]=newToArr;
+      closeModalForce();showToast('Employee moved \u2713','success');navTo('hrf-employees');
+    });
+  });
+}
+function hrfDeleteEmp(empId,branchId){
+  if(!confirm('Delete this employee permanently?\n\nThis removes them from the branch staff list.'))return;
+  if(!db)return;
+  var arr=(HRF.staff[branchId]||[]).filter(function(x){return x.id!==empId;});
+  db.ref('branches/'+branchId+'/staff').set(arr,function(err){
+    if(err){showToast('Delete failed: '+err.message,'error');return;}
+    HRF.staff[branchId]=arr;
+    showToast('Employee deleted','success');navTo('hrf-employees');
+  });
 }
 
 // ── ATTENDANCE ──
@@ -9798,7 +10089,8 @@ function pHrfHealth(){
       (HRF.health[b.id]||[]).forEach(function(h2){
         h2._branchName=(NX_BRANCHES[b.id]||{}).name||b.id;
         all.push(h2);
-        var exp=h2.expiry||h2.expiryDate||h2.exp||'';
+        // OpsHub stores medical expiry as medExp; fallbacks for older shapes
+        var exp=h2.medExp||h2.expiry||h2.expiryDate||h2.exp||'';
         if(exp){var ms=new Date(exp+'T00:00:00').getTime();var days=Math.ceil((ms-todayMs)/86400000);if(days<0)expired++;else if(days<=30)expiring++;}
       });
     });
@@ -9810,23 +10102,40 @@ function pHrfHealth(){
     h+='</div>';
     var rows='';
     all.forEach(function(card){
-      var exp=card.expiry||card.expiryDate||card.exp||'';
-      var badge='—';
+      var exp=card.medExp||card.expiry||card.expiryDate||card.exp||'';
+      var deptVal=card.dept||'';
+      // If dept is missing on the card, look up the staff member from branch staff list
+      if(!deptVal&&card.staffId){
+        var staffArr=HRF.staff[card._branchId]||[];
+        // try all branches if branch wasn't tagged
+        if(!staffArr.length){branches.forEach(function(b){(HRF.staff[b.id]||[]).forEach(function(m){if(m.id===card.staffId)deptVal=m.dept||deptVal;});});}
+        else{staffArr.forEach(function(m){if(m.id===card.staffId)deptVal=m.dept||deptVal;});}
+      }
+      if(!deptVal&&card.name){
+        branches.forEach(function(b){(HRF.staff[b.id]||[]).forEach(function(m){if(m.name===card.name)deptVal=m.dept||deptVal;});});
+      }
+      var badge='\u2014',daysCell='\u2014';
       if(exp){var ms=new Date(exp+'T00:00:00').getTime();var days=Math.ceil((ms-Date.now())/86400000);
         var col=days<0?'#f87171':days<=30?'#f59e0b':days<=60?'#ffd166':'#34d399';
-        badge=hrfBadge(days<0?'Expired':days+'d left',col);}
-      rows+='<tr><td><strong>'+hxe(card.name||card.empName||'—')+'</strong></td>'+
-        '<td>'+hxe(card._branchName)+'</td><td>'+hxe(card.dept||'—')+'</td>'+
-        '<td style="font-family:var(--mono)">'+hxe(card.cardNo||card.id||'—')+'</td>'+
-        '<td>'+hxe(exp||'—')+'</td><td>'+badge+'</td></tr>';
+        badge=hrfBadge(days<0?'Expired':days+'d left',col);
+        daysCell='<span style="color:'+col+';font-weight:600">'+(days<0?'Expired':days+'d')+'</span>';
+      }
+      rows+='<tr><td><strong>'+hxe(card.name||card.empName||'\u2014')+'</strong></td>'+
+        '<td>'+hxe(card._branchName)+'</td><td>'+hxe(deptVal||'\u2014')+'</td>'+
+        '<td style="font-family:var(--mono)">'+hxe(card.cardNo||card.id||'\u2014')+'</td>'+
+        '<td>'+hxe(exp||'\u2014')+'</td><td>'+daysCell+'</td></tr>';
     });
     if(!rows)h+='<div class="empty-state"><div class="es-icon">&#x1F4B3;</div><h3>No health cards</h3></div>';
     else h+=hrfTable(['Name','Branch','Dept','Card No.','Expiry Date','Days Left'],rows);
     return h;
   }
-  var cached=branches.filter(function(b){return HRF.health[b.id];});
-  if(cached.length===branches.length)return renderHealth();
-  hrfLoadAll('health','health',function(){navTo('hrf-health');});
+  var cachedH=branches.filter(function(b){return HRF.health[b.id];});
+  var cachedS=branches.filter(function(b){return HRF.staff[b.id];});
+  if(cachedH.length===branches.length&&cachedS.length===branches.length)return renderHealth();
+  // Need both health AND staff (for dept lookup)
+  var done=0;function check(){done++;if(done>=2)navTo('hrf-health');}
+  if(cachedH.length<branches.length)hrfLoadAll('health','health',check);else check();
+  if(cachedS.length<branches.length)hrfLoadAll('staff','staff',check);else check();
   return hrfLoading('Loading health cards\u2026');
 }
 
@@ -10878,20 +11187,34 @@ function saveBmLeaveRequest() {
   var eid = bgv('bmlv-emp'), type = bgv('bmlv-type'), from = bgv('bmlv-from'), to = bgv('bmlv-to');
   if(!eid||!from||!to){showToast('Select employee and dates','error');return;}
   if(from > to){showToast('Start date cannot be after end date','error');return;}
+  // Guard against double-submit
+  if(BS._submittingLeave){return;} BS._submittingLeave=true;
+  setTimeout(function(){BS._submittingLeave=false;},2000);
+  // Duplicate guard: same employee + same dates within last 60s
+  var nowTs=Date.now();
+  var dup=(BS.tsLeaves||[]).find(function(x){return x.empId===eid&&x.from===from&&x.to===to&&(nowTs-(x.createdAt||0)<60000);});
+  if(dup){showToast('Duplicate leave request prevented','error');BS._submittingLeave=false;return;}
   var days = Math.max(1,Math.ceil((new Date(to+'T00:00:00')-new Date(from+'T00:00:00'))/86400000)+1);
   var s = NX.session||{};
   var rec = {id:buid(),empId:eid,type:type,start:from,from:from,end:to,to:to,days:days,
     note:bgv('bmlv-note'),status:'pending',branchId:s.branchId||'',branchName:s.branchName||'',
-    submittedBy:s.entityName||'Branch Manager',createdAt:Date.now()};
-  BS.tsLeaves.push(rec);
-  bSaveColl('tsLeaves',BS.tsLeaves);
-  // Also write to shared leaves path so HR sees it
+    submittedBy:s.entityName||'Branch Manager',createdAt:nowTs};
+  // Single write path: if Firebase available, push there and let listener update BS.tsLeaves
+  // Otherwise, write locally only
   if(db&&s.branchId){
-    db.ref('branches/'+s.branchId+'/tsLeaves').push(rec);
+    db.ref('branches/'+s.branchId+'/tsLeaves/'+rec.id).set(rec,function(err){
+      if(err){showToast('Submit failed: '+err.message,'error');BS._submittingLeave=false;return;}
+      bmUpdateBadges();
+      showToast('Leave request submitted \u2713','success');
+      navTo('bm-leave');
+    });
+  } else {
+    BS.tsLeaves.push(rec);
+    bSaveColl('tsLeaves',BS.tsLeaves);
+    bmUpdateBadges();
+    showToast('Leave request submitted \u2713','success');
+    navTo('bm-leave');
   }
-  bmUpdateBadges();
-  showToast('Leave request submitted \u2713','success');
-  navTo('bm-leave');
 }
 
 function bmApproveLeave(id) {
