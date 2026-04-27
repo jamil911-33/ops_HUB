@@ -9944,14 +9944,17 @@ function pHrfEmployees(){
     var rows='';
     filtered.forEach(function(m){
       var stCol=(m.status||'Active')==='Active'?'#34d399':m.status==='On Leave'?'#ffd166':'#f87171';
+      var sponsorLabel=m.workerType==='3rdparty'?
+        ('<span style="font-size:10px;color:#a78bfa;background:rgba(167,139,250,.12);padding:2px 7px;border-radius:10px;font-weight:600">3rd Party'+(m.companyId?' · '+hxe(m.companyId):'')+' </span>'):
+        '<span style="font-size:10px;color:#34d399;background:rgba(52,211,153,.1);padding:2px 7px;border-radius:10px;font-weight:600">Company</span>';
       rows+='<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="hrf-emp-avatar" style="width:32px;height:32px;font-size:11px">'+hini(m.name)+'</div>'+
         '<div><div style="font-weight:600;color:var(--text-primary)">'+hxe(m.name)+'</div>'+
         '<div style="font-size:11px;color:var(--text-tertiary)">'+hxe(m.sap||m.id||'\u2014')+'</div></div></div></td>'+
         '<td>'+hxe(m.dept||'\u2014')+'</td><td>'+hxe(m.role||'\u2014')+'</td>'+
         '<td><strong>'+hxe(m._branchName)+'</strong></td>'+
         '<td>'+hrfBadge(m.status||'Active',stCol)+'</td>'+
+        '<td>'+sponsorLabel+'</td>'+
         '<td>'+hxe(m.phone||'\u2014')+'</td>'+
-        '<td>'+hxe(m.nationality||'\u2014')+'</td>'+
         '<td><div style="display:flex;gap:4px">'+
           '<button class="btn btn-sm" data-eid="'+hxe(m.id||'')+'" data-bid="'+hxe(m._branchId||'')+'" onclick="openHrfEmpModal(this.dataset.eid,this.dataset.bid)">Edit</button>'+
           '<button class="btn btn-sm" style="color:#a78bfa" data-eid="'+hxe(m.id||'')+'" data-bid="'+hxe(m._branchId||'')+'" onclick="openHrfReassignModal(this.dataset.eid,this.dataset.bid)">Move</button>'+
@@ -9959,7 +9962,7 @@ function pHrfEmployees(){
         '</div></td></tr>';
     });
     if(!filtered.length)h+='<div class="empty-state"><div class="es-icon">&#x1F465;</div><h3>No staff found</h3><p>Try adjusting filters</p></div>';
-    else h+=hrfTable(['Name','Dept','Role','Branch','Status','Phone','Nationality','Actions'],rows);
+    else h+=hrfTable(['Name','Dept','Role','Branch','Status','Sponsor','Phone','Actions'],rows);
     return h;
   }
   var cached=branches.filter(function(b){return HRF.staff[b.id];});
@@ -10027,19 +10030,16 @@ function openHrfEmpModal(empId,branchId){
       '<div class="bfg"><label class="form-label">Status</label>'+
       '<select class="form-input form-select" id="hrfemp-status">'+stOpts+'</select></div></div>'+
 
-      // Row 5: Worker Type toggle
-      '<div class="bfg"><label class="form-label">Worker Type</label>'+
-      '<div style="display:flex;gap:8px;margin-top:4px">'+
-        '<button id="wt-company" class="btn'+(wType==='company'?' btn-primary':'')+'" style="flex:1" onclick="hrfToggleWorkerType(\'company\')">\uD83C\uDFE2 Company Staff</button>'+
-        '<button id="wt-3rdparty" class="btn'+(wType==='3rdparty'?' btn-primary':'')+'" style="flex:1" onclick="hrfToggleWorkerType(\'3rdparty\')">\uD83E\uDD1D 3rd Party</button>'+
-      '</div></div>'+
-      '<input type="hidden" id="hrfemp-workertype" value="'+bxe(wType)+'">'+
-
-      // Row 6: Company (for 3rd party) — shown/hidden
-      '<div id="hrfemp-company-row" class="bfg" style="'+(wType==='3rdparty'?'':'display:none')+'"><label class="form-label">Staffing Company</label>'+
-      '<div style="display:flex;gap:8px">'+
-        '<select class="form-input form-select" id="hrfemp-company" style="flex:1">'+compOpts+'</select>'+
-      '</div></div>'+
+      // Row 5: Worker Sponsor + Company
+      '<div class="form-row">'+
+        '<div class="bfg"><label class="form-label">Worker Sponsor</label>'+
+        '<select class="form-input form-select" id="hrfemp-workertype" onchange="hrfToggleWorkerType(this.value)">'+
+          '<option value="company"'+(wType==='company'?' selected':'')+'>Company Staff</option>'+
+          '<option value="3rdparty"'+(wType==='3rdparty'?' selected':'')+'>3rd Party</option>'+
+        '</select></div>'+
+        '<div class="bfg" id="hrfemp-company-row" style="'+(wType==='3rdparty'?'':'visibility:hidden')+'"><label class="form-label">Staffing Company</label>'+
+        '<select class="form-input form-select" id="hrfemp-company">'+compOpts+'</select></div>'+
+      '</div>'+
 
       // Row 7: Nationality + Hire Date
       '<div class="form-row"><div class="bfg"><label class="form-label">Nationality</label>'+
@@ -10057,14 +10057,8 @@ function openHrfEmpModal(empId,branchId){
 }
 
 function hrfToggleWorkerType(type){
-  var hidden=document.getElementById('hrfemp-workertype');
   var compRow=document.getElementById('hrfemp-company-row');
-  var btnC=document.getElementById('wt-company');
-  var btn3=document.getElementById('wt-3rdparty');
-  if(hidden)hidden.value=type;
-  if(compRow)compRow.style.display=type==='3rdparty'?'':'none';
-  if(btnC){btnC.className='btn'+(type==='company'?' btn-primary':'');}
-  if(btn3){btn3.className='btn'+(type==='3rdparty'?' btn-primary':'');}
+  if(compRow)compRow.style.visibility=type==='3rdparty'?'visible':'hidden';
 }
 
 function saveHrfEmp(empId,oldBranchId){
