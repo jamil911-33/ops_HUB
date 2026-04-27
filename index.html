@@ -3308,28 +3308,47 @@ function pRevAnalytics() {
   // Initialise filter state on NX object
   if (!NX.rev) NX.rev = { period:'month', group:'brand', yoy:false, brand:'all', region:'all', branch:'all' };
 
+  // Ensure live sales data is loaded — if not, kick off load and show placeholder
+  var branches = getAccessibleBranches();
+  var allLoaded = branches.every(function(b){ return NX_BRANCH_SALES[b.id] !== undefined; });
+  if (!allLoaded) {
+    loadAllBranchesSales(function(){ navTo('rev-analytics'); });
+    return '<div style="padding:48px;text-align:center;color:var(--text-tertiary)"><div style="font-size:32px;margin-bottom:12px">\u23F3</div><div>Loading live sales data from Firebase\u2026</div></div>';
+  }
+
   var s = NX.session || {};
   var role = s.role || 'ceo';
 
-  // Build entity selector options based on role
+  // Build live brand→region→branch tree from accessible branches
+  var liveTree = {};
+  branches.forEach(function(b){
+    var brandName = b.brand || 'Unknown';
+    var brandId = brandName.toLowerCase().replace(/\s+/g,'_');
+    var regionName = b.region || (b.location || 'Unknown');
+    var regionId = regionName.toLowerCase().replace(/\s+/g,'_');
+    if (!liveTree[brandId]) liveTree[brandId] = { name:brandName, regions:{} };
+    if (!liveTree[brandId].regions[regionId]) liveTree[brandId].regions[regionId] = { name:regionName, branches:[] };
+    liveTree[brandId].regions[regionId].branches.push(b);
+  });
+
+  // Build entity selector options based on live data
   var brandOpts = '<option value="all">All Brands</option>';
-  Object.keys(SEED.brands).forEach(function(bk) {
-    brandOpts += '<option value="' + bk + '"' + (NX.rev.brand===bk?' selected':'') + '>' + SEED.brands[bk].config.icon + ' ' + SEED.brands[bk].config.name + '</option>';
+  Object.keys(liveTree).sort().forEach(function(bk) {
+    brandOpts += '<option value="' + bk + '"' + (NX.rev.brand===bk?' selected':'') + '>' + xe(liveTree[bk].name) + '</option>';
   });
 
   var regionOpts = '<option value="all">All Regions</option>';
-  Object.keys(SEED.brands).forEach(function(bk) {
-    Object.keys(SEED.brands[bk].regions).forEach(function(rk) {
-      regionOpts += '<option value="' + bk + '|' + rk + '"' + (NX.rev.region===bk+'|'+rk?' selected':'') + '>' + SEED.brands[bk].config.name + ' — ' + SEED.brands[bk].regions[rk].config.name + '</option>';
+  Object.keys(liveTree).sort().forEach(function(bk) {
+    Object.keys(liveTree[bk].regions).sort().forEach(function(rk) {
+      regionOpts += '<option value="' + bk + '|' + rk + '"' + (NX.rev.region===bk+'|'+rk?' selected':'') + '>' + xe(liveTree[bk].name) + ' \u2014 ' + xe(liveTree[bk].regions[rk].name) + '</option>';
     });
   });
 
   var branchOpts = '<option value="all">All Branches</option>';
-  Object.keys(SEED.brands).forEach(function(bk) {
-    Object.keys(SEED.brands[bk].regions).forEach(function(rk) {
-      Object.keys(SEED.brands[bk].regions[rk].branches).forEach(function(brk) {
-        var br = SEED.brands[bk].regions[rk].branches[brk];
-        branchOpts += '<option value="' + bk + '|' + rk + '|' + brk + '"' + (NX.rev.branch===bk+'|'+rk+'|'+brk?' selected':'') + '>' + br.config.name + '</option>';
+  Object.keys(liveTree).sort().forEach(function(bk) {
+    Object.keys(liveTree[bk].regions).sort().forEach(function(rk) {
+      liveTree[bk].regions[rk].branches.forEach(function(br) {
+        branchOpts += '<option value="' + bk + '|' + rk + '|' + br.id + '"' + (NX.rev.branch===bk+'|'+rk+'|'+br.id?' selected':'') + '>' + xe(br.name) + '</option>';
       });
     });
   });
@@ -3493,48 +3512,60 @@ function revGroupLabel() {
   return labels[(NX.rev||{}).group] || 'By Brand';
 }
 
-// Get all entities based on current group + filters
+// Get all entities based on current group + filters — LIVE from NX_BRANCHES
 function revGetEntities() {
   var g = (NX.rev||{}).group || 'brand';
   var brandFilter = (NX.rev||{}).brand || 'all';
+  var regionFilter = (NX.rev||{}).region || 'all';
   var entities = [];
-  var BRAND_COLORS = { piatto:'#7c6ff7', hybrid:'#3b9eff', cafex:'#f59e0b' };
+  var BRAND_COLORS = { piatto:'#7c6ff7', hybrid:'#3b9eff', cafex:'#f59e0b', steakhouse:'#ef4444', firegrill:'#f97316' };
+  var iconFor = function(bn){var l=(bn||'').toLowerCase();if(l.indexOf('piatto')>=0)return '\uD83C\uDF55';if(l.indexOf('hybrid')>=0)return '\uD83C\uDFEA';if(l.indexOf('steak')>=0)return '\uD83E\uDD69';if(l.indexOf('fire')>=0||l.indexOf('grill')>=0)return '\uD83D\uDD25';return '\uD83C\uDFEA';};
+
+  var branches = getAccessibleBranches();
+  // Build brand→region→branch tree from live NX_BRANCHES
+  var tree = {};
+  branches.forEach(function(b){
+    var brandName = b.brand || 'Unknown';
+    var brandId = brandName.toLowerCase().replace(/\s+/g,'_');
+    var regionName = b.region || (b.location||'Unknown');
+    var regionId = regionName.toLowerCase().replace(/\s+/g,'_');
+    if (!tree[brandId]) tree[brandId] = { id:brandId, name:brandName, regions:{} };
+    if (!tree[brandId].regions[regionId]) tree[brandId].regions[regionId] = { id:regionId, name:regionName, branches:[] };
+    tree[brandId].regions[regionId].branches.push(b);
+  });
 
   if (g === 'brand') {
-    Object.keys(SEED.brands).forEach(function(bk) {
+    Object.keys(tree).forEach(function(bk) {
       if (brandFilter !== 'all' && bk !== brandFilter) return;
-      var b = SEED.brands[bk];
+      var brand = tree[bk];
       entities.push({
-        id: bk, name: b.config.icon + ' ' + b.config.name,
-        color: b.config.color || BRAND_COLORS[bk] || '#94a3b8',
+        id: bk, name: iconFor(brand.name) + ' ' + brand.name,
+        color: BRAND_COLORS[bk] || '#94a3b8',
         brandId: bk
       });
     });
   } else if (g === 'region') {
-    Object.keys(SEED.brands).forEach(function(bk) {
+    Object.keys(tree).forEach(function(bk) {
       if (brandFilter !== 'all' && bk !== brandFilter) return;
-      var b = SEED.brands[bk];
-      Object.keys(b.regions).forEach(function(rk) {
+      Object.keys(tree[bk].regions).forEach(function(rk) {
         entities.push({
-          id: bk+'|'+rk, name: b.config.name + ' · ' + b.regions[rk].config.name,
-          color: b.config.color || BRAND_COLORS[bk] || '#94a3b8',
+          id: bk+'|'+rk, name: tree[bk].name + ' \u00b7 ' + tree[bk].regions[rk].name,
+          color: BRAND_COLORS[bk] || '#94a3b8',
           brandId: bk, regionId: rk
         });
       });
     });
   } else {
-    var regionFilter = (NX.rev||{}).region || 'all';
-    Object.keys(SEED.brands).forEach(function(bk) {
+    Object.keys(tree).forEach(function(bk) {
       if (brandFilter !== 'all' && bk !== brandFilter) return;
-      var b = SEED.brands[bk];
-      Object.keys(b.regions).forEach(function(rk) {
+      Object.keys(tree[bk].regions).forEach(function(rk) {
         if (regionFilter !== 'all' && bk+'|'+rk !== regionFilter) return;
-        Object.keys(b.regions[rk].branches).forEach(function(brk) {
+        tree[bk].regions[rk].branches.forEach(function(br) {
           entities.push({
-            id: bk+'|'+rk+'|'+brk,
-            name: b.regions[rk].branches[brk].config.name,
-            color: b.config.color || BRAND_COLORS[bk] || '#94a3b8',
-            brandId: bk, regionId: rk, branchId: brk
+            id: bk+'|'+rk+'|'+br.id,
+            name: br.name,
+            color: BRAND_COLORS[bk] || '#94a3b8',
+            brandId: bk, regionId: rk, branchId: br.id
           });
         });
       });
@@ -3543,68 +3574,36 @@ function revGetEntities() {
   return entities;
 }
 
-// Get revenue for an entity within a date range from DEMO_METRICS
+// Get revenue for an entity within a date range — LIVE Firebase data
 function revGetEntityRevenue(entity, startDate, endDate) {
   var total = 0;
-  var bm = DEMO_METRICS.brands[entity.brandId];
-  if (!bm) return 0;
-
-  if (entity.branchId) {
-    // Single branch
-    var brData = bm.branches[entity.branchId];
-    if (brData && brData.salesData) {
-      brData.salesData.forEach(function(d) {
-        if (d.date >= startDate && d.date <= endDate) total += d.amount;
-      });
-    }
-  } else if (entity.regionId) {
-    // Sum all branches in this region
-    Object.keys(SEED.brands[entity.brandId].regions[entity.regionId].branches).forEach(function(brk) {
-      var brData = bm.branches[brk];
-      if (brData && brData.salesData) {
-        brData.salesData.forEach(function(d) {
-          if (d.date >= startDate && d.date <= endDate) total += d.amount;
-        });
+  var branches = getAccessibleBranches();
+  branches.forEach(function(b){
+    if (!_revBranchMatchesEntity(b, entity)) return;
+    var entries = NX_BRANCH_SALES[b.id] || [];
+    entries.forEach(function(d){
+      if (d.date >= startDate && d.date <= endDate) {
+        total += parseFloat(d.actual||d.amount||0)||0;
       }
     });
-  } else {
-    // Sum all branches in this brand
-    Object.values(bm.branches).forEach(function(brData) {
-      if (brData && brData.salesData) {
-        brData.salesData.forEach(function(d) {
-          if (d.date >= startDate && d.date <= endDate) total += d.amount;
-        });
-      }
-    });
-  }
+  });
   return total;
 }
 
-// Get daily revenue series for an entity
+// Get daily revenue series for an entity — LIVE Firebase data
 function revGetDailySeries(entity, startDate, endDate) {
   var byDate = {};
-  var bm = DEMO_METRICS.brands[entity.brandId];
-  if (!bm) return [];
-
-  function addBranchData(brData) {
-    if (!brData || !brData.salesData) return;
-    brData.salesData.forEach(function(d) {
+  var branches = getAccessibleBranches();
+  branches.forEach(function(b){
+    if (!_revBranchMatchesEntity(b, entity)) return;
+    var entries = NX_BRANCH_SALES[b.id] || [];
+    entries.forEach(function(d){
       if (d.date >= startDate && d.date <= endDate) {
-        byDate[d.date] = (byDate[d.date] || 0) + d.amount;
+        var amt = parseFloat(d.actual||d.amount||0)||0;
+        byDate[d.date] = (byDate[d.date] || 0) + amt;
       }
     });
-  }
-
-  if (entity.branchId) {
-    addBranchData(bm.branches[entity.branchId]);
-  } else if (entity.regionId) {
-    Object.keys(SEED.brands[entity.brandId].regions[entity.regionId].branches).forEach(function(brk) {
-      addBranchData(bm.branches[brk]);
-    });
-  } else {
-    Object.values(bm.branches).forEach(function(br) { addBranchData(br); });
-  }
-
+  });
   // Generate all dates in range
   var result = [];
   var cur = new Date(startDate + 'T00:00:00');
@@ -3615,6 +3614,20 @@ function revGetDailySeries(entity, startDate, endDate) {
     cur.setDate(cur.getDate() + 1);
   }
   return result;
+}
+
+// Helper: does this Firebase branch match the entity scope?
+function _revBranchMatchesEntity(b, entity){
+  if (entity.branchId) return b.id === entity.branchId;
+  var brandId = (b.brand||'').toLowerCase().replace(/\s+/g,'_');
+  var regionId = (b.region||'').toLowerCase().replace(/\s+/g,'_');
+  if (entity.regionId && entity.brandId) {
+    return brandId === entity.brandId && regionId === entity.regionId;
+  }
+  if (entity.brandId) {
+    return brandId === entity.brandId;
+  }
+  return true;
 }
 
 // Generate date labels for x-axis (smart formatting based on range)
@@ -5360,6 +5373,7 @@ function attachBranchListeners() {
   db.ref(bPath('tsAtt')).on('value', function(snap){ BS.tsAtt=snap.val()||{}; });
   db.ref(bPath('config')).on('value', function(snap){ BS._branchConfig=snap.val()||{}; });
   db.ref(bPath('pcBudget')).once('value', function(snap){ BS.pcBudget=snap.val()||0; });
+  db.ref('admin/branchPermissions/'+NX.session.branchId).once('value', function(snap){ BS._branchPerms=snap.val()||{}; });
   db.ref(bPath('pcCostCenters')).on('value', function(snap){ var v=snap.val(); if(v&&v.length)BS.pcCostCenters=v; });
   db.ref(bPath('pcGLs')).on('value', function(snap){ var v=snap.val(); if(v&&v.length)BS.pcGLs=v; });
   db.ref(bPath('pcCycleNo')).on('value', function(snap){ var v=snap.val(); if(v!==null&&v!==undefined)BS.pcCycleNo=v; });
@@ -6771,6 +6785,14 @@ function pStaff() {
   attachBranchListeners();
   var sess=NX.session||{};
   var canEdit=(sess.role==='hr_manager'||sess.role==='super_admin'||sess.role==='ceo');
+  // Branch Managers can add if HR has granted permission for this branch
+  var bmCanAdd=false;
+  if(sess.role==='branch_mgr'&&sess.branchId){
+    var _perms=(typeof HRF_BRANCH_PERMS!=='undefined'?HRF_BRANCH_PERMS:{});
+    bmCanAdd=!!(_perms[sess.branchId]&&_perms[sess.branchId].canAddStaff);
+    // Also check live from Firebase cache in BS
+    if(!bmCanAdd&&BS._branchPerms)bmCanAdd=!!(BS._branchPerms.canAddStaff);
+  }
   var now=new Date(),todayName=DAYS_WEEK[now.getDay()];
   var act=0,lv=0,oth=0;BS.staff.forEach(function(m){if(m.status==='Active')act++;else if(m.status==='On Leave')lv++;else oth++;});
   var dbt='';['All'].concat(DEPTS).forEach(function(d){dbt+='<button class="bfbt'+(BS.fd===d?' on':'')+'" onclick="BS.fd=\''+d+'\';navTo(\'staff\')">'+bxe(d)+'</button>';});
@@ -6797,6 +6819,8 @@ function pStaff() {
   h+='<button class="btn btn-sm" onclick="BS._roleFilter=\'All\';navTo(\'staff\')">Clear</button></div>';
   h+='<div class="bgrid-4" style="margin-bottom:14px"><div class="bsc"><div class="bsc-lbl">Total</div><div class="bsc-val bca">'+BS.staff.length+'</div></div><div class="bsc"><div class="bsc-lbl">Active</div><div class="bsc-val bcg">'+act+'</div></div><div class="bsc"><div class="bsc-lbl">On Leave</div><div class="bsc-val bcr">'+lv+'</div></div><div class="bsc"><div class="bsc-lbl">Other</div><div class="bsc-val" style="color:var(--text-secondary)">'+oth+'</div></div></div>';
   if(canEdit){
+    h+='<div class="header-actions"><div></div><button class="btn btn-primary" onclick="openBranchStaffModal(null)">+ Add Staff</button></div>';
+  } else if(bmCanAdd) {
     h+='<div class="header-actions"><div></div><button class="btn btn-primary" onclick="openBranchStaffModal(null)">+ Add Staff</button></div>';
   } else {
     h+='<div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.25);border-radius:9px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:10px"><span style="font-size:16px">&#x1F512;</span><div>Adding, editing, and removing staff is managed by HR. Use <strong>Transfer</strong> to request a staff move between branches.</div></div>';
@@ -9910,6 +9934,7 @@ function pHrfEmployees(){
     var depOpts=depts.map(function(d){return '<option value="'+hxe(d)+'"'+(filterDept===d?' selected':'')+'>'+(d||'All Departments')+'</option>';}).join('');
     var INP='padding:7px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:var(--font);font-size:13px;outline:none';
     var h=hrfHeader('Employee Directory',filtered.length+' of '+allStaff.length+' staff',
+      '<button class="btn" onclick="openHrfBranchAccessMgr()">\uD83D\uDD11 Branch Access</button>'+
       '<button class="btn" onclick="hrfExportEmployees()">&#x2B07; Export CSV</button>'+
       '<button class="btn btn-primary" onclick="openHrfEmpModal(null,null)">+ Add Employee</button>');
     h+='<div style="display:flex;gap:8px;padding:12px 0;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:16px">'+
@@ -9944,37 +9969,113 @@ function pHrfEmployees(){
 }
 
 // ── HR Employee Add/Edit Modal ──
-function openHrfEmpModal(empId,branchId){
-  var m=null;
-  if(empId&&branchId){var arr=HRF.staff[branchId]||[];m=arr.find(function(x){return x.id===empId;});}
-  var branches=hrfBranches();
-  var brOpts=branches.map(function(b){return '<option value="'+hxe(b.id)+'"'+(m&&m._branchId===b.id?' selected':(branchId===b.id?' selected':''))+'>'+hxe(b.name)+'</option>';}).join('');
-  var deps=['FOH','Kitchen','Bar','Management','Other'];
-  var depOpts=deps.map(function(d){return '<option'+(m&&m.dept===d?' selected':'')+'>'+d+'</option>';}).join('');
-  var statuses=['Active','On Leave','Resigned'];
-  var stOpts=statuses.map(function(s){return '<option'+(m&&m.status===s?' selected':(!m&&s==='Active'?' selected':''))+'>'+s+'</option>';}).join('');
-  openModal(
-    '<div class="modal-head"><h2>'+(m?'Edit Employee':'Add Employee')+'</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>'+
-    '<div class="form-row"><div class="bfg"><label class="form-label">Full Name *</label><input class="form-input" id="hrfemp-name" value="'+bxe(m?m.name||'':'')+'"></div>'+
-    '<div class="bfg"><label class="form-label">SAP #</label><input class="form-input" id="hrfemp-sap" value="'+bxe(m?m.sap||'':'')+'"></div></div>'+
-    '<div class="form-row"><div class="bfg"><label class="form-label">Branch *</label><select class="form-input form-select" id="hrfemp-branch">'+brOpts+'</select></div>'+
-    '<div class="bfg"><label class="form-label">Department</label><select class="form-input form-select" id="hrfemp-dept">'+depOpts+'</select></div></div>'+
-    '<div class="form-row"><div class="bfg"><label class="form-label">Role / Position</label><input class="form-input" id="hrfemp-role" value="'+bxe(m?m.role||'':'')+'"></div>'+
-    '<div class="bfg"><label class="form-label">Status</label><select class="form-input form-select" id="hrfemp-status">'+stOpts+'</select></div></div>'+
-    '<div class="form-row"><div class="bfg"><label class="form-label">Phone</label><input class="form-input" id="hrfemp-phone" value="'+bxe(m?m.phone||'':'')+'"></div>'+
-    '<div class="bfg"><label class="form-label">Nationality</label><input class="form-input" id="hrfemp-nat" value="'+bxe(m?m.nationality||'':'')+'"></div></div>'+
-    '<div class="form-row"><div class="bfg"><label class="form-label">Basic Salary (SAR)</label><input class="form-input" type="number" step="0.01" id="hrfemp-salary" value="'+(m?m.basicSalary||m.salary||'':'')+'"></div>'+
-    '<div class="bfg"><label class="form-label">Hire Date</label><input class="form-input" type="date" id="hrfemp-hire" value="'+bxe(m?m.hireDate||'':'')+'"></div></div>'+
-    '<button class="btn btn-primary" style="width:100%;margin-top:8px" data-eid="'+bxe(empId||'')+'" data-bid="'+bxe(branchId||'')+'" onclick="saveHrfEmp(this.dataset.eid,this.dataset.bid)">'+(m?'Save Changes':'Add Employee')+'</button>'
-  );
+// ── HR Managed Roles & Companies (stored in shared Firebase) ──
+var HRF_ROLES = ['Restaurant Manager','Supervisor','Kitchen Manager','Assistant Kitchen Manager','Captain','Server','Host','Barista','Busser','Line Cook','Prep Cook','Dishwasher','Maintenance','Driver'];
+var HRF_COMPANIES = []; // 3rd-party staffing companies
+
+function hrfLoadRolesAndCompanies(cb){
+  if(!db){if(cb)cb();return;}
+  var done=0;
+  function check(){done++;if(done>=2&&cb)cb();}
+  db.ref('shared/hr_roles').once('value',function(snap){var v=snap.val();if(v&&v.length)HRF_ROLES=v;check();});
+  db.ref('shared/hr_companies').once('value',function(snap){var v=snap.val();if(v)HRF_COMPANIES=Array.isArray(v)?v:Object.values(v);else HRF_COMPANIES=[];check();});
 }
+
+function openHrfEmpModal(empId,branchId){
+  hrfLoadRolesAndCompanies(function(){
+    var m=null;
+    if(empId&&branchId){var arr=HRF.staff[branchId]||[];m=arr.find(function(x){return x.id===empId;});}
+    var branches=hrfBranches();
+    var brOpts=branches.map(function(b){return '<option value="'+hxe(b.id)+'"'+(m&&m._branchId===b.id?' selected':(branchId===b.id?' selected':''))+'>'+hxe(b.name)+'</option>';}).join('');
+    var deps=['FOH','Kitchen','Bar','Management','Maintenance','Other'];
+    var depOpts=deps.map(function(d){return '<option'+(m&&m.dept===d?' selected':'')+'>'+d+'</option>';}).join('');
+    var statuses=['Active','On Leave','Resigned','Terminated'];
+    var stOpts=statuses.map(function(s){return '<option'+(m&&m.status===s?' selected':(!m&&s==='Active'?' selected':''))+'>'+s+'</option>';}).join('');
+    var roleOpts='<option value="">— Select role —</option>'+HRF_ROLES.map(function(r){return '<option value="'+hxe(r)+'"'+(m&&m.role===r?' selected':'')+'>'+hxe(r)+'</option>';}).join('');
+    var wType=m?m.workerType||'company':'company';
+    var compOpts='<option value="">— None —</option>'+HRF_COMPANIES.map(function(c){var id=c.id||c.name;return '<option value="'+hxe(id)+'"'+(m&&m.companyId===id?' selected':'')+'>'+hxe(c.name)+'</option>';}).join('');
+
+    openModal(
+      '<div class="modal-head"><h2>'+(m?'Edit Employee':'Add Employee')+'</h2>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button class="btn btn-sm" onclick="openHrfRolesMgr()" title="Manage Roles">\u2699\uFE0F Roles</button>'+
+        '<button class="btn btn-sm" onclick="openHrfCompaniesMgr()" title="Manage Companies">\u2699\uFE0F Companies</button>'+
+        '<button class="modal-close" onclick="closeModalForce()">\u2715</button>'+
+      '</div></div>'+
+
+      // Row 1: Name + SAP
+      '<div class="form-row"><div class="bfg"><label class="form-label">Full Name *</label>'+
+      '<input class="form-input" id="hrfemp-name" value="'+bxe(m?m.name||'':'')+'"></div>'+
+      '<div class="bfg"><label class="form-label">SAP #</label>'+
+      '<input class="form-input" id="hrfemp-sap" value="'+bxe(m?m.sap||'':'')+'"></div></div>'+
+
+      // Row 2: Email + Phone
+      '<div class="form-row"><div class="bfg"><label class="form-label">Email</label>'+
+      '<input class="form-input" type="email" id="hrfemp-email" value="'+bxe(m?m.email||'':'')+'" placeholder="employee@example.com"></div>'+
+      '<div class="bfg"><label class="form-label">Phone</label>'+
+      '<input class="form-input" id="hrfemp-phone" value="'+bxe(m?m.phone||'':'')+'"></div></div>'+
+
+      // Row 3: Branch + Dept
+      '<div class="form-row"><div class="bfg"><label class="form-label">Branch *</label>'+
+      '<select class="form-input form-select" id="hrfemp-branch">'+brOpts+'</select></div>'+
+      '<div class="bfg"><label class="form-label">Department</label>'+
+      '<select class="form-input form-select" id="hrfemp-dept">'+depOpts+'</select></div></div>'+
+
+      // Row 4: Role (managed dropdown) + Status
+      '<div class="form-row"><div class="bfg"><label class="form-label">Role / Position</label>'+
+      '<select class="form-input form-select" id="hrfemp-role">'+roleOpts+'</select></div>'+
+      '<div class="bfg"><label class="form-label">Status</label>'+
+      '<select class="form-input form-select" id="hrfemp-status">'+stOpts+'</select></div></div>'+
+
+      // Row 5: Worker Type toggle
+      '<div class="bfg"><label class="form-label">Worker Type</label>'+
+      '<div style="display:flex;gap:8px;margin-top:4px">'+
+        '<button id="wt-company" class="btn'+(wType==='company'?' btn-primary':'')+'" style="flex:1" onclick="hrfToggleWorkerType(\'company\')">\uD83C\uDFE2 Company Staff</button>'+
+        '<button id="wt-3rdparty" class="btn'+(wType==='3rdparty'?' btn-primary':'')+'" style="flex:1" onclick="hrfToggleWorkerType(\'3rdparty\')">\uD83E\uDD1D 3rd Party</button>'+
+      '</div></div>'+
+      '<input type="hidden" id="hrfemp-workertype" value="'+bxe(wType)+'">'+
+
+      // Row 6: Company (for 3rd party) — shown/hidden
+      '<div id="hrfemp-company-row" class="bfg" style="'+(wType==='3rdparty'?'':'display:none')+'"><label class="form-label">Staffing Company</label>'+
+      '<div style="display:flex;gap:8px">'+
+        '<select class="form-input form-select" id="hrfemp-company" style="flex:1">'+compOpts+'</select>'+
+      '</div></div>'+
+
+      // Row 7: Nationality + Hire Date
+      '<div class="form-row"><div class="bfg"><label class="form-label">Nationality</label>'+
+      '<input class="form-input" id="hrfemp-nat" value="'+bxe(m?m.nationality||'':'')+'"></div>'+
+      '<div class="bfg"><label class="form-label">Hire Date</label>'+
+      '<input class="form-input" type="date" id="hrfemp-hire" value="'+bxe(m?m.hireDate||'':'')+'"></div></div>'+
+
+      // Row 8: Salary
+      '<div class="bfg"><label class="form-label">Basic Salary (SAR)</label>'+
+      '<input class="form-input" type="number" step="0.01" id="hrfemp-salary" value="'+(m?m.basicSalary||m.salary||'':'')+'"></div>'+
+
+      '<button class="btn btn-primary" style="width:100%;margin-top:14px" data-eid="'+bxe(empId||'')+'" data-bid="'+bxe(branchId||'')+'" onclick="saveHrfEmp(this.dataset.eid,this.dataset.bid)">'+(m?'Save Changes':'Add Employee')+'</button>'
+    );
+  });
+}
+
+function hrfToggleWorkerType(type){
+  var hidden=document.getElementById('hrfemp-workertype');
+  var compRow=document.getElementById('hrfemp-company-row');
+  var btnC=document.getElementById('wt-company');
+  var btn3=document.getElementById('wt-3rdparty');
+  if(hidden)hidden.value=type;
+  if(compRow)compRow.style.display=type==='3rdparty'?'':'none';
+  if(btnC){btnC.className='btn'+(type==='company'?' btn-primary':'');}
+  if(btn3){btn3.className='btn'+(type==='3rdparty'?' btn-primary':'');}
+}
+
 function saveHrfEmp(empId,oldBranchId){
   var name=bgv('hrfemp-name'),branchId=bgv('hrfemp-branch');
   if(!name||!branchId){showToast('Name and Branch are required','error');return;}
+  var wType=bgv('hrfemp-workertype')||'company';
   var rec={
     id:empId||buid(),
     name:name,
     sap:bgv('hrfemp-sap'),
+    email:bgv('hrfemp-email'),
     dept:bgv('hrfemp-dept'),
     role:bgv('hrfemp-role'),
     status:bgv('hrfemp-status')||'Active',
@@ -9982,19 +10083,18 @@ function saveHrfEmp(empId,oldBranchId){
     nationality:bgv('hrfemp-nat'),
     basicSalary:parseFloat(bgv('hrfemp-salary'))||0,
     hireDate:bgv('hrfemp-hire'),
+    workerType:wType,
+    companyId:wType==='3rdparty'?(bgv('hrfemp-company')||''):'',
     branchId:branchId
   };
   if(!db){showToast('Firebase not connected','error');return;}
-  // If editing and branch changed, remove from old branch and add to new
   if(empId&&oldBranchId&&oldBranchId!==branchId){
     var oldArr=(HRF.staff[oldBranchId]||[]).filter(function(x){return x.id!==empId;});
     db.ref('branches/'+oldBranchId+'/staff').set(oldArr,function(err){
-      if(err){showToast('Move-from-old failed: '+err.message,'error');return;}
-      // Now add to new branch
-      var newArr=(HRF.staff[branchId]||[]).slice();
-      newArr.push(rec);
+      if(err){showToast('Move failed: '+err.message,'error');return;}
+      var newArr=(HRF.staff[branchId]||[]).slice();newArr.push(rec);
       db.ref('branches/'+branchId+'/staff').set(newArr,function(e2){
-        if(e2){showToast('Save to new branch failed: '+e2.message,'error');return;}
+        if(e2){showToast('Save failed: '+e2.message,'error');return;}
         HRF.staff[oldBranchId]=oldArr;HRF.staff[branchId]=newArr;
         closeModalForce();showToast('Employee moved & updated','success');navTo('hrf-employees');
       });
@@ -10002,13 +10102,107 @@ function saveHrfEmp(empId,oldBranchId){
   } else {
     var arr=(HRF.staff[branchId]||[]).slice();
     if(empId){var i=arr.findIndex(function(x){return x.id===empId;});if(i>=0)arr[i]=rec;else arr.push(rec);}
-    else {arr.push(rec);}
+    else arr.push(rec);
     db.ref('branches/'+branchId+'/staff').set(arr,function(err){
       if(err){showToast('Save failed: '+err.message,'error');return;}
       HRF.staff[branchId]=arr;
       closeModalForce();showToast(empId?'Employee updated':'Employee added','success');navTo('hrf-employees');
     });
   }
+}
+
+// ── Managed Roles CRUD ──
+function openHrfRolesMgr(){
+  var rows=HRF_ROLES.map(function(r,i){return '<tr><td style="font-weight:600">'+hxe(r)+'</td><td style="text-align:right;white-space:nowrap">'+
+    '<button class="btn btn-sm" data-ri="'+i+'" onclick="renameHrfRole(parseInt(this.dataset.ri))">Edit</button> '+
+    '<button class="btn btn-sm" style="color:var(--danger)" data-ri="'+i+'" onclick="deleteHrfRole(parseInt(this.dataset.ri))">Del</button></td></tr>';}).join('');
+  openModal('<div class="modal-head"><h2>\u2699\uFE0F Manage Roles</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>'+
+    '<div class="bfg"><label class="form-label">Add new role</label><div style="display:flex;gap:8px"><input class="form-input" id="hrf-role-new" placeholder="e.g. Shift Leader"><button class="btn btn-primary" onclick="addHrfRole()">+ Add</button></div></div>'+
+    '<div class="btw" style="max-height:320px;overflow-y:auto;margin-top:10px"><table class="btbl"><thead><tr><th>Role</th><th></th></tr></thead><tbody>'+
+    (rows||'<tr><td colspan="2" style="text-align:center;color:var(--text-tertiary);padding:14px">No roles defined</td></tr>')+
+    '</tbody></table></div>');
+}
+function addHrfRole(){var v=bgv('hrf-role-new');if(!v){showToast('Enter a role name','error');return;}if(HRF_ROLES.indexOf(v)>=0){showToast('Already exists','error');return;}HRF_ROLES.push(v);db.ref('shared/hr_roles').set(HRF_ROLES);showToast('Role added','success');openHrfRolesMgr();}
+function renameHrfRole(i){var v=prompt('Rename "'+HRF_ROLES[i]+'" to:',HRF_ROLES[i]);if(!v||v===HRF_ROLES[i])return;HRF_ROLES[i]=v;db.ref('shared/hr_roles').set(HRF_ROLES);showToast('Renamed','success');openHrfRolesMgr();}
+function deleteHrfRole(i){if(!confirm('Delete role "'+HRF_ROLES[i]+'"?'))return;HRF_ROLES.splice(i,1);db.ref('shared/hr_roles').set(HRF_ROLES);showToast('Deleted','success');openHrfRolesMgr();}
+
+// ── Managed Companies CRUD ──
+function openHrfCompaniesMgr(){
+  var rows=HRF_COMPANIES.map(function(c,i){return '<tr>'+
+    '<td style="font-weight:600">'+hxe(c.name)+'</td>'+
+    '<td style="color:var(--text-tertiary);font-size:11px">'+hxe(c.contact||'')+'</td>'+
+    '<td style="text-align:right;white-space:nowrap">'+
+      '<button class="btn btn-sm" data-ci="'+i+'" onclick="editHrfCompany(parseInt(this.dataset.ci))">Edit</button> '+
+      '<button class="btn btn-sm" style="color:var(--danger)" data-ci="'+i+'" onclick="deleteHrfCompany(parseInt(this.dataset.ci))">Del</button>'+
+    '</td></tr>';}).join('');
+  openModal('<div class="modal-head"><h2>\u2699\uFE0F Staffing Companies</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>'+
+    '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:10px">Companies used for 3rd party staffing assignments.</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
+      '<input class="form-input" id="hrf-co-name" placeholder="Company name *">'+
+      '<input class="form-input" id="hrf-co-contact" placeholder="Contact person"></div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+
+      '<input class="form-input" id="hrf-co-phone" placeholder="Phone">'+
+      '<input class="form-input" id="hrf-co-email" placeholder="Email"></div>'+
+    '<button class="btn btn-primary" style="width:100%;margin-bottom:14px" onclick="addHrfCompany()">+ Add Company</button>'+
+    '<table class="btbl"><thead><tr><th>Company</th><th>Contact</th><th></th></tr></thead><tbody>'+
+    (rows||'<tr><td colspan="3" style="text-align:center;color:var(--text-tertiary);padding:14px">No companies added</td></tr>')+
+    '</tbody></table>');
+}
+function addHrfCompany(){
+  var name=bgv('hrf-co-name');if(!name){showToast('Company name required','error');return;}
+  if(HRF_COMPANIES.find(function(c){return c.name===name;})){showToast('Already exists','error');return;}
+  var co={id:buid(),name:name,contact:bgv('hrf-co-contact'),phone:bgv('hrf-co-phone'),email:bgv('hrf-co-email')};
+  HRF_COMPANIES.push(co);
+  db.ref('shared/hr_companies').set(HRF_COMPANIES);showToast('Company added','success');openHrfCompaniesMgr();
+}
+function editHrfCompany(i){
+  var c=HRF_COMPANIES[i];
+  var name=prompt('Company name:',c.name);if(!name)return;
+  var contact=prompt('Contact person:',c.contact||'');
+  HRF_COMPANIES[i]=Object.assign({},c,{name:name,contact:contact||''});
+  db.ref('shared/hr_companies').set(HRF_COMPANIES);showToast('Updated','success');openHrfCompaniesMgr();
+}
+function deleteHrfCompany(i){if(!confirm('Delete "'+HRF_COMPANIES[i].name+'"?'))return;HRF_COMPANIES.splice(i,1);db.ref('shared/hr_companies').set(HRF_COMPANIES);showToast('Deleted','success');openHrfCompaniesMgr();}
+
+// ── Branch Add-Employee Access Control ──
+// HR can grant/revoke per-branch permission to add staff
+// Stored at admin/branchPermissions/{branchId}/canAddStaff
+var HRF_BRANCH_PERMS = {};
+function hrfLoadBranchPerms(cb){
+  if(!db){if(cb)cb();return;}
+  db.ref('admin/branchPermissions').once('value',function(snap){HRF_BRANCH_PERMS=snap.val()||{};if(cb)cb();});
+}
+function openHrfBranchAccessMgr(){
+  hrfLoadBranchPerms(function(){
+    var branches=hrfBranches();
+    var rows=branches.map(function(b){
+      var allowed=!!(HRF_BRANCH_PERMS[b.id]&&HRF_BRANCH_PERMS[b.id].canAddStaff);
+      return '<tr><td style="font-weight:600">'+hxe(b.name)+'</td>'+
+        '<td style="color:var(--text-tertiary);font-size:11px">'+hxe(b.brand||'')+'</td>'+
+        '<td style="text-align:right">'+
+          '<button class="btn btn-sm'+(allowed?' btn-primary':'')+'" data-bid="'+hxe(b.id)+'" data-allowed="'+(allowed?'1':'0')+'" onclick="hrfToggleBranchAccess(this.dataset.bid,this.dataset.allowed===\'1\')">'+
+            (allowed?'\u2705 Can Add':'&#x1F512; Locked')+
+          '</button>'+
+        '</td></tr>';
+    }).join('');
+    openModal('<div class="modal-head"><h2>\uD83D\uDD11 Branch Staff Access</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>'+
+      '<div style="font-size:12px;color:var(--text-secondary);background:var(--surface-2);padding:10px 14px;border-radius:8px;margin-bottom:14px">'+
+        'When a branch has <strong>Can Add</strong> permission, its Branch Manager can add new staff members from the Staff page. Otherwise only HR can.'+
+      '</div>'+
+      '<table class="btbl"><thead><tr><th>Branch</th><th>Brand</th><th style="text-align:right">Add Staff</th></tr></thead><tbody>'+
+      rows+'</tbody></table>');
+  });
+}
+function hrfToggleBranchAccess(branchId,currentlyAllowed){
+  if(!db)return;
+  var newVal=!currentlyAllowed;
+  db.ref('admin/branchPermissions/'+branchId+'/canAddStaff').set(newVal,function(err){
+    if(err){showToast('Update failed','error');return;}
+    if(!HRF_BRANCH_PERMS[branchId])HRF_BRANCH_PERMS[branchId]={};
+    HRF_BRANCH_PERMS[branchId].canAddStaff=newVal;
+    showToast((newVal?'Branch can now add staff':'Branch access revoked'),'success');
+    openHrfBranchAccessMgr();
+  });
 }
 function openHrfReassignModal(empId,fromBranchId){
   var arr=HRF.staff[fromBranchId]||[];
