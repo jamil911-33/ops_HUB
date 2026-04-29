@@ -6613,13 +6613,23 @@ function pOrdersHistoryNX() {
     h += '<div style="font-size:11px;font-weight:700;color:' + (stC[o.status]||'var(--text-secondary)') + '">' + xe(o.status||'pending') + '</div>';
     h += '<span style="color:var(--text-tertiary)">▾</span></div>';
     h += '<div style="display:none;padding:0 14px 12px">';
+    h += '<div style="display:flex;justify-content:flex-end;margin-bottom:8px">';
+    h += '<button class="btn btn-sm" onclick="printPurchaseOrder(\'' + xe(o.id) + '\')" style="font-size:11px;gap:4px">🖨️ Print Order</button>';
+    h += '</div>';
     (o.items||[]).forEach(function(it) {
-      var rv = it.received||0, done = rv >= it.qty;
-      h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">';
-      h += '<span>' + xe(it.name) + ' <span style="font-family:var(--mono);color:var(--text-tertiary);font-size:10px">'+xe(it.code)+'</span></span>';
-      h += '<span style="font-family:var(--mono);color:' + (done?'var(--success)':'var(--text-primary)') + '">' + (it.received||0) + '/' + it.qty + ' ' + (it.unit||'') + '</span>';
-      if (!done && o.status !== 'done' && o.status !== 'cancelled') {
-        h += '<button class="btn btn-sm" onclick="bktReceiveItem(\'' + xe(o.id) + '\',\'' + xe(it.code) + '\')">✅ Receive</button>';
+      var rv = it.received||0, done = rv >= it.qty, notRecv = it.notReceived;
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px;flex-wrap:wrap">';
+      h += '<span style="flex:1;min-width:0">' + xe(it.name) + ' <span style="font-family:var(--mono);color:var(--text-tertiary);font-size:10px">'+xe(it.code)+'</span></span>';
+      h += '<span style="font-family:var(--mono);color:' + (done?'var(--success)':notRecv?'var(--warning)':'var(--text-primary)') + '">' + (it.received||0) + '/' + it.qty + ' ' + (it.unit||'') + (notRecv?' ⚠️':'') + '</span>';
+      if (!done && !notRecv && o.status !== 'done' && o.status !== 'cancelled') {
+        h += '<div style="display:flex;gap:4px;flex-shrink:0">';
+        h += '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);color:#34d399;border-color:rgba(52,211,153,.3)" onclick="bktReceiveItem(\'' + xe(o.id) + '\',\'' + xe(it.code) + '\')">✅ Receive</button>';
+        h += '<button class="btn btn-sm" style="background:rgba(248,113,113,.1);color:#f87171;border-color:rgba(248,113,113,.3)" onclick="bktMarkNotReceived(\'' + xe(o.id) + '\',\'' + xe(it.code) + '\')">✗ Not Received</button>';
+        h += '</div>';
+      } else if (done) {
+        h += '<span style="font-size:10px;font-weight:700;color:#34d399;flex-shrink:0">✅ Done</span>';
+      } else if (notRecv) {
+        h += '<span style="font-size:10px;font-weight:700;color:#f59e0b;flex-shrink:0">⚠️ Not Received</span>';
       }
       h += '</div>';
     });
@@ -6644,11 +6654,109 @@ function bktReceiveItem(ordId, code) {
   var o = bOrders.find(function(x){ return x.id===ordId; });
   if (!o) return;
   var it = (o.items||[]).find(function(x){ return x.code===code; });
-  if (it) { it.received = it.qty; }
+  if (!it) return;
+  var prevReceived = it.received || 0;
+  var addQty = it.qty - prevReceived;
+  it.received = it.qty;
+  // Update item QTY in inventory
+  if (addQty > 0) {
+    var invItem = bfindItem(code);
+    if (invItem) {
+      invItem.qty = parseFloat(invItem.qty || 0) + addQty;
+      bSaveStock(code, invItem.qty);
+      bLogs.push({code: code, name: invItem.name, type: 'receive', qty: addQty, note: 'From PO: ' + ordId, date: TODAY_BS});
+      bSaveLogs();
+    }
+  }
   var allDone = (o.items||[]).every(function(x){ return (x.received||0)>=x.qty; });
   if (allDone) o.status = 'done';
+  else o.status = 'partial';
   bSaveColl('inv_orders', bOrders);
+  showToast('✅ Received — stock updated', 'success');
   navTo('inv-orders');
+}
+
+function bktMarkNotReceived(ordId, code) {
+  var o = bOrders.find(function(x){ return x.id===ordId; });
+  if (!o) return;
+  var it = (o.items||[]).find(function(x){ return x.code===code; });
+  if (!it) return;
+  it.notReceived = true;
+  it.received = it.received || 0;
+  // Check if all items are either received or marked not-received
+  var allSettled = (o.items||[]).every(function(x){ return (x.received||0)>=x.qty || x.notReceived; });
+  var anyReceived = (o.items||[]).some(function(x){ return (x.received||0)>0; });
+  if (allSettled) o.status = anyReceived ? 'partial' : 'cancelled';
+  bSaveColl('inv_orders', bOrders);
+  showToast('⚠️ Marked as not received', 'warning');
+  navTo('inv-orders');
+}
+
+function printPurchaseOrder(ordId) {
+  var o = bOrders.find(function(x){ return x.id===ordId; });
+  if (!o) { showToast('Order not found', 'error'); return; }
+  var s = NX.session || {};
+  var rows = (o.items||[]).map(function(it, i) {
+    var done = (it.received||0) >= it.qty;
+    var notRecv = it.notReceived;
+    var statusLabel = done ? '✅ Received' : notRecv ? '⚠️ Not Received' : '⏳ Pending';
+    return '<tr style="border-bottom:1px solid #e2e8f0">' +
+      '<td style="padding:10px 12px;font-size:12px;font-weight:600;color:#111">' + (i+1) + '</td>' +
+      '<td style="padding:10px 12px"><div style="font-size:12px;font-weight:700;color:#111">' + (it.name||'') + '</div><div style="font-size:10px;color:#64748b;font-family:monospace">' + (it.code||'') + '</div></td>' +
+      '<td style="padding:10px 12px;text-align:center;font-size:13px;font-weight:700;color:#1a2340;font-family:monospace">' + it.qty + '</td>' +
+      '<td style="padding:10px 12px;text-align:center;font-size:12px;color:#64748b">' + (it.unit||'') + '</td>' +
+      '<td style="padding:10px 12px;text-align:center;font-size:11px;font-weight:600;color:' + (done?'#16a34a':notRecv?'#b45309':'#64748b') + '">' + statusLabel + '</td>' +
+      '<td style="padding:10px 12px;font-family:monospace;font-size:11px;color:#94a3b8;border:1px solid #e2e8f0;min-width:120px">&nbsp;</td>' +
+    '</tr>';
+  }).join('');
+  var total = (o.items||[]).reduce(function(s,it){ return s + (it.qty * (parseFloat(it.price)||0)); }, 0);
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Purchase Order - ' + o.id + '</title>' +
+    '<style>@page{size:A4;margin:12mm}*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}' +
+    'body{background:#fff;color:#111;font-size:12px}' +
+    'table{width:100%;border-collapse:collapse}' +
+    '.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;margin-bottom:18px;border-bottom:3px solid #1a2340}' +
+    '.po-badge{background:#1a2340;color:#fff;padding:6px 16px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:1px}' +
+    '.info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px}' +
+    '.info-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px}' +
+    '.info-box .lbl{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:3px}' +
+    '.info-box .val{font-size:13px;font-weight:700;color:#1a2340}' +
+    'thead th{background:#1a2340;color:#fff;padding:10px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px}' +
+    'tbody tr:nth-child(even){background:#f8fafc}' +
+    '.foot{margin-top:24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:30px}' +
+    '.foot-cell{border-top:2px solid #1a2340;padding-top:6px;text-align:center;font-size:9px;color:#64748b;font-weight:600}' +
+    '@media print{.np{display:none!important}}' +
+    '</style></head><body>' +
+    '<div class="hdr">' +
+      '<div><div style="font-size:22px;font-weight:900;color:#1a2340">ALFA.CO</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-top:2px">' + (s.branchName||s.entityName||'') + '</div></div>' +
+      '<div style="text-align:center"><h1 style="font-size:18px;font-weight:900;color:#1a2340;letter-spacing:2px">PURCHASE ORDER</h1>' +
+      '<div class="po-badge" style="margin-top:6px;display:inline-block">' + o.id + '</div></div>' +
+      '<div style="text-align:right;font-size:10px;color:#64748b"><div>Date: <strong>' + o.date + '</strong></div>' +
+      '<div style="margin-top:4px">Printed: ' + new Date().toLocaleDateString('en-GB') + '</div></div>' +
+    '</div>' +
+    '<div class="info-grid">' +
+      '<div class="info-box"><div class="lbl">Supplier</div><div class="val">' + (o.supplier||'—') + '</div></div>' +
+      '<div class="info-box"><div class="lbl">Status</div><div class="val" style="text-transform:capitalize">' + (o.status||'pending') + '</div></div>' +
+      '<div class="info-box"><div class="lbl">Note</div><div class="val" style="font-size:11px;font-weight:500">' + (o.note||'—') + '</div></div>' +
+    '</div>' +
+    '<table><thead><tr>' +
+      '<th style="width:40px">#</th><th>Item</th><th style="text-align:center;width:80px">Qty</th>' +
+      '<th style="text-align:center;width:60px">Unit</th><th style="text-align:center;width:120px">Status</th>' +
+      '<th style="width:140px">Supplier Signature</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>' +
+    (total > 0 ? '<div style="text-align:right;margin-top:12px;font-size:13px;font-weight:700;color:#1a2340">Total Estimated: SAR ' + total.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div>' : '') +
+    '<div class="foot">' +
+      '<div class="foot-cell">Prepared by</div>' +
+      '<div class="foot-cell">Approved by Manager</div>' +
+      '<div class="foot-cell">Supplier Representative</div>' +
+    '</div>' +
+    '<div class="np" style="text-align:center;margin-top:20px">' +
+      '<button onclick="window.print()" style="background:#1a2340;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer">🖨️ Print / Save PDF</button>' +
+    '</div>' +
+    '</body></html>';
+  var w = window.open('', '_blank', 'width=900,height=700');
+  if (w) { w.document.write(html); w.document.close(); }
+  else showToast('Allow pop-ups to print', 'error');
 }
 
 function openBasketModalNX() {
