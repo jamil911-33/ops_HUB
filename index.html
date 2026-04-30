@@ -1697,7 +1697,7 @@ var NAV_CONFIG = {
       { id:'region-dash',    icon:'📊', label:'Region Dashboard' },
       { id:'region-branches',icon:'🏪', label:'My Branches' },
       { id:'rev-analytics',  icon:'📊', label:'Sales Comparison' },
-      { id:'headcount',      icon:'👥', label:'Staff Management' },
+      { id:'headcount',      icon:'👥', label:'Staff Management', badge:'am-transfers-pending' },
       { id:'alerts-center',  icon:'⚠️', label:'Alerts', badge:'alerts' }
     ]}
   ],
@@ -3850,6 +3850,52 @@ function pHeadcount() {
     return h;
   }
 
+  // ── Area Manager: show transfer requests for approval ────────────────────
+  if (s.role === 'regional') {
+    h += '<div class="card section">';
+    h += '<div style="font-size:11px;font-weight:700;color:#c084fc;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">&#x1F500; Pending Staff Transfer Requests</div>';
+    h += '<div id="am-transfer-list"><div style="text-align:center;padding:14px;color:var(--text-tertiary);font-size:12px">Loading…</div></div>';
+    h += '</div>';
+    if (db) {
+      setTimeout(function() {
+        var container = document.getElementById('am-transfer-list');
+        if (!container) return;
+        db.ref('admin/transfer_requests').once('value', function(snap) {
+          var raw = snap.val() || {};
+          var myBranchIds = s.branchIds || [];
+          var reqs = Object.values(raw).filter(function(r) {
+            if (!r || r.status !== 'pending') return false;
+            // Show if either source or destination branch belongs to this area manager
+            return myBranchIds.length === 0 ||
+              myBranchIds.indexOf(r.fromBranch) >= 0 ||
+              myBranchIds.indexOf(r.toBranch) >= 0;
+          });
+          if (!reqs.length) {
+            container.innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-tertiary);font-size:12px;font-style:italic">No pending transfer requests</div>';
+            return;
+          }
+          var htm = reqs.map(function(r) {
+            var toName = r.toBranchName || (NX_BRANCHES[r.toBranch] && NX_BRANCHES[r.toBranch].name) || r.toBranch;
+            var enc = encodeURIComponent(JSON.stringify(r)).replace(/'/g,'%27');
+            return '<div style="background:var(--surface-2);border:1px solid rgba(192,132,252,.2);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+              '<div style="flex:1;min-width:0">' +
+                '<div style="font-size:13px;font-weight:700">' + xe(r.staffName) + '</div>' +
+                '<div style="font-size:11px;color:var(--text-tertiary)">' + xe(r.staffDept||r.staffRole||'') + ' &middot; From: <strong>' + xe(r.fromBranchName||r.fromBranch) + '</strong> &rarr; <strong>' + xe(toName) + '</strong></div>' +
+                (r.note ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px">' + xe(r.note) + '</div>' : '') +
+                '<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">' + xe(r.id) + ' &middot; ' + xe(r.date) + '</div>' +
+              '</div>' +
+              '<div style="display:flex;gap:6px;flex-shrink:0">' +
+                '<button class="btn btn-primary btn-sm" onclick="approveStaffTransfer(\'' + xe(r.id) + '\',\'' + enc + '\')">&#x2705; Approve</button>' +
+                '<button class="btn btn-sm" style="color:var(--danger)" onclick="rejectStaffTransfer(\'' + xe(r.id) + '\')">&#x2715; Reject</button>' +
+              '</div>' +
+            '</div>';
+          }).join('');
+          container.innerHTML = htm;
+        });
+      }, 150);
+    }
+  }
+
   // CEO/Admin: load all branches
   if (!NX._hcCache) NX._hcCache = {};
   var cached = branches.filter(function(b){ return NX._hcCache[b.id]; });
@@ -4648,7 +4694,7 @@ function pAccessCtrl() {
           return '<div style="background:var(--surface-2);border:1px solid rgba(192,132,252,.2);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
             '<div style="flex:1">' +
               '<div style="font-size:13px;font-weight:700">' + xe(r.staffName) + '</div>' +
-              '<div style="font-size:11px;color:var(--text-tertiary)">' + xe(r.staffDept||'') + ' \xb7 From: <strong>' + xe(r.fromBranchName||r.fromBranch) + '</strong> \u2192 <strong>' + xe(r.toBranch) + '</strong></div>' +
+              '<div style="font-size:11px;color:var(--text-tertiary)">' + xe(r.staffDept||r.staffRole||'') + ' \xb7 From: <strong>' + xe(r.fromBranchName||r.fromBranch) + '</strong> \u2192 <strong>' + xe(r.toBranchName||NX_BRANCHES[r.toBranch]&&NX_BRANCHES[r.toBranch].name||r.toBranch) + '</strong></div>' +
               (r.note ? '<div style="font-size:11px;color:var(--text-secondary)">' + xe(r.note) + '</div>' : '') +
               '<div style="font-size:10px;color:var(--text-tertiary)">' + xe(r.id) + ' \xb7 ' + xe(r.date) + '</div>' +
             '</div>' +
@@ -7021,12 +7067,14 @@ function doNXTransferStaff(staffId) {
   var note = ((document.getElementById('nxt-note')||{}).value||'').trim();
   if (!dest) { showToast('Select destination branch','warning'); return; }
   var s = NX.session || {};
+  var destBranch = NX_BRANCHES[dest];
+  var destBranchName = destBranch ? (destBranch.name || dest) : dest;
   var reqId = 'STRF-' + TODAY_BS + '-' + String(Date.now()).slice(-4);
   var req = {
     id:reqId, type:'staff_transfer', staffId:staffId,
     staffName:staff.name, staffDept:staff.dept||'', staffRole:staff.role||'',
     fromBranch:s.branchId||'', fromBranchName:s.branchName||'',
-    toBranch:dest, note:note, status:'pending', date:TODAY_BS, createdAt:Date.now()
+    toBranch:dest, toBranchName:destBranchName, note:note, status:'pending', date:TODAY_BS, createdAt:Date.now()
   };
   db.ref('admin/transfer_requests/' + reqId).set(req, function(err) {
     if (err) { showToast('Request failed: ' + err.message, 'error'); return; }
@@ -7039,7 +7087,8 @@ function doNXTransferStaff(staffId) {
 function approveStaffTransfer(reqId, reqEncoded) {
   if (!db) { showToast('Not connected','error'); return; }
   var req; try { req = JSON.parse(decodeURIComponent(reqEncoded)); } catch(e) { showToast('Invalid data','error'); return; }
-  if (!confirm('Approve transfer of "' + req.staffName + '" to ' + req.toBranch + '?')) return;
+  var toName = req.toBranchName || (NX_BRANCHES[req.toBranch] && NX_BRANCHES[req.toBranch].name) || req.toBranch;
+  if (!confirm('Approve transfer of "' + req.staffName + '" to ' + toName + '?')) return;
   var srcPath = 'branches/' + req.fromBranch + '/staff';
   var destPath = 'branches/' + req.toBranch + '/staff';
   var staffKey = String(req.staffId).replace(/[.#$[\]\/]/g, '_');
@@ -7061,12 +7110,14 @@ function approveStaffTransfer(reqId, reqEncoded) {
         // Hybrid branch: copy staff to destination but keep at source
         db.ref('admin/transfer_requests/' + reqId + '/status').set('approved', function() {
           showToast('Transfer approved — staff copied (Hybrid branch — kept at source)', 'success');
+          if (typeof amUpdateTransferBadge === 'function') amUpdateTransferBadge();
           navTo('access-ctrl');
         });
       } else {
         db.ref(srcPath + '/' + staffKey).remove(function() {
           db.ref('admin/transfer_requests/' + reqId + '/status').set('approved', function() {
             showToast('Transfer approved - staff moved', 'success');
+            if (typeof amUpdateTransferBadge === 'function') amUpdateTransferBadge();
             navTo('access-ctrl');
           });
         });
@@ -7080,6 +7131,7 @@ function rejectStaffTransfer(reqId) {
   if (!confirm('Reject this transfer request?')) return;
   db.ref('admin/transfer_requests/' + reqId + '/status').set('rejected', function() {
     showToast('Transfer rejected','warning');
+    if (typeof amUpdateTransferBadge === 'function') amUpdateTransferBadge();
     navTo('access-ctrl');
   });
 }
@@ -9758,6 +9810,10 @@ launchApp = function() {
     // Update alert badge
     var nb = document.getElementById('nb-alerts');
     if (nb) { nb.style.display = 'flex'; nb.textContent = '3'; }
+    // Update Area Manager transfer pending badge
+    if (NX.session && NX.session.role === 'regional') {
+      setTimeout(amUpdateTransferBadge, 500);
+    }
     // ── Defensive: ensure page-area has content; if empty, force re-render ──
     var _pa = document.getElementById('page-area');
     if (_pa && (!_pa.innerHTML || _pa.innerHTML.trim().length < 20) && NX.page) {
@@ -11707,6 +11763,25 @@ function bmUpdateBadges() {
   var ua = (BS._bmAnns||[]).filter(function(a){return !(BS._bmAcks||{})[a.id];});
   var nb3 = document.getElementById('nb-bm-ann-unread');
   if(nb3){nb3.style.display=ua.length?'flex':'none';nb3.textContent=ua.length;}
+}
+
+// ── Area Manager transfer badge updater ──
+function amUpdateTransferBadge() {
+  if (!db) return;
+  var s = NX.session || {};
+  if (s.role !== 'regional') return;
+  db.ref('admin/transfer_requests').once('value', function(snap) {
+    var raw = snap.val() || {};
+    var myBranchIds = s.branchIds || [];
+    var pending = Object.values(raw).filter(function(r) {
+      if (!r || r.status !== 'pending') return false;
+      return myBranchIds.length === 0 ||
+        myBranchIds.indexOf(r.fromBranch) >= 0 ||
+        myBranchIds.indexOf(r.toBranch) >= 0;
+    });
+    var nb = document.getElementById('nb-am-transfers-pending');
+    if (nb) { nb.style.display = pending.length ? 'flex' : 'none'; nb.textContent = pending.length; }
+  });
 }
 
 // Load announcements + acks for branch manager
