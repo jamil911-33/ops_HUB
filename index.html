@@ -7096,29 +7096,57 @@ function approveStaffTransfer(reqId, reqEncoded) {
   var srcBranch = Object.values(NX_BRANCHES).find(function(b){ return b.id === req.fromBranch; });
   var srcName = (srcBranch&&srcBranch.name||req.fromBranchName||'').toLowerCase();
   var keepAtSource = srcName.indexOf('hybrid') >= 0;
-  db.ref(srcPath + '/' + staffKey).once('value', function(snap) {
-    var staffData = snap.val();
-    if (!staffData) { showToast('Staff not found at source','error'); return; }
+
+  // Load the entire staff node — handles both keyed objects and numeric arrays
+  db.ref(srcPath).once('value', function(snap) {
+    var raw = snap.val();
+    if (!raw) { showToast('Staff not found at source', 'error'); return; }
+
+    // Find the staff member by id or name (handles array and object storage)
+    var foundKey = null, staffData = null;
+    var entries = typeof raw === 'object' ? Object.entries(raw) : [];
+    for (var i = 0; i < entries.length; i++) {
+      var k = entries[i][0], v = entries[i][1];
+      if (!v) continue;
+      if (String(v.id) === String(req.staffId) ||
+          (v.name && v.name === req.staffName)) {
+        foundKey = k;
+        staffData = v;
+        break;
+      }
+    }
+
+    // Fall back to direct key
+    if (!staffData && raw[staffKey]) {
+      foundKey = staffKey;
+      staffData = raw[staffKey];
+    }
+
+    if (!staffData) { showToast('Staff not found at source', 'error'); return; }
+
     var updated = Object.assign({}, staffData, {
       transferredFrom: req.fromBranchName||req.fromBranch,
       transferNote: req.note||'', transferDate: TODAY_BS,
       approvedBy: (NX.session||{}).userName||'Area Manager'
     });
-    db.ref(destPath + '/' + staffKey).set(updated, function(err) {
+
+    // Write to destination using same key format
+    var destKey = foundKey;
+    db.ref(destPath + '/' + destKey).set(updated, function(err) {
       if (err) { showToast('Failed: '+err.message,'error'); return; }
       if (keepAtSource) {
         // Hybrid branch: copy staff to destination but keep at source
         db.ref('admin/transfer_requests/' + reqId + '/status').set('approved', function() {
           showToast('Transfer approved — staff copied (Hybrid branch — kept at source)', 'success');
           if (typeof amUpdateTransferBadge === 'function') amUpdateTransferBadge();
-          navTo('access-ctrl');
+          navTo('headcount');
         });
       } else {
-        db.ref(srcPath + '/' + staffKey).remove(function() {
+        db.ref(srcPath + '/' + foundKey).remove(function() {
           db.ref('admin/transfer_requests/' + reqId + '/status').set('approved', function() {
-            showToast('Transfer approved - staff moved', 'success');
+            showToast('Transfer approved — staff moved', 'success');
             if (typeof amUpdateTransferBadge === 'function') amUpdateTransferBadge();
-            navTo('access-ctrl');
+            navTo('headcount');
           });
         });
       }
