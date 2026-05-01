@@ -7280,94 +7280,129 @@ function approveStaffTransfer(reqId, reqEncoded) {
   var req; try { req = JSON.parse(decodeURIComponent(reqEncoded)); } catch(e) { showToast('Invalid data','error'); return; }
   var toName = req.toBranchName || (NX_BRANCHES[req.toBranch] && NX_BRANCHES[req.toBranch].name) || req.toBranch;
   if (!confirm('Approve transfer of "' + req.staffName + '" to ' + toName + '?')) return;
-  var srcPath = 'branches/' + req.fromBranch + '/staff';
-  var destPath = 'branches/' + req.toBranch + '/staff';
+  var srcBase = 'branches/' + req.fromBranch;
+  var destBase = 'branches/' + req.toBranch;
   var staffKey = String(req.staffId).replace(/[.#$[\]\/]/g, '_');
-  // Hybrid branches: staff are shared — keep at source branch after transfer
   var srcBranch = Object.values(NX_BRANCHES).find(function(b){ return b.id === req.fromBranch; });
   var srcName = (srcBranch&&srcBranch.name||req.fromBranchName||'').toLowerCase();
   var keepAtSource = srcName.indexOf('hybrid') >= 0;
+  var role = (NX.session||{}).role;
+  var nextPage = role === 'regional' ? 'headcount' : 'access-ctrl';
 
-  // Load the entire staff node — handles both keyed objects and numeric arrays
-  db.ref(srcPath).once('value', function(snap) {
+  // Step 1: Load source staff node
+  db.ref(srcBase + '/staff').once('value', function(snap) {
     var raw = snap.val();
     if (!raw) { showToast('Staff not found at source', 'error'); return; }
 
-    // Find the staff member by id or name (handles array and object storage)
+    // Find staff by id or name (handles both array and keyed object)
     var foundKey = null, staffData = null;
     var entries = typeof raw === 'object' ? Object.entries(raw) : [];
     for (var i = 0; i < entries.length; i++) {
       var k = entries[i][0], v = entries[i][1];
       if (!v) continue;
-      if (String(v.id) === String(req.staffId) ||
-          (v.name && v.name === req.staffName)) {
-        foundKey = k;
-        staffData = v;
-        break;
+      if (String(v.id) === String(req.staffId) || (v.name && v.name === req.staffName)) {
+        foundKey = k; staffData = v; break;
       }
     }
-
-    // Fall back to direct key
-    if (!staffData && raw[staffKey]) {
-      foundKey = staffKey;
-      staffData = raw[staffKey];
-    }
-
+    if (!staffData && raw[staffKey]) { foundKey = staffKey; staffData = raw[staffKey]; }
     if (!staffData) { showToast('Staff not found at source', 'error'); return; }
 
+    var staffId = String(staffData.id || req.staffId);
     var updated = Object.assign({}, staffData, {
       transferredFrom: req.fromBranchName||req.fromBranch,
       transferNote: req.note||'', transferDate: TODAY_BS,
       approvedBy: (NX.session||{}).userName||'Area Manager'
     });
 
-    // Helper: copy health card from source to destination branch
-    function transferHealthCard(onDone) {
-      var srcHealthPath = 'branches/' + req.fromBranch + '/health';
-      var destHealthPath = 'branches/' + req.toBranch + '/health';
-      db.ref(srcHealthPath).once('value', function(snap) {
-        var raw = snap.val();
-        if (!raw) { onDone(); return; }
-        var entries = typeof raw === 'object' ? Object.values(raw) : [];
-        var hc = entries.find(function(h) {
-          return h && (h.name === req.staffName ||
-            (h.staffId && String(h.staffId) === String(req.staffId)));
-        });
-        if (!hc) { onDone(); return; } // no health card found — that's OK
-        var hcKey = String(hc.id || hc.name).replace(/[.#$[\]\/]/g, '_');
-        var hcCopy = Object.assign({}, hc, {
-          transferredFrom: req.fromBranchName || req.fromBranch,
-          transferDate: TODAY_BS
-        });
-        db.ref(destHealthPath + '/' + hcKey).set(hcCopy, function() {
-          onDone();
-        });
+    // Collect all async ops then finalize
+    var pending = 0;
+    function done() { if (--pending > 0) return; finalize(); }
+
+    function finalize() {
+      // Mark request approved
+      db.ref('admin/transfer_requests/' + reqId + '/status').set('approved', function() {
+        showToast('✅ Transfer complete — Staff, Schedule, Timesheet & Health Card moved', 'success');
+        if (typeof amUpdateTransferBadge === 'function') amUpdateTransferBadge();
+        navTo(nextPage);
       });
     }
 
-    // Write to destination using same key format
-    var destKey = foundKey;
-    db.ref(destPath + '/' + destKey).set(updated, function(err) {
-      if (err) { showToast('Failed: '+err.message,'error'); return; }
-      var role = (NX.session||{}).role;
-      var nextPage = role === 'regional' ? 'headcount' : 'access-ctrl';
-      // Transfer health card then finalize
-      transferHealthCard(function() {
-        if (keepAtSource) {
-          db.ref('admin/transfer_requests/' + reqId + '/status').set('approved', function() {
-            showToast('Transfer approved — staff & health card copied', 'success');
-            if (typeof amUpdateTransferBadge === 'function') amUpdateTransferBadge();
-            navTo(nextPage);
-          });
-        } else {
-          db.ref(srcPath + '/' + foundKey).remove(function() {
-            db.ref('admin/transfer_requests/' + reqId + '/status').set('approved', function() {
-              showToast('Transfer approved — staff & health card moved', 'success');
-              if (typeof amUpdateTransferBadge === 'function') amUpdateTransferBadge();
-              navTo(nextPage);
-            });
-          });
-        }
+    // Step 2: Write staff to destination
+    pending++;
+    db.ref(destBase + '/staff/' + foundKey).set(updated, function(err) {
+      if (err) { showToast('Failed writing staff: '+err.message,'error'); return; }
+      if (!keepAtSource) db.ref(srcBase + '/staff/' + foundKey).remove();
+      done();
+    });
+
+    // Step 3: Transfer tsEmps (timesheet employee record)
+    pending++;
+    db.ref(srcBase + '/tsEmps').once('value', function(snap2) {
+      var tsRaw = snap2.val();
+      var tsEntries = tsRaw ? (Array.isArray(tsRaw) ? tsRaw : Object.values(tsRaw)) : [];
+      var tsEmp = tsEntries.find(function(e){ return e && String(e.id) === staffId; });
+      if (tsEmp) {
+        var tsKey = String(tsEmp.id).replace(/[.#$[\]\/]/g,'_');
+        var tsUpdated = Object.assign({}, tsEmp, { branchTransferDate: TODAY_BS });
+        db.ref(destBase + '/tsEmps/' + tsKey).set(tsUpdated, function() {
+          if (!keepAtSource) {
+            // Remove from source tsEmps — handle array or object
+            if (Array.isArray(tsRaw)) {
+              var newArr = tsEntries.filter(function(e){ return e && String(e.id) !== staffId; });
+              db.ref(srcBase + '/tsEmps').set(newArr, function(){ done(); });
+            } else {
+              db.ref(srcBase + '/tsEmps/' + tsKey).remove(function(){ done(); });
+            }
+          } else { done(); }
+        });
+      } else { done(); }
+    });
+
+    // Step 4: Transfer tsAtt (attendance records)
+    pending++;
+    db.ref(srcBase + '/tsAtt/' + staffId).once('value', function(snap3) {
+      var attData = snap3.val();
+      if (attData) {
+        db.ref(destBase + '/tsAtt/' + staffId).set(attData, function() {
+          if (!keepAtSource) db.ref(srcBase + '/tsAtt/' + staffId).remove();
+          done();
+        });
+      } else { done(); }
+    });
+
+    // Step 5: Remove staff from source schedule (sch) — all weeks
+    pending++;
+    db.ref(srcBase + '/sch').once('value', function(snap4) {
+      var schData = snap4.val();
+      if (schData && !keepAtSource) {
+        // Remove this staff's shifts from every week
+        var schUpdates = {};
+        Object.keys(schData).forEach(function(week) {
+          if (schData[week] && schData[week][staffId] !== undefined) {
+            schUpdates[srcBase + '/sch/' + week + '/' + staffId] = null;
+          }
+        });
+        if (Object.keys(schUpdates).length) {
+          db.ref().update(schUpdates, function(){ done(); });
+        } else { done(); }
+      } else { done(); }
+    });
+
+    // Step 6: Transfer health card
+    pending++;
+    db.ref(srcBase + '/health').once('value', function(snap5) {
+      var hRaw = snap5.val();
+      if (!hRaw) { done(); return; }
+      var hEntries = typeof hRaw === 'object' ? Object.values(hRaw) : [];
+      var hc = hEntries.find(function(h){
+        return h && (h.name === req.staffName || (h.staffId && String(h.staffId) === staffId));
+      });
+      if (!hc) { done(); return; }
+      var hcKey = String(hc.id || hc.name).replace(/[.#$[\]\/]/g,'_');
+      var hcCopy = Object.assign({}, hc, { transferredFrom: req.fromBranchName||req.fromBranch, transferDate: TODAY_BS });
+      db.ref(destBase + '/health/' + hcKey).set(hcCopy, function() {
+        if (!keepAtSource) db.ref(srcBase + '/health/' + hcKey).remove();
+        done();
       });
     });
   });
