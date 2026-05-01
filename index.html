@@ -3979,118 +3979,133 @@ function pFoodCost() {
   var s = NX.session || {};
   var now = new Date();
   var tm = now.getFullYear()+'-'+(now.getMonth()<9?'0':'')+(now.getMonth()+1);
-  var h = '<div class="page-header"><h1>Food Cost Analysis</h1><p>Wastage data · ' + branches.length + ' branch(es)</p></div>';
+  var h = '<div class="page-header"><h1>🍽️ Food Cost</h1><p style="font-family:var(--mono);font-size:11px;opacity:.6">'+tm+'</p></div>';
 
   if (s.role === 'branch_mgr') {
     var fcTarget = parseFloat((BS._branchConfig||{}).fcTarget)||30;
 
-    // ── Food Cost = Issues cost + Wastage value ──
     function calcFC(monthPrefix) {
       var issueCost = bLogs.reduce(function(s,l){
         if(l.type!=='issue') return s;
         if(!(l.date||'').startsWith(monthPrefix)) return s;
-        // Use stored cost if available, else fallback to qty × item price
-        if(l.cost) return s + l.cost;
-        var it=bfindItem(l.code);
-        return s + (l.qty*(it?parseFloat(it.price||0):0));
+        if(l.cost) return s+l.cost;
+        var it=bfindItem(l.code); return s+(l.qty*(it?parseFloat(it.price||0):0));
       },0);
       var wasteCost = BS.waste.reduce(function(s,w){
-        return (w.date||'').startsWith(monthPrefix) ? s+(+w.value||0) : s;
+        return (w.date||'').startsWith(monthPrefix)?s+(+w.value||0):s;
       },0);
-      return {issue: issueCost, waste: wasteCost, total: issueCost+wasteCost};
+      return {issue:issueCost,waste:wasteCost,total:issueCost+wasteCost};
     }
 
     var fc = calcFC(tm);
-    var totalFCost = fc.total;
-    var mtd=branchSalesMTD(s.branchId||'');
-    var fcPct=mtd>0?(totalFCost/mtd*100).toFixed(1):'—';
-    var pctNum=mtd>0?(totalFCost/mtd*100):0;
-    var fcColor=pctNum===0?'var(--text-tertiary)':pctNum<=fcTarget?'var(--success)':pctNum<=fcTarget*1.1?'var(--warning)':'var(--danger)';
+    var mtd = branchSalesMTD(s.branchId||'');
+    var pctNum = mtd>0?(fc.total/mtd*100):0;
+    var fcPct = mtd>0?pctNum.toFixed(1):'—';
+    var fcOk = pctNum>0&&pctNum<=fcTarget;
+    var fcHigh = pctNum>fcTarget&&pctNum<=fcTarget*1.1;
+    var fcColor = pctNum===0?'var(--text-tertiary)':fcOk?'#34d399':fcHigh?'#f59e0b':'#f87171';
+    var statusLbl = pctNum===0?'No Data':fcOk?'✅ On Track':fcHigh?'⚠️ Caution':'🔴 Over Target';
 
-    // ── KPI Cards ──
-    h += '<div class="kpi-grid section">';
-    h += kpiCard('🍳','Issues Cost', formatSAR(fc.issue), 'Kitchen pulls this month', 'var(--warning)', tm, '');
-    h += kpiCard('🗑️','Wastage Cost', formatSAR(fc.waste), 'Logged wastage', 'var(--danger)', tm, '');
-    h += kpiCard('📊','Total Food Cost', formatSAR(totalFCost), 'Issues + Wastage', fcColor, 'Target: ≤'+fcTarget+'%', '');
-    h += kpiCard('📈','Food Cost %', fcPct!=='—'?fcPct+'%':'—', 'of MTD sales '+formatSAR(mtd), fcColor, 'Target: ≤'+fcTarget+'%', '');
+    // ── Top bar: target button ──
+    h += '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:16px">';
+    h += '<button class="btn btn-sm" onclick="openFCTargetModal()" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 14px">⚙️ Target: '+fcTarget+'%</button>';
     h += '</div>';
 
-    // ── Target setter ──
-    h += '<div class="card section" style="margin-bottom:14px">';
-    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
-    h += '<div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em">Food Cost Target</div>';
-    h += '<div style="display:flex;align-items:center;gap:8px">';
-    h += '<input type="number" id="fc-target-input" value="'+fcTarget+'" min="1" max="100" style="width:70px;background:var(--surface-3);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text-primary);font-size:13px;font-weight:700;font-family:var(--mono);text-align:center;outline:none"> <span style="font-size:13px;color:var(--text-secondary)">%</span>';
-    h += '<button class="btn btn-primary btn-sm" onclick="saveFCTarget()">Save Target</button>';
-    h += '</div></div>';
-    if (fcPct !== '—') {
-      var pctW = Math.min(100,pctNum).toFixed(1);
-      var targetPct = Math.min(100,fcTarget);
-      h += '<div style="position:relative;height:12px;background:var(--surface-3);border-radius:6px;overflow:hidden;margin-bottom:6px">';
-      h += '<div style="height:100%;width:'+pctW+'%;background:'+fcColor+';border-radius:6px;transition:width .4s"></div>';
-      h += '<div style="position:absolute;top:0;left:'+targetPct+'%;height:100%;width:2px;background:#f59e0b;opacity:.8"></div>';
-      h += '</div>';
-      h += '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-tertiary)">';
-      h += '<span>0%</span>';
-      h += '<span style="color:#f59e0b">▲ Target '+fcTarget+'%</span>';
-      h += '<span>100%</span></div>';
-      h += '<div style="margin-top:8px;font-size:11px;color:'+fcColor+';font-weight:700">';
-      if (pctNum <= fcTarget) h += '✅ Within target ('+fcPct+'% of '+fcTarget+'%)';
-      else h += '⚠️ Over target by '+(pctNum-fcTarget).toFixed(1)+'%';
-      h += '</div>';
-    }
+    // ── Main layout: left content + right trend sidebar ──
+    h += '<div style="display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start">';
+    h += '<div>';
+
+    // Card 1: Issues (what was "Food Invoices" in the screenshot)
+    var issuesPct = mtd>0?(fc.issue/mtd*100):0;
+    h += '<div class="card" style="padding:24px;margin-bottom:12px">';
+    h += '<div style="font-size:10px;font-weight:700;color:var(--text-tertiary);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">KITCHEN ISSUES THIS MONTH</div>';
+    h += '<div style="font-size:28px;font-weight:800;font-family:var(--mono);color:var(--text-primary);margin-bottom:4px">'+formatSAR(fc.issue)+'</div>';
+    h += '<div style="font-size:12px;color:var(--text-tertiary)">'+(mtd>0?issuesPct.toFixed(1)+'% of sales':'No sales data')+'</div>';
+    h += '<canvas id="chart-fc-trend" height="60" style="margin-top:14px;opacity:.7"></canvas>';
     h += '</div>';
 
-    // ── 3-Month FC% Trend ──
-    var months3 = [];
-    for (var mi=-2; mi<=0; mi++) {
-      var d2=new Date(now.getFullYear(), now.getMonth()+mi, 1);
-      var mkey=d2.getFullYear()+'-'+(d2.getMonth()<9?'0':'')+(d2.getMonth()+1);
-      var mLabel=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d2.getMonth()]+' '+d2.getFullYear();
-      var mFC=calcFC(mkey);
-      var mSales=branchSalesMTD(s.branchId||'',mkey);
-      var mPct=mSales>0?(mFC.total/mSales*100):0;
-      months3.push({label:mLabel,pct:mPct,issue:mFC.issue,waste:mFC.waste,total:mFC.total,sales:mSales});
-    }
-    h += '<div class="card section" style="margin-bottom:14px">';
-    h += '<div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">&#x1F4C8; 3-Month Food Cost % Trend</div>';
-    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">';
-    months3.forEach(function(m,i){
-      var col=m.pct===0?'var(--text-tertiary)':m.pct<=fcTarget?'#34d399':m.pct<=fcTarget*1.1?'#f59e0b':'#f87171';
-      var isCurrent=(i===2);
-      h += '<div style="background:var(--surface-3);border:1px solid '+(isCurrent?col:'var(--border)')+';border-radius:10px;padding:12px;text-align:center'+(isCurrent?';box-shadow:0 0 0 2px '+col+'30':'')+'">';
-      h += '<div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">'+m.label+(isCurrent?' (Current)':'')+'</div>';
-      h += '<div style="font-size:22px;font-weight:700;color:'+col+';font-family:var(--mono)">'+(m.pct>0?m.pct.toFixed(1)+'%':'—')+'</div>';
-      h += '<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">Issues: '+formatSAR(m.issue)+'</div>';
-      h += '<div style="font-size:10px;color:var(--text-tertiary)">Waste: '+formatSAR(m.waste)+'</div>';
-      // mini bar vs target
-      if (m.pct > 0) {
-        var bw=Math.min(100,m.pct/Math.max(fcTarget*1.5,m.pct)*100).toFixed(0);
-        h += '<div style="margin-top:6px;height:4px;background:var(--surface-4);border-radius:2px;overflow:hidden">';
-        h += '<div style="height:100%;width:'+bw+'%;background:'+col+';border-radius:2px"></div></div>';
-      }
-      h += '</div>';
-    });
-    h += '</div>';
-    // Trend arrow
-    var t0=months3[0].pct, t1=months3[1].pct, t2=months3[2].pct;
-    var trend = (t2>0&&t1>0) ? (t2<t1?'↓ Improving':'↑ Worsening') : '— No data';
-    var trendCol = (t2>0&&t1>0) ? (t2<t1?'#34d399':'#f87171') : 'var(--text-tertiary)';
-    h += '<div style="font-size:12px;font-weight:600;color:'+trendCol+'">'+trend+' vs last month</div>';
+    // Card 2: Wastage
+    var wastePct = mtd>0?(fc.waste/mtd*100):0;
+    h += '<div class="card" style="padding:24px;margin-bottom:12px">';
+    h += '<div style="font-size:10px;font-weight:700;color:var(--text-tertiary);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">WASTAGE THIS MONTH</div>';
+    h += '<div style="font-size:28px;font-weight:800;font-family:var(--mono);color:#f87171;margin-bottom:4px">'+formatSAR(fc.waste)+'</div>';
+    h += '<div style="font-size:12px;color:var(--text-tertiary)">'+(mtd>0?wastePct.toFixed(1)+'% of sales':'—')+'</div>';
     h += '</div>';
 
-    // ── Wastage Table ──
-    h += '<div class="table-wrap section"><table class="data-table"><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Reason</th><th>Reported By</th><th style="text-align:right">Loss (SAR)</th></tr></thead><tbody>';
-    BS.waste.slice().sort(function(a,b){return(b.date||'').localeCompare(a.date||'');}).forEach(function(w){
+    // Card 3: Total vs Sales
+    var barW = Math.min(100,pctNum).toFixed(1);
+    var targetPos = Math.min(99,fcTarget).toFixed(1);
+    h += '<div class="card" style="padding:24px;margin-bottom:12px">';
+    h += '<div style="font-size:10px;font-weight:700;color:var(--text-tertiary);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">TOTAL FOOD COST VS SALES</div>';
+    h += '<div style="font-size:24px;font-weight:800;font-family:var(--mono);color:'+fcColor+';margin-bottom:4px">'+formatSAR(fc.total)+' <span style="font-size:14px;font-weight:500;color:var(--text-tertiary)">/ '+formatSAR(mtd)+' sales</span></div>';
+    h += '<div style="position:relative;height:8px;background:var(--surface-3);border-radius:99px;overflow:visible;margin:14px 0 6px">';
+    h += '<div style="height:100%;width:'+barW+'%;background:'+fcColor+';border-radius:99px;transition:width .5s"></div>';
+    h += '<div style="position:absolute;top:-4px;left:'+targetPos+'%;width:2px;height:16px;background:#f59e0b;border-radius:2px"></div>';
+    h += '</div>';
+    h += '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-tertiary)">';
+    h += '<span>0%</span><span style="color:#f59e0b">Target '+fcTarget+'%</span><span>100%</span></div>';
+    h += '</div>';
+
+    // Status badge
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">';
+    h += '<span style="background:'+(fcOk?'rgba(52,211,153,.12)':fcHigh?'rgba(245,158,11,.12)':'rgba(248,113,113,.12)')+';color:'+fcColor+';border:1px solid '+fcColor+'40;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700">'+statusLbl+'</span>';
+    if (pctNum>0) h += '<span style="font-size:11px;color:var(--text-tertiary)">'+fcPct+'% food cost · Target ≤'+fcTarget+'%</span>';
+    h += '</div>';
+
+    // Wastage detail table
+    h += '<div class="card" style="padding:0;overflow:hidden">';
+    h += '<div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">';
+    h += '<span style="font-size:12px;font-weight:700">Wastage Log</span>';
+    h += '<button class="btn btn-sm btn-primary" onclick="navTo(\'wastage\')">+ Log Wastage</button></div>';
+    h += '<div class="table-wrap"><table class="data-table"><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Reason</th><th>By</th><th style="text-align:right">Loss</th></tr></thead><tbody>';
+    var wSorted = BS.waste.slice().sort(function(a,b){return(b.date||'').localeCompare(a.date||'');});
+    wSorted.forEach(function(w){
       h+='<tr><td class="mono" style="font-size:11px">'+xe(w.date||'—')+'</td>';
       h+='<td style="font-weight:600">'+xe(w.item||'—')+'</td>';
       h+='<td class="mono">'+xe(String(w.qty||'—'))+'</td>';
       h+='<td style="font-size:11px">'+xe(w.reason||'—')+'</td>';
       h+='<td style="font-size:11px;color:var(--text-secondary)">'+xe(w.by||'—')+'</td>';
-      h+='<td class="mono" style="text-align:right;color:var(--danger);font-weight:600">'+formatSAR(w.value||0)+'</td></tr>';
+      h+='<td class="mono" style="text-align:right;color:#f87171;font-weight:600">'+formatSAR(w.value||0)+'</td></tr>';
     });
-    if (!BS.waste.length) h+='<tr><td colspan="6" style="text-align:center;color:var(--text-tertiary);padding:20px">No wastage entries yet</td></tr>';
-    h+='</tbody></table></div>';
+    if(!wSorted.length) h+='<tr><td colspan="6" style="text-align:center;color:var(--text-tertiary);padding:20px">No wastage entries yet</td></tr>';
+    h+='</tbody></table></div></div>';
+    h += '</div>'; // end left col
+
+    // ── Right sidebar: 3-month trend ──
+    h += '<div>';
+    h += '<div class="card" style="padding:18px">';
+    h += '<div style="font-size:10px;font-weight:700;color:var(--text-tertiary);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">3-MONTH TREND</div>';
+    for (var mi=-2; mi<=0; mi++) {
+      var d2=new Date(now.getFullYear(),now.getMonth()+mi,1);
+      var mkey=d2.getFullYear()+'-'+(d2.getMonth()<9?'0':'')+(d2.getMonth()+1);
+      var mLbl=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d2.getMonth()];
+      var mFC=calcFC(mkey);
+      var mSales=branchSalesMTD(s.branchId||'',mkey);
+      var mPct=mSales>0?(mFC.total/mSales*100):0;
+      var isCurr=(mi===0);
+      var mCol=mPct===0?'var(--text-tertiary)':mPct<=fcTarget?'#34d399':mPct<=fcTarget*1.1?'#f59e0b':'#f87171';
+      var barWm=mPct>0?Math.min(100,mPct/Math.max(fcTarget*1.5,mPct)*100).toFixed(0):0;
+      h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px'+(isCurr?';font-weight:700':'')+'">';
+      h += '<div style="width:30px;font-size:11px;color:'+(isCurr?'var(--text-primary)':'var(--text-tertiary)')+'">'+mLbl+'</div>';
+      h += '<div style="flex:1;height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden;position:relative">';
+      if(mPct>0) h += '<div style="height:100%;width:'+barWm+'%;background:'+mCol+';border-radius:99px"></div>';
+      h += '<div style="position:absolute;top:0;left:'+Math.min(99,fcTarget/Math.max(fcTarget*1.5,mPct||1)*100).toFixed(0)+'%;width:2px;height:100%;background:#f59e0b;opacity:.7"></div>';
+      h += '</div>';
+      h += '<div style="width:36px;font-size:11px;font-family:var(--mono);color:'+mCol+';text-align:right">'+(mPct>0?mPct.toFixed(1)+'%':'—')+'</div>';
+      h += '</div>';
+    }
+    h += '<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px;font-size:10px;color:#f59e0b;display:flex;align-items:center;gap:6px">';
+    h += '<div style="width:12px;height:2px;background:#f59e0b;flex-shrink:0"></div> Target '+fcTarget+'%</div>';
+    // FC target edit inline
+    h += '<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">';
+    h += '<div style="font-size:10px;color:var(--text-tertiary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Set Target</div>';
+    h += '<div style="display:flex;gap:6px;align-items:center">';
+    h += '<input type="number" id="fc-target-input" value="'+fcTarget+'" min="1" max="100" style="flex:1;background:var(--surface-3);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text-primary);font-size:13px;font-weight:700;font-family:var(--mono);text-align:center;outline:none">%';
+    h += '<button class="btn btn-primary btn-sm" onclick="saveFCTarget()">Save</button>';
+    h += '</div></div>';
+    h += '</div>'; // end card
+    h += '</div>'; // end right col
+    h += '</div>'; // end grid
     return h;
   }
 
@@ -9210,15 +9225,16 @@ function initFCTrendChart() {
   var ctx = document.getElementById('chart-fc-trend');
   if (!ctx) return;
   var labels = getLabels30();
-  // Real wastage data from BS.waste if branch manager
   var data = Array(30).fill(0);
-  if (BS.waste.length) {
-    for (var i = 29; i >= 0; i--) {
-      var d = new Date(); d.setDate(d.getDate()-i);
-      var ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-      var dayWaste = BS.waste.filter(function(w){return w.date===ds;}).reduce(function(s,w){return s+(+w.value||0);},0);
-      data[29-i] = dayWaste;
-    }
+  for (var i = 29; i >= 0; i--) {
+    var d = new Date(); d.setDate(d.getDate()-i);
+    var ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    var dayWaste = BS.waste.filter(function(w){return w.date===ds;}).reduce(function(s,w){return s+(+w.value||0);},0);
+    var dayIssue = bLogs.filter(function(l){return l.type==='issue'&&l.date===ds;}).reduce(function(s,l){
+      if(l.cost)return s+l.cost;
+      var it=bfindItem(l.code); return s+(l.qty*(it?parseFloat(it.price||0):0));
+    },0);
+    data[29-i] = dayWaste+dayIssue;
   }
   var opts = chartDefaults();
   opts.plugins.legend.display = false;
@@ -9231,31 +9247,35 @@ function drawFCGauge() {
   if (!canvas) return;
   var ctx2 = canvas.getContext('2d');
   if (!ctx2) return;
-  // Use real wastage data from BS.waste if available, otherwise show 0
-  var mtd = branchSalesMTD((NX.session||{}).branchId||'');
-  var wastage = 0;
-  if (BS.waste.length) {
-    var tm = new Date(), mkey = tm.getFullYear()+'-'+String(tm.getMonth()+1).padStart(2,'0');
-    BS.waste.forEach(function(w){ if((w.date||'').indexOf(mkey)===0) wastage+=(+w.value||0); });
-  }
-  var fc = mtd > 0 ? Math.round(wastage/mtd*100) : 0;
-  var pct = Math.min(fc / 50, 1);
+  var s = NX.session||{};
+  var mtd = branchSalesMTD(s.branchId||'');
+  var fcTarget = parseFloat((BS._branchConfig||{}).fcTarget)||30;
+  var tm = new Date(), mkey = tm.getFullYear()+'-'+String(tm.getMonth()+1).padStart(2,'0');
+  // Issues cost
+  var issueCost = bLogs.reduce(function(sum,l){
+    if(l.type!=='issue'||!(l.date||'').startsWith(mkey))return sum;
+    if(l.cost)return sum+l.cost;
+    var it=bfindItem(l.code); return sum+(l.qty*(it?parseFloat(it.price||0):0));
+  },0);
+  var wastage = BS.waste.reduce(function(sum,w){
+    return (w.date||'').startsWith(mkey)?sum+(+w.value||0):sum;
+  },0);
+  var totalFC = issueCost+wastage;
+  var fc = mtd > 0 ? (totalFC/mtd*100) : 0;
+  var pct = Math.min(fc / Math.max(fcTarget*2,50), 1);
   var W = canvas.width, H = canvas.height;
   ctx2.clearRect(0,0,W,H);
   var cx = W/2, cy = H*0.7, r = Math.min(cx,cy)*0.85;
   var startAngle = Math.PI, endAngle = 2*Math.PI;
   var valueAngle = startAngle + pct*(endAngle-startAngle);
-  // Background arc
   ctx2.beginPath(); ctx2.arc(cx,cy,r,startAngle,endAngle);
   ctx2.strokeStyle='rgba(255,255,255,.08)'; ctx2.lineWidth=18; ctx2.lineCap='round'; ctx2.stroke();
-  // Value arc
   var grad = ctx2.createLinearGradient(0,0,W,0);
   grad.addColorStop(0,'#34d399'); grad.addColorStop(0.5,'#f59e0b'); grad.addColorStop(1,'#f87171');
   ctx2.beginPath(); ctx2.arc(cx,cy,r,startAngle,valueAngle);
   ctx2.strokeStyle=grad; ctx2.lineWidth=18; ctx2.lineCap='round'; ctx2.stroke();
-  // Labels
   ctx2.textAlign='center'; ctx2.fillStyle='rgba(255,255,255,.9)';
-  ctx2.font='700 28px DM Sans'; ctx2.fillText(fc+'%', cx, cy-10);
+  ctx2.font='700 28px DM Sans'; ctx2.fillText(fc.toFixed(1)+'%', cx, cy-10);
   ctx2.font='12px DM Sans'; ctx2.fillStyle='rgba(255,255,255,.4)';
   ctx2.fillText(mtd>0?'of MTD sales':'No sales data', cx, cy+16);
 }
