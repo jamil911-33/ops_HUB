@@ -3983,19 +3983,36 @@ function pFoodCost() {
 
   if (s.role === 'branch_mgr') {
     var fcTarget = parseFloat((BS._branchConfig||{}).fcTarget)||30;
-    var totalWastage=0;
-    BS.waste.forEach(function(w){ if((w.date||'').indexOf(tm)===0) totalWastage+=(+w.value||0); });
+
+    // ── Food Cost = Issues cost + Wastage value ──
+    function calcFC(monthPrefix) {
+      var issueCost = bLogs.reduce(function(s,l){
+        if(l.type!=='issue') return s;
+        if(!(l.date||'').startsWith(monthPrefix)) return s;
+        // Use stored cost if available, else fallback to qty × item price
+        if(l.cost) return s + l.cost;
+        var it=bfindItem(l.code);
+        return s + (l.qty*(it?parseFloat(it.price||0):0));
+      },0);
+      var wasteCost = BS.waste.reduce(function(s,w){
+        return (w.date||'').startsWith(monthPrefix) ? s+(+w.value||0) : s;
+      },0);
+      return {issue: issueCost, waste: wasteCost, total: issueCost+wasteCost};
+    }
+
+    var fc = calcFC(tm);
+    var totalFCost = fc.total;
     var mtd=branchSalesMTD(s.branchId||'');
-    var fcPct=mtd>0?(totalWastage/mtd*100).toFixed(1):'—';
-    var pctNum=mtd>0?(totalWastage/mtd*100):0;
+    var fcPct=mtd>0?(totalFCost/mtd*100).toFixed(1):'—';
+    var pctNum=mtd>0?(totalFCost/mtd*100):0;
     var fcColor=pctNum===0?'var(--text-tertiary)':pctNum<=fcTarget?'var(--success)':pctNum<=fcTarget*1.1?'var(--warning)':'var(--danger)';
 
     // ── KPI Cards ──
     h += '<div class="kpi-grid section">';
-    h += kpiCard('&#x1F5D1;&#xFE0F;','MTD Wastage', formatSAR(totalWastage), 'This month', 'var(--danger)', tm, '');
-    h += kpiCard('&#x1F4B0;','MTD Sales', formatSAR(mtd), 'Branch total', 'var(--ceo)', '', '');
-    h += kpiCard('&#x1F4CA;','Food Cost %', fcPct!=='—'?fcPct+'%':'—', 'of MTD sales', fcColor, 'Target: ≤'+fcTarget+'%', '');
-    h += kpiCard('&#x1F4CB;','Log Entries', BS.waste.length, 'Wastage records', 'var(--info)', '', '');
+    h += kpiCard('🍳','Issues Cost', formatSAR(fc.issue), 'Kitchen pulls this month', 'var(--warning)', tm, '');
+    h += kpiCard('🗑️','Wastage Cost', formatSAR(fc.waste), 'Logged wastage', 'var(--danger)', tm, '');
+    h += kpiCard('📊','Total Food Cost', formatSAR(totalFCost), 'Issues + Wastage', fcColor, 'Target: ≤'+fcTarget+'%', '');
+    h += kpiCard('📈','Food Cost %', fcPct!=='—'?fcPct+'%':'—', 'of MTD sales '+formatSAR(mtd), fcColor, 'Target: ≤'+fcTarget+'%', '');
     h += '</div>';
 
     // ── Target setter ──
@@ -4030,11 +4047,10 @@ function pFoodCost() {
       var d2=new Date(now.getFullYear(), now.getMonth()+mi, 1);
       var mkey=d2.getFullYear()+'-'+(d2.getMonth()<9?'0':'')+(d2.getMonth()+1);
       var mLabel=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d2.getMonth()]+' '+d2.getFullYear();
-      var mWaste=0;
-      BS.waste.forEach(function(w){ if((w.date||'').indexOf(mkey)===0) mWaste+=(+w.value||0); });
+      var mFC=calcFC(mkey);
       var mSales=branchSalesMTD(s.branchId||'',mkey);
-      var mPct=mSales>0?(mWaste/mSales*100):0;
-      months3.push({label:mLabel,pct:mPct,waste:mWaste,sales:mSales});
+      var mPct=mSales>0?(mFC.total/mSales*100):0;
+      months3.push({label:mLabel,pct:mPct,issue:mFC.issue,waste:mFC.waste,total:mFC.total,sales:mSales});
     }
     h += '<div class="card section" style="margin-bottom:14px">';
     h += '<div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">&#x1F4C8; 3-Month Food Cost % Trend</div>';
@@ -4045,7 +4061,8 @@ function pFoodCost() {
       h += '<div style="background:var(--surface-3);border:1px solid '+(isCurrent?col:'var(--border)')+';border-radius:10px;padding:12px;text-align:center'+(isCurrent?';box-shadow:0 0 0 2px '+col+'30':'')+'">';
       h += '<div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">'+m.label+(isCurrent?' (Current)':'')+'</div>';
       h += '<div style="font-size:22px;font-weight:700;color:'+col+';font-family:var(--mono)">'+(m.pct>0?m.pct.toFixed(1)+'%':'—')+'</div>';
-      h += '<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">Waste: '+formatSAR(m.waste)+'</div>';
+      h += '<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">Issues: '+formatSAR(m.issue)+'</div>';
+      h += '<div style="font-size:10px;color:var(--text-tertiary)">Waste: '+formatSAR(m.waste)+'</div>';
       // mini bar vs target
       if (m.pct > 0) {
         var bw=Math.min(100,m.pct/Math.max(fcTarget*1.5,m.pct)*100).toFixed(0);
@@ -5736,14 +5753,17 @@ function pBranchDash() {
   }
   var wv=0; BS.waste.forEach(function(w){if(w.date===todayStr)wv+=(+w.value||0);});
   var fcTarget=parseFloat((BS._branchConfig||{}).fcTarget)||30;
-  var foodSpendM=0,wasteM=0;
-  (BS.invoices||[]).forEach(function(inv){
-    if(!inv.invoiceDate||inv.invoiceDate.indexOf(tm)!==0)return;
-    var isFood=(inv.category==='Food & Beverage')||(inv.category&&inv.category.toLowerCase().indexOf('food')>=0);
-    if(isFood)foodSpendM+=(parseFloat(inv.amount)||0);
-  });
+  var wasteM=0;
   BS.waste.forEach(function(w){if(w.date&&w.date.indexOf(tm)===0)wasteM+=(+w.value||0);});
-  var totalFCM=foodSpendM+wasteM;
+  // Issues cost = qty × price from movement logs
+  var issueCostM=bLogs.reduce(function(s,l){
+    if(l.type!=='issue')return s;
+    if(!(l.date||'').startsWith(tm))return s;
+    if(l.cost)return s+l.cost;
+    var it=bfindItem(l.code);
+    return s+(l.qty*(it?parseFloat(it.price||0):0));
+  },0);
+  var totalFCM=issueCostM+wasteM;
   var fcPct=tA>0?(totalFCM/tA*100):0;
   var fcOk=fcPct>0&&fcPct<=fcTarget,fcHigh=fcPct>fcTarget&&fcPct<=fcTarget*1.1;
   var fcColor=fcPct===0?'var(--text-tertiary)':fcOk?'#34d399':fcHigh?'#f59e0b':'#f87171';
@@ -6070,7 +6090,29 @@ function pInvItems() {
   h+='</select><select class="bfi" style="width:auto" id="binv-sts"><option value="">All Status</option><option value="ok"'+(sts==='ok'?' selected':'')+'>OK</option><option value="low"'+(sts==='low'?' selected':'')+'>Low</option></select>';
   h+='<div style="margin-left:auto;display:flex;gap:8px"><button class="btn btn-sm" onclick="diagInventory()">\uD83D\uDD0D Debug</button><button class="btn btn-sm btn-primary" onclick="openInvImportModal()">\u2b06 Import CSV</button><button class="btn btn-sm btn-primary" onclick="openBranchItemModal(null)">+ Add Item</button><button class="btn btn-sm" onclick="exportBranchItemsCSV()">\u2b07 CSV</button></div></div>';
   h+='<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Code</th><th>Name</th><th>Location</th><th>Qty</th><th>Unit</th><th>Min</th><th>Price</th><th>Status</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="9" style="text-align:center;color:var(--text-tertiary);padding:24px">No items found</td></tr>')+'</tbody></table></div></div>';
-  setTimeout(function(){var q2=document.getElementById('binv-q');if(q2)q2.oninput=function(){BS.q=this.value;navTo('inv-items');};var l2=document.getElementById('binv-loc');if(l2)l2.onchange=function(){BS.inv_loc=this.value;navTo('inv-items');};var s2=document.getElementById('binv-sts');if(s2)s2.onchange=function(){BS.inv_sts=this.value;navTo('inv-items');};},0);
+  setTimeout(function(){
+    var q2=document.getElementById('binv-q');
+    var l2=document.getElementById('binv-loc');
+    var s2=document.getElementById('binv-sts');
+    function applyInvFilter(){
+      var q=(BS.q||'').toLowerCase(),loc=BS.inv_loc||'',sts=BS.inv_sts||'';
+      var filtered=bItems.filter(function(i){
+        if(q&&String(i.code).toLowerCase().indexOf(q)<0&&i.name.toLowerCase().indexOf(q)<0)return false;
+        if(loc&&i.location!==loc)return false;
+        if(sts==='ok'&&i.min>0&&i.qty<=i.min)return false;
+        if(sts==='low'&&!(i.min>0&&i.qty<=i.min))return false;
+        return true;
+      });
+      var rows=filtered.map(function(it){var isLow=it.min>0&&it.qty<=it.min;return '<tr><td class="bmono" style="color:var(--ceo);font-size:10px">'+bxe(it.code)+'</td><td style="font-weight:600;color:var(--text-primary)">'+bxe(it.name)+'</td><td><span class="chip">'+bxe(it.location||'\u2014')+'</span></td><td class="bmono" style="font-weight:700;font-size:14px;color:'+(isLow?'var(--danger)':'var(--text-primary)')+'">'+it.qty+'</td><td class="bmono">'+bxe(it.unit)+'</td><td class="bmono" style="color:var(--text-secondary)">'+it.min+'</td><td class="bmono" style="color:var(--text-secondary)">'+parseFloat(it.price||0).toFixed(2)+'</td><td>'+bpl(isLow?'Low':'OK',isLow?'#f87171':'#34d399')+'</td><td><div style="display:flex;gap:4px"><button class="btn btn-sm" onclick="openBranchItemModal(\''+bxe(it.code)+'\')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchItem(\''+bxe(it.code)+'\')">Del</button></div></td></tr>';}).join('');
+      var tbody=document.querySelector('.btbl tbody');
+      if(tbody)tbody.innerHTML=rows||'<tr><td colspan="9" style="text-align:center;color:var(--text-tertiary);padding:24px">No items found</td></tr>';
+      var hdr=document.querySelector('.page-header p');
+      if(hdr)hdr.textContent=filtered.length+' of '+bItems.length+' items';
+    }
+    if(q2){q2.oninput=function(){BS.q=this.value;applyInvFilter();};}
+    if(l2){l2.onchange=function(){BS.inv_loc=this.value;applyInvFilter();};}
+    if(s2){s2.onchange=function(){BS.inv_sts=this.value;applyInvFilter();};}
+  },0);
   return h;
 }
 function openBranchItemModal(code){
@@ -6652,8 +6694,8 @@ function invSelect(code,hiddenId,dropId,inputId){
   var info=document.getElementById(prefix+'-sel-info');
   if(info)info.textContent=bxe(it.name)+' · '+it.qty+' '+bxe(it.unit||'')+' in stock'+(it.min>0&&it.qty<=it.min?' ⚠ LOW':'');
 }
-function doReceive(){var code=bgv('recv-code'),qty=parseFloat(bgv('recv-qty'))||0,note=bgv('recv-note');if(!code||qty<=0){showToast('Select item and enter quantity','error');return;}var it=bfindItem(code);if(!it){showToast('Item not found','error');return;}it.qty=parseFloat(it.qty||0)+qty;bSaveStock(code,it.qty);bLogs.push({code:code,name:it.name,type:'receive',qty:qty,note:note,date:TODAY_BS});bSaveLogs();showToast(it.name+' +'+qty+' received','success');navTo('inv-moves');}
-function doPull(){var code=bgv('pull-code'),qty=parseFloat(bgv('pull-qty'))||0,note=bgv('pull-note');if(!code||qty<=0){showToast('Select item and enter quantity','error');return;}var it=bfindItem(code);if(!it){showToast('Item not found','error');return;}if(qty>it.qty){showToast('Insufficient stock ('+it.qty+' '+it.unit+' available)','error');return;}it.qty=parseFloat(it.qty||0)-qty;bSaveStock(code,it.qty);bLogs.push({code:code,name:it.name,type:'issue',qty:qty,note:note,date:TODAY_BS});bSaveLogs();showToast(it.name+' -'+qty+' issued','success');navTo('inv-moves');}
+function doReceive(){var code=bgv('recv-code'),qty=parseFloat(bgv('recv-qty'))||0,note=bgv('recv-note');if(!code||qty<=0){showToast('Select item and enter quantity','error');return;}var it=bfindItem(code);if(!it){showToast('Item not found','error');return;}it.qty=parseFloat(it.qty||0)+qty;bSaveStock(code,it.qty);bLogs.push({code:code,name:it.name,type:'receive',qty:qty,cost:qty*(parseFloat(it.price)||0),note:note,date:TODAY_BS});bSaveLogs();showToast(it.name+' +'+qty+' received','success');navTo('inv-moves');}
+function doPull(){var code=bgv('pull-code'),qty=parseFloat(bgv('pull-qty'))||0,note=bgv('pull-note');if(!code||qty<=0){showToast('Select item and enter quantity','error');return;}var it=bfindItem(code);if(!it){showToast('Item not found','error');return;}if(qty>it.qty){showToast('Insufficient stock ('+it.qty+' '+it.unit+' available)','error');return;}it.qty=parseFloat(it.qty||0)-qty;bSaveStock(code,it.qty);bLogs.push({code:code,name:it.name,type:'issue',qty:qty,cost:qty*(parseFloat(it.price)||0),note:note,date:TODAY_BS});bSaveLogs();showToast(it.name+' -'+qty+' issued to kitchen','success');navTo('inv-moves');}
 function exportBranchLogsCSV(){var rows=[['Code','Name','Type','Qty','Note','Date']];bLogs.forEach(function(l){rows.push([l.code,l.name,l.type,l.qty,l.note||'',l.date]);});var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='movements.csv';a.click();}
 
 // ── Purchase Orders ──────────────────────────────────
@@ -6859,7 +6901,7 @@ function bktReceiveItem(ordId, code) {
     if (invItem) {
       invItem.qty = parseFloat(invItem.qty || 0) + addQty;
       bSaveStock(code, invItem.qty);
-      bLogs.push({code: code, name: invItem.name, type: 'receive', qty: addQty, note: 'From PO: ' + ordId, date: TODAY_BS});
+      bLogs.push({code: code, name: invItem.name, type: 'receive', qty: addQty, cost: addQty*(parseFloat(invItem.price)||0), note: 'From PO: ' + ordId, date: TODAY_BS});
       bSaveLogs();
     }
   }
@@ -8375,10 +8417,13 @@ function pDSR(){
       body+='<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:10px;text-align:center">';
       body+='<div style="font-size:12px;color:var(--text-primary);margin-bottom:6px;font-weight:700">SAR '+d.l+'</div>';
       body+='<input type="number" min="0" value="'+(qty||'')+'" placeholder="0" oninput="dsrUpdDenom(\''+dk+'\',this.value)" style="'+fi+'text-align:center;font-size:15px;font-weight:700;margin-bottom:5px">';
-      body+='<div style="font-size:12px;color:var(--ceo);font-family:var(--mono);font-weight:700">='+sub.toFixed(2)+'</div>';
+      body+='<div id="denom-sub-'+dk+'" style="font-size:12px;color:var(--ceo);font-family:var(--mono);font-weight:700">='+sub.toFixed(2)+'</div>';
       body+='</div>';
     });
-    body+='</div></div>';
+    body+='</div>';
+    var physRunning=Object.keys(D.denoms||{}).filter(function(k){return k.indexOf('dep_')===0;}).reduce(function(a,k){var v=parseFloat(k.replace('dep_','').replace('_','.'));return a+(parseFloat((D.denoms||{})[k])||0)*v;},0);
+    body+='<div id="denom-total" style="margin-top:12px;font-size:16px;font-weight:700;color:var(--ceo);font-family:var(--mono);text-align:right">SAR '+physRunning.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div>';
+    body+='</div>';
     body+='<button onclick="dsrPrintDeposit()" style="padding:10px 28px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-primary);font-size:13px;font-weight:600;cursor:pointer">⎙ Print Deposit Sheet</button>';
 
   } else if(D.tab==='manager'){
@@ -8560,7 +8605,23 @@ function dsrRmVR(si,arr,id){var D=_dsrD();if(!D.servers[si])return;D.servers[si]
 function dsrUpdVR(si,arr,id,k,v){var D=_dsrD();var item=(D.servers[si]&&D.servers[si][arr]||[]).find(function(x){return x.id===id;});if(item)item[k]=v;}
 function dsrApprVR(si,arr,id){var D=_dsrD();var item=(D.servers[si]&&D.servers[si][arr]||[]).find(function(x){return x.id===id;});if(item){if(item.status==='pending')item.status='approved';else item.status='pending';}navTo('dsr');}
 function dsrRejVR(si,arr,id){var D=_dsrD();var item=(D.servers[si]&&D.servers[si][arr]||[]).find(function(x){return x.id===id;});if(item)item.status='rejected';navTo('dsr');}
-function dsrUpdDenom(k,v){var D=_dsrD();if(!D.denoms)D.denoms={};D.denoms[k]=v;navTo('dsr');}
+function dsrUpdDenom(k,v){
+  var D=_dsrD();
+  if(!D.denoms)D.denoms={};
+  D.denoms[k]=parseFloat(v)||0;
+  // Update this denom's subtotal in-place
+  var denomVal=parseFloat(k.replace('dep_','').replace('_','.'))||0;
+  var sub=D.denoms[k]*denomVal;
+  var subEl=document.getElementById('denom-sub-'+k);
+  if(subEl)subEl.textContent='='+sub.toFixed(2);
+  // Update running total in-place
+  var total=Object.keys(D.denoms).filter(function(dk){return dk.indexOf('dep_')===0;}).reduce(function(s,dk){
+    var dv=parseFloat(dk.replace('dep_','').replace('_','.'))||0;
+    return s+(D.denoms[dk]*dv);
+  },0);
+  var el=document.getElementById('denom-total');
+  if(el)el.textContent='SAR '+total.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
 function dsrSave(){var D=_dsrD();var activeDate=_dsrActiveDate();if(db&&NX.session&&NX.session.branchId){db.ref(dsrFbPath(activeDate)).set(D,function(err){if(err)showToast('Save failed','error');else showToast('DSR saved to Firebase ✓','success');});}else{try{localStorage.setItem('dsr_nexus_'+activeDate,JSON.stringify(D));showToast('DSR saved locally ✓','success');}catch(e){showToast('Save failed','error');}}}
 function dsrClear(){
   var activeDate=_dsrActiveDate();
