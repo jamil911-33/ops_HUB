@@ -5872,8 +5872,8 @@ function pBranchDash() {
   var _sLbl=fcPct===0?'No Data':fcOk?'\u2705 On Track':fcHigh?'\u26a0\ufe0f Caution':'\ud83d\udd34 Over';
   h += '<div style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+(fcPct===0?'var(--surface-2)':fcOk?'rgba(52,211,153,.12)':fcHigh?'rgba(240,165,0,.12)':'rgba(239,68,68,.12)')+';color:'+fcColor+'">'+_sLbl+'</div></div>';
   h += '<div style="display:flex;flex-direction:column;gap:6px">';
-  h += '<div style="background:var(--surface-2);border-radius:8px;padding:10px 12px"><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;margin-bottom:3px">Food Invoices</div>';
-  h += '<div class="mono" style="font-size:14px;font-weight:700">'+fsar(foodSpendM)+'</div></div>';
+  h += '<div style="background:var(--surface-2);border-radius:8px;padding:10px 12px"><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;margin-bottom:3px">Kitchen Issues</div>';
+  h += '<div class="mono" style="font-size:14px;font-weight:700;color:'+(issueCostM>0?'#f59e0b':'var(--text-primary)')+'">'+fsar(issueCostM)+'</div></div>';
   h += '<div style="background:var(--surface-2);border-radius:8px;padding:10px 12px"><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;margin-bottom:3px">Wastage This Month</div>';
   h += '<div class="mono" style="font-size:14px;font-weight:700;color:'+(wasteM>0?'#f87171':'var(--text-primary)')+'">'+fsar(wasteM)+'</div></div>';
   h += '<div style="background:var(--surface-2);border-radius:8px;padding:10px 12px"><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;margin-bottom:3px">Total vs Sales</div>';
