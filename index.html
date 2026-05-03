@@ -2084,10 +2084,44 @@ div[style*="background:rgba(20,26,48"] {
   background: var(--nm-base) !important;
   color: var(--text-primary) !important;
 }
+
+/* ── WHITE TEXT ON LIGHT THEME FIX ── */
+/* Catch all inline white/near-white text that would be invisible on light bg */
 div[style*="color:#fff"],
 span[style*="color:#fff"],
-div[style*="color:rgba(255,255,255"] {
+p[style*="color:#fff"],
+h1[style*="color:#fff"],
+h2[style*="color:#fff"],
+h3[style*="color:#fff"],
+td[style*="color:#fff"],
+th[style*="color:#fff"],
+div[style*="color:rgba(255,255,255"],
+span[style*="color:rgba(255,255,255"],
+p[style*="color:rgba(255,255,255"],
+div[style*="color: #fff"],
+span[style*="color: #fff"],
+div[style*="color:#ffffff"],
+span[style*="color:#ffffff"],
+div[style*="color:white"],
+span[style*="color:white"] {
   color: var(--text-primary) !important;
+}
+
+/* Exception: keep white text inside elements that have explicit dark backgrounds */
+[style*="background:#1a2340"] *,
+[style*="background:linear-gradient(135deg,#c0392b"],
+[style*="background:#c0392b"],
+[style*="background:#e74c3c"],
+[style*="background:#1B5E20"],
+[style*="background:#dc2626"],
+[style*="background:#1a56c4"],
+#lum-overlay *,
+#lum-gate *,
+#lum-panel *,
+.logout-btn,
+.bav,
+.hrf-emp-avatar {
+  color: inherit;
 }
 
 /* ── SCROLLBAR ── */
