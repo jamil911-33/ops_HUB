@@ -7349,31 +7349,120 @@ function pBranchDash() {
   h += '</div></div>';
   h += '</div>';
 
-  h += '<div class="card" style="padding:16px;margin-bottom:10px">';
-  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
-  h += '<span style="font-size:13px;font-weight:700">\ud83c\udf7d\ufe0f Food Cost \xb7 '+tm+'</span>';
-  h += '<button class="btn btn-sm" onclick="navTo(\'wastage\')">Log Wastage</button></div>';
-  h += '<div style="display:grid;grid-template-columns:100px 1fr;gap:16px;align-items:center">';
-  var _gr=44,_gc=2*Math.PI*_gr;
-  var _gF=Math.min(100,fcPct)/100*_gc;
+  // ── FOOD COST WIDGET — full design matching Food Cost page ──────────────
+  var fcBarW = Math.min(100,fcPct).toFixed(1);
+  var fcTargetPos = Math.min(99,fcTarget).toFixed(1);
+  var fcStatusLbl = fcPct===0?'No Data':fcOk?'On Track':fcHigh?'Caution':'Over Target';
+  var fcStatusIcon = fcOk?'✓':fcHigh?'!':'✕';
+  // 3-month trend data
+  var fcTrend3 = [];
+  var MONTHS_FC=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  for(var fmi=-2;fmi<=0;fmi++){
+    var fd2=new Date(now2.getFullYear(),now2.getMonth()+fmi,1);
+    var fmkey=fd2.getFullYear()+'-'+(fd2.getMonth()<9?'0':'')+(fd2.getMonth()+1);
+    var fmLbl=MONTHS_FC[fd2.getMonth()];
+    var fmIssue=bLogs.reduce(function(acc,l){if(l.type!=='issue'||(l.date||'').indexOf(fmkey)!==0)return acc;var it=bfindItem(l.code);return acc+(l.cost||l.qty*(it?parseFloat(it.price||0):0));},0);
+    var fmWaste=BS.waste.reduce(function(acc,w){return(w.date||'').indexOf(fmkey)===0?acc+(+w.value||0):acc;},0);
+    var fmTotal=fmIssue+fmWaste;
+    var fmSales=branchSalesMTD(s.branchId||'',fmkey);
+    var fmPct=fmSales>0?(fmTotal/fmSales*100):0;
+    var fmCol=fmPct===0?'var(--text-tertiary)':fmPct<=fcTarget?'#00A63D':fmPct<=fcTarget*1.1?'#FE9900':'#FF2157';
+    fcTrend3.push({lbl:fmLbl,pct:fmPct,col:fmCol,key:fmkey});
+  }
+  var maxTrendPct=Math.max.apply(null,fcTrend3.map(function(x){return Math.max(x.pct,fcTarget);}));
+
+  h += '<div style="background:var(--nm-base,#E7E5E4);border:none;border-radius:20px;padding:0;margin-bottom:10px;box-shadow:6px 6px 16px rgba(0,0,0,0.13),-5px -5px 14px rgba(255,255,255,0.87);overflow:hidden">';
+
+  // Header row
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 14px;border-bottom:1px solid rgba(0,0,0,0.06);box-shadow:0 1px 0 rgba(255,255,255,0.8)">';
+  h += '<div style="display:flex;align-items:center;gap:10px">';
+  h += '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-secondary)"><path d="M3 4h18M3 8h18M5 12h14M7 16h10M9 20h6"/></svg>';
+  h += '<span style="font-size:14px;font-weight:700;font-family:var(--font);color:var(--text-primary);letter-spacing:-0.03em">Food Cost</span>';
+  h += '<span style="background:var(--nm-base,#E7E5E4);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--text-secondary);box-shadow:2px 2px 6px rgba(0,0,0,0.12),-2px -2px 6px rgba(255,255,255,0.85);font-family:var(--mono)">'+tm+'</span>';
+  h += '</div>';
+  h += '<div style="display:flex;align-items:center;gap:8px">';
+  h += '<button onclick="openFCTargetModal()" style="display:inline-flex;align-items:center;gap:5px;background:var(--nm-base,#E7E5E4);border:none;border-radius:20px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--text-secondary);cursor:pointer;box-shadow:2px 2px 6px rgba(0,0,0,0.12),-2px -2px 6px rgba(255,255,255,0.85);font-family:var(--font);transition:all .15s">⚙️ Target: '+fcTarget+'%</button>';
+  h += '<button class="btn btn-sm btn-primary" onclick="navTo(\'food-cost\')">Full View →</button>';
+  h += '</div></div>';
+
+  // Body — 2 column: left=cards+bar, right=trend
+  h += '<div style="display:grid;grid-template-columns:1fr 200px;gap:0">';
+  h += '<div style="padding:16px 20px">';
+
+  // Big % + status badge row
+  h += '<div style="display:flex;align-items:center;gap:18px;margin-bottom:16px">';
+  // Circle indicator
   h += '<div style="display:flex;flex-direction:column;align-items:center;gap:4px">';
-  h += '<svg width="100" height="100" viewBox="0 0 110 110">';
-  h += '<circle cx="55" cy="55" r="'+_gr+'" fill="none" stroke="var(--surface-3)" stroke-width="10"/>';
-  if(fcPct>0) h += '<circle cx="55" cy="55" r="'+_gr+'" fill="none" stroke="'+fcColor+'" stroke-width="10" stroke-dasharray="'+_gF.toFixed(1)+' '+_gc.toFixed(1)+'" stroke-dashoffset="'+(_gc/4).toFixed(1)+'" stroke-linecap="round"/>';
-  h += '<text x="55" y="51" text-anchor="middle" fill="'+fcColor+'" font-size="15" font-weight="800" font-family="var(--mono)">'+fcPct.toFixed(1)+'%</text>';
-  h += '<text x="55" y="65" text-anchor="middle" fill="var(--text-tertiary)" font-size="9" font-family="var(--mono)">FC</text>';
-  h += '</svg>';
-  var _sLbl=fcPct===0?'No Data':fcOk?'\u2705 On Track':fcHigh?'\u26a0\ufe0f Caution':'\ud83d\udd34 Over';
-  h += '<div style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+(fcPct===0?'var(--surface-2)':fcOk?'rgba(52,211,153,.12)':fcHigh?'rgba(240,165,0,.12)':'rgba(239,68,68,.12)')+';color:'+fcColor+'">'+_sLbl+'</div></div>';
-  h += '<div style="display:flex;flex-direction:column;gap:6px">';
-  h += '<div style="background:var(--surface-2);border-radius:8px;padding:10px 12px"><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;margin-bottom:3px">Kitchen Issues</div>';
-  h += '<div class="mono" style="font-size:14px;font-weight:700;color:'+(issueCostM>0?'#f59e0b':'var(--text-primary)')+'">'+fsar(issueCostM)+'</div></div>';
-  h += '<div style="background:var(--surface-2);border-radius:8px;padding:10px 12px"><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;margin-bottom:3px">Wastage This Month</div>';
-  h += '<div class="mono" style="font-size:14px;font-weight:700;color:'+(wasteM>0?'#f87171':'var(--text-primary)')+'">'+fsar(wasteM)+'</div></div>';
-  h += '<div style="background:var(--surface-2);border-radius:8px;padding:10px 12px"><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;margin-bottom:3px">Total vs Sales</div>';
-  h += '<div class="mono" style="font-size:14px;font-weight:700;color:'+fcColor+'">'+fsar(totalFCM)+'</div>';
-  h += '<div style="height:4px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+Math.min(100,fcPct).toFixed(1)+'%;background:'+fcColor+';border-radius:99px"></div></div></div>';
-  h += '</div></div></div>';
+  h += '<div style="width:52px;height:52px;border-radius:50%;background:var(--nm-base,#E7E5E4);box-shadow:4px 4px 10px rgba(0,0,0,0.14),-3px -3px 9px rgba(255,255,255,0.86);display:flex;align-items:center;justify-content:center">';
+  h += '<div style="width:22px;height:22px;border-radius:50%;background:'+fcColor+';box-shadow:0 0 8px '+fcColor+'66"></div>';
+  h += '</div>';
+  h += '<div style="font-size:20px;font-weight:700;font-family:var(--mono);color:'+fcColor+';letter-spacing:-0.04em">'+fcPct.toFixed(1)+'%</div>';
+  h += '<div style="font-size:8px;font-weight:700;color:var(--text-tertiary);letter-spacing:.12em;text-transform:uppercase;font-family:var(--mono)">FOOD COST</div>';
+  h += '<div style="width:10px;height:20px;border-radius:99px;background:#FE9900;opacity:0.5"></div>';
+  h += '</div>';
+  // Status badge
+  h += '<div style="background:var(--nm-base,#E7E5E4);border-radius:20px;padding:9px 16px;box-shadow:inset 2px 2px 6px rgba(0,0,0,0.10),inset -2px -2px 6px rgba(255,255,255,0.75);display:inline-flex;align-items:center;gap:7px">';
+  h += '<span style="width:14px;height:14px;border-radius:4px;background:'+fcColor+'22;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:'+fcColor+';font-weight:700">'+fcStatusIcon+'</span>';
+  h += '<span style="font-size:12px;font-weight:700;color:'+fcColor+';font-family:var(--font)">'+fcStatusLbl+'</span>';
+  h += '</div>';
+  h += '</div>';
+
+  // Card 1 — Food Invoices
+  h += '<div style="background:var(--nm-base,#E7E5E4);border-radius:16px;padding:18px 20px;margin-bottom:10px;position:relative;box-shadow:5px 5px 13px rgba(0,0,0,0.12),-4px -4px 10px rgba(255,255,255,0.87)">';
+  h += '<div style="font-size:9px;font-weight:700;color:var(--text-tertiary);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;font-family:var(--mono)">FOOD INVOICES THIS MONTH</div>';
+  h += '<div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--text-primary);margin-bottom:4px;letter-spacing:-0.04em">'+fsar(issueCostM)+'</div>';
+  h += '<div style="font-size:11px;color:var(--text-tertiary);font-family:var(--mono)">'+(tA>0?(issueCostM/tA*100).toFixed(1)+'% of sales':'No sales data')+'</div>';
+  h += '<div style="position:absolute;top:50%;right:18px;transform:translateY(-50%);width:0;height:0;border-style:solid;border-width:9px 0 9px 15px;border-color:transparent transparent transparent rgba(0,0,0,0.10)"></div>';
+  h += '</div>';
+
+  // Card 2 — Wastage
+  h += '<div style="background:var(--nm-base,#E7E5E4);border-radius:16px;padding:18px 20px;margin-bottom:10px;box-shadow:5px 5px 13px rgba(0,0,0,0.12),-4px -4px 10px rgba(255,255,255,0.87)">';
+  h += '<div style="font-size:9px;font-weight:700;color:var(--text-tertiary);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;font-family:var(--mono)">WASTAGE THIS MONTH</div>';
+  h += '<div style="font-size:22px;font-weight:700;font-family:var(--mono);color:#FF2157;margin-bottom:4px;letter-spacing:-0.04em">'+fsar(wasteM)+'</div>';
+  h += '<div style="font-size:11px;color:var(--text-tertiary);font-family:var(--mono)">'+(tA>0?(wasteM/tA*100).toFixed(1)+'% of sales':'—')+'</div>';
+  h += '</div>';
+
+  // Card 3 — Total vs Sales with progress bar
+  h += '<div style="background:var(--nm-base,#E7E5E4);border-radius:16px;padding:18px 20px;box-shadow:5px 5px 13px rgba(0,0,0,0.12),-4px -4px 10px rgba(255,255,255,0.87)">';
+  h += '<div style="font-size:9px;font-weight:700;color:var(--text-tertiary);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px;font-family:var(--mono)">TOTAL FOOD COST VS SALES</div>';
+  h += '<div style="margin-bottom:14px">';
+  h += '<span style="font-size:20px;font-weight:700;font-family:var(--mono);color:'+fcColor+';letter-spacing:-0.04em">'+fsar(totalFCM)+'</span>';
+  h += '<span style="font-size:11px;color:var(--text-tertiary);font-family:var(--mono);margin-left:8px">/ '+fsar(tA)+' sales</span>';
+  h += '</div>';
+  // Inset progress bar
+  h += '<div style="position:relative;height:9px;background:var(--nm-base,#E7E5E4);border-radius:99px;margin-bottom:7px;box-shadow:inset 2px 2px 6px rgba(0,0,0,0.11),inset -2px -2px 6px rgba(255,255,255,0.74)">';
+  h += '<div style="height:100%;width:'+fcBarW+'%;background:'+fcColor+';border-radius:99px;transition:width .5s;box-shadow:0 0 5px '+fcColor+'66"></div>';
+  h += '<div style="position:absolute;top:-3px;left:'+fcTargetPos+'%;transform:translateX(-50%);width:2px;height:15px;background:#FE9900;border-radius:2px;opacity:.9"></div>';
+  h += '</div>';
+  h += '<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-tertiary);font-family:var(--mono)">';
+  h += '<span>0%</span><span style="color:#FE9900;font-weight:700">Target '+fcTarget+'%</span><span>100%</span></div>';
+  h += '</div>';
+  h += '</div>'; // end left col
+
+  // Right — 3-Month Trend sidebar
+  h += '<div style="padding:16px 16px 16px 12px;border-left:1px solid rgba(0,0,0,0.05);box-shadow:-1px 0 0 rgba(255,255,255,0.8)">';
+  h += '<div style="font-size:8px;font-weight:700;color:var(--text-tertiary);letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;font-family:var(--mono)">3-MONTH TREND</div>';
+  fcTrend3.forEach(function(row){
+    var barWt=row.pct>0?Math.min(100,row.pct/Math.max(maxTrendPct,1)*100).toFixed(0):0;
+    var isCurrent=(row.key===tm);
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
+    h += '<div style="font-size:10px;font-weight:'+(isCurrent?'700':'400')+';color:'+(isCurrent?'var(--text-primary)':'var(--text-secondary)')+';font-family:var(--mono);width:28px;flex-shrink:0">'+row.lbl+'</div>';
+    h += '<div style="flex:1;height:9px;background:var(--nm-base,#E7E5E4);border-radius:99px;position:relative;box-shadow:inset 2px 2px 5px rgba(0,0,0,0.10),inset -1px -1px 4px rgba(255,255,255,0.78)">';
+    h += '<div style="height:100%;width:'+barWt+'%;background:'+row.col+';border-radius:99px;transition:width .5s;box-shadow:0 0 4px '+row.col+'55"></div>';
+    h += '</div>';
+    h += '<div style="font-size:10px;font-weight:700;color:'+row.col+';font-family:var(--mono);width:38px;text-align:right;flex-shrink:0">'+(row.pct>0?row.pct.toFixed(1)+'%':'—')+'</div>';
+    h += '</div>';
+  });
+  // Target line legend
+  h += '<div style="display:flex;align-items:center;gap:6px;margin-top:6px">';
+  h += '<div style="width:20px;height:2px;background:#FE9900;border-radius:1px"></div>';
+  h += '<div style="font-size:9px;color:#FE9900;font-family:var(--mono);font-weight:600">Target '+fcTarget+'%</div>';
+  h += '</div>';
+  h += '</div>'; // end right col
+
+  h += '</div>'; // end grid
+  h += '</div>'; // end food cost widget
+
 
   // ROW 3: Health Cards | On Leave | By Department
   h += '<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:10px">';
