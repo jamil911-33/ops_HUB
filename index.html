@@ -2178,6 +2178,404 @@ button[onclick="openLoginUserMgr()"]:hover {
   box-shadow: var(--nm-raised) !important;
 }
 
+/* ══════════════════════════════════════════════════════════
+   DESIGN ENHANCEMENT — ALFA.CO  (Neumorphism Skill Applied)
+   Space Mono · JetBrains Mono · Compact density · WCAG AA
+═══════════════════════════════════════════════════════════ */
+
+/* ── Typography refinement ── */
+body, #page-area, .main-content {
+  letter-spacing: -0.01em !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+h1, h2, h3, .page-header h1 {
+  font-family: 'Space Mono', monospace !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.04em !important;
+}
+
+/* ── Cards — tighter radius, richer shadow depth ── */
+.card, .bcard, .kpi-card, .chart-card {
+  border-radius: 18px !important;
+  box-shadow:
+    6px 6px 16px rgba(0,0,0,0.12),
+    -4px -4px 12px rgba(255,255,255,0.88) !important;
+  transition: box-shadow 0.2s ease, transform 0.2s ease !important;
+  padding: 18px !important;
+}
+.card:hover, .bcard:hover, .kpi-card:hover {
+  box-shadow:
+    8px 8px 22px rgba(0,0,0,0.14),
+    -5px -5px 16px rgba(255,255,255,0.92) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ── KPI icon — deeper inset ── */
+.kpi-icon {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 12px !important;
+  box-shadow:
+    inset 3px 3px 7px rgba(0,0,0,0.11),
+    inset -2px -2px 5px rgba(255,255,255,0.85) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.kpi-label {
+  font-size: 9px !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  font-weight: 700 !important;
+}
+.kpi-value {
+  font-size: 22px !important;
+  font-weight: 300 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.1 !important;
+}
+
+/* ── Tables — neumorphic wrapper + refined rows ── */
+.btbl, .data-table {
+  font-family: 'Space Mono', monospace !important;
+  font-size: 11px !important;
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+.btbl thead th, .data-table th {
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: var(--text-tertiary) !important;
+  padding: 10px 14px !important;
+  border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+  background: transparent !important;
+  white-space: nowrap !important;
+}
+.btbl tbody tr td, .data-table td {
+  padding: 11px 14px !important;
+  border-bottom: 1px solid rgba(0,0,0,0.04) !important;
+  color: var(--text-secondary) !important;
+  transition: background 0.12s !important;
+}
+.btbl tbody tr:hover td, .data-table tbody tr:hover td {
+  background: rgba(0,102,102,0.05) !important;
+  color: var(--text-primary) !important;
+}
+.btbl tbody tr:last-child td,
+.data-table tr:last-child td { border-bottom: none !important; }
+
+/* ── Buttons — raised nm with hover press ── */
+.btn {
+  font-family: 'Space Mono', monospace !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em !important;
+  border-radius: 10px !important;
+  padding: 8px 16px !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  background: var(--nm-base) !important;
+  box-shadow:
+    3px 3px 8px rgba(0,0,0,0.12),
+    -2px -2px 6px rgba(255,255,255,0.85) !important;
+  color: var(--text-primary) !important;
+}
+.btn:hover {
+  box-shadow:
+    4px 4px 12px rgba(0,0,0,0.14),
+    -3px -3px 8px rgba(255,255,255,0.9) !important;
+  transform: translateY(-1px) !important;
+}
+.btn:active {
+  box-shadow:
+    inset 2px 2px 6px rgba(0,0,0,0.14),
+    inset -1px -1px 4px rgba(255,255,255,0.8) !important;
+  transform: translateY(0) !important;
+}
+.btn-primary, .btn.btn-primary {
+  background: var(--primary) !important;
+  color: #fff !important;
+  box-shadow:
+    3px 3px 10px rgba(0,102,102,0.38),
+    -1px -1px 4px rgba(255,255,255,0.5) !important;
+}
+.btn-primary:hover {
+  box-shadow:
+    5px 5px 16px rgba(0,102,102,0.46),
+    -2px -2px 6px rgba(255,255,255,0.6) !important;
+  transform: translateY(-1px) !important;
+}
+.btn-sm {
+  padding: 5px 11px !important;
+  font-size: 10px !important;
+  border-radius: 8px !important;
+}
+
+/* ── Form inputs — deep inset ── */
+.form-input, input[type="text"], input[type="number"],
+input[type="date"], input[type="password"], input[type="email"],
+select, textarea {
+  font-family: 'Space Mono', monospace !important;
+  font-size: 12px !important;
+  padding: 10px 14px !important;
+  border-radius: 10px !important;
+  border: none !important;
+  background: var(--nm-base) !important;
+  color: var(--text-primary) !important;
+  box-shadow:
+    inset 3px 3px 8px rgba(0,0,0,0.10),
+    inset -2px -2px 6px rgba(255,255,255,0.88) !important;
+  transition: box-shadow 0.15s !important;
+  width: 100% !important;
+}
+.form-input:focus, input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  box-shadow:
+    inset 3px 3px 8px rgba(0,0,0,0.10),
+    inset -2px -2px 6px rgba(255,255,255,0.88),
+    0 0 0 2px rgba(0,102,102,0.22) !important;
+}
+.form-label, label {
+  font-family: 'Space Mono', monospace !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.10em !important;
+  text-transform: uppercase !important;
+  color: var(--text-tertiary) !important;
+  margin-bottom: 6px !important;
+  display: block !important;
+}
+.form-group, .bfg { margin-bottom: 14px !important; }
+
+/* ── Badges / pills — neumorphic pressed style ── */
+.badge, span[class*="badge"] {
+  font-family: 'Space Mono', monospace !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  padding: 3px 9px !important;
+  border-radius: 20px !important;
+}
+/* bpl() generated pills */
+span[style*="border-radius:12px"] {
+  font-family: 'Space Mono', monospace !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  padding: 3px 10px !important;
+}
+
+/* ── Navigation items — cleaner active state ── */
+.nav-item {
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  font-size: 11px !important;
+  margin-bottom: 2px !important;
+  letter-spacing: -0.01em !important;
+}
+.nav-item.active {
+  box-shadow:
+    inset 2px 2px 6px rgba(0,0,0,0.12),
+    inset -1px -1px 4px rgba(255,255,255,0.82) !important;
+  font-weight: 700 !important;
+}
+.nav-section-label {
+  font-size: 8px !important;
+  letter-spacing: 0.16em !important;
+  padding: 14px 12px 4px !important;
+  font-weight: 700 !important;
+}
+
+/* ── Topbar — crisper shadow line ── */
+.topbar {
+  box-shadow:
+    0 4px 20px rgba(0,0,0,0.10),
+    0 1px 0 rgba(255,255,255,0.85) !important;
+  padding: 0 20px !important;
+}
+.topbar-title {
+  font-size: 13px !important;
+  letter-spacing: -0.03em !important;
+}
+
+/* ── Page header ── */
+.page-header {
+  margin-bottom: 22px !important;
+  padding-bottom: 16px !important;
+  border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.8) !important;
+}
+.page-header h1 {
+  font-size: 20px !important;
+  letter-spacing: -0.05em !important;
+}
+.page-header p {
+  font-size: 10px !important;
+  margin-top: 5px !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* ── Modals — premium raised surface ── */
+.modal-box {
+  border-radius: 22px !important;
+  box-shadow:
+    12px 12px 32px rgba(0,0,0,0.16),
+    -6px -6px 20px rgba(255,255,255,0.92) !important;
+}
+.modal-head {
+  padding: 20px 22px 16px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.75) !important;
+}
+.modal-close {
+  width: 30px !important; height: 30px !important;
+  border-radius: 8px !important;
+  box-shadow:
+    2px 2px 6px rgba(0,0,0,0.10),
+    -1px -1px 4px rgba(255,255,255,0.85) !important;
+  font-size: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s !important;
+}
+.modal-close:hover {
+  box-shadow:
+    3px 3px 9px rgba(0,0,0,0.13),
+    -2px -2px 6px rgba(255,255,255,0.90) !important;
+  color: var(--danger-nm) !important;
+}
+
+/* ── Stats / metric cards (bsc) ── */
+.bsc {
+  border-radius: 16px !important;
+  padding: 16px !important;
+  background: var(--nm-base) !important;
+  box-shadow:
+    5px 5px 14px rgba(0,0,0,0.11),
+    -3px -3px 10px rgba(255,255,255,0.88) !important;
+  transition: box-shadow 0.2s !important;
+}
+.bsc-lbl {
+  font-family: 'Space Mono', monospace !important;
+  font-size: 8px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: var(--text-tertiary) !important;
+  margin-bottom: 6px !important;
+}
+.bsc-val {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 24px !important;
+  font-weight: 300 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1 !important;
+  color: var(--text-primary) !important;
+}
+.bsc-sub {
+  font-size: 10px !important;
+  margin-top: 5px !important;
+  color: var(--text-tertiary) !important;
+}
+
+/* ── Avatar circles ── */
+.bav, .user-avatar, .hrf-emp-avatar {
+  font-family: 'Space Mono', monospace !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  box-shadow:
+    3px 3px 8px rgba(0,0,0,0.12),
+    -2px -2px 6px rgba(255,255,255,0.85) !important;
+  border: none !important;
+}
+
+/* ── Sidebar foot clock ── */
+.sb-clock {
+  font-size: 18px !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1 !important;
+}
+
+/* ── Empty states ── */
+.empty-state, .es-icon {
+  font-family: 'Space Mono', monospace !important;
+}
+.empty-state h3 {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--text-secondary) !important;
+}
+.empty-state p {
+  font-size: 11px !important;
+  color: var(--text-tertiary) !important;
+}
+
+/* ── Toast notifications ── */
+.toast, #toast {
+  font-family: 'Space Mono', monospace !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+  box-shadow:
+    6px 6px 18px rgba(0,0,0,0.16),
+    -3px -3px 10px rgba(255,255,255,0.85) !important;
+  padding: 12px 18px !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* ── Scrollbar — neumorphic inset ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track {
+  background: var(--nm-base) !important;
+  box-shadow: inset 1px 1px 3px rgba(0,0,0,0.08) !important;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.14) !important;
+  border-radius: 6px !important;
+  box-shadow: inset 0 0 3px rgba(255,255,255,0.5) !important;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(0,102,102,0.28) !important; }
+
+/* ── Progress bars ── */
+[style*="border-radius:99px"][style*="height:5px"],
+[style*="border-radius:99px"][style*="height:6px"],
+[style*="border-radius:99px"][style*="height:8px"] {
+  box-shadow:
+    inset 2px 2px 5px rgba(0,0,0,0.10),
+    inset -1px -1px 3px rgba(255,255,255,0.80) !important;
+  border-radius: 99px !important;
+}
+
+/* ── Dividers ── */
+hr, .divider {
+  border: none !important;
+  height: 1px !important;
+  background: rgba(0,0,0,0.06) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.82) !important;
+  margin: 16px 0 !important;
+}
+
+/* ── Grid section gaps ── */
+.bgrid-4, .bgrid-3, .bgrid-2 { gap: 14px !important; }
+
+/* ── Branch cards ── */
+.bcard {
+  border-radius: 16px !important;
+  padding: 16px !important;
+  box-shadow:
+    5px 5px 14px rgba(0,0,0,0.10),
+    -3px -3px 9px rgba(255,255,255,0.88) !important;
+  border: 1px solid rgba(0,0,0,0.04) !important;
+}
+
 </style>
 
 </head>
