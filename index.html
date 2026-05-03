@@ -76,7 +76,7 @@ window.addEventListener('unhandledrejection', function(e) {
   --sidebar-bg:rgba(5,8,16,.97);
 
   /* Role colors */
-  --ceo:#f0c040;
+  --ceo:#c8920a;
   --brand-dir:#a78bfa;
   --regional:#60a5fa;
   --branch-mgr:#34d399;
@@ -84,7 +84,7 @@ window.addEventListener('unhandledrejection', function(e) {
   --super-admin:#f87171;
 
   /* Semantic */
-  --success:#34d399;
+  --success:#059669;
   --warning:#f59e0b;
   --danger:#f87171;
   --info:#60a5fa;
@@ -571,7 +571,7 @@ body{
   font-size:12px;color:var(--text-secondary);margin-top:6px;
   display:flex;align-items:center;gap:4px;
 }
-.delta-pos{color:var(--success)}
+.delta-pos{color:#059669}
 .delta-neg{color:var(--danger)}
 
 /* KPI Grid */
@@ -1062,7 +1062,7 @@ body{
 /* ══ HR & FINANCE MODULE CSS ══ */
 :root {
   --hr-color:#a78bfa;
-  --fin-color:#34d399;
+  --fin-color:#059669;
   --payroll-color:#f0c040;
   --budget-color:#60a5fa;
 }
@@ -1187,7 +1187,7 @@ body{
   --chart-tick: rgba(30,41,56,0.35);
 
   /* Role colors adjusted for light surface */
-  --ceo: #B8860B;
+  --ceo: #b45309;
   --brand-dir: #5B21B6;
   --regional: #1D4ED8;
   --branch-mgr: #065F46;
@@ -3418,10 +3418,10 @@ function _lumCheckPin() {
 var LUM_ROLES = {
   brand_dir:   { label:'Brand Director', icon:'🎯', color:'#a78bfa' },
   regional:    { label:'Area Manager',   icon:'🗺️', color:'#60a5fa' },
-  branch_mgr:  { label:'Branch Manager', icon:'🏪', color:'#34d399' },
+  branch_mgr:  { label:'Branch Manager', icon:'🏪', color:'#059669' },
   ceo:         { label:'CEO',            icon:'👑', color:'#f0c040' },
   hr_manager:  { label:'HR Manager',     icon:'🧑‍💼', color:'#94a3b8' },
-  finance_dir: { label:'Finance Dir',    icon:'💰', color:'#f59e0b' }
+  finance_dir: { label:'Finance Dir',    icon:'💰', color:'#b45309' }
 };
 
 function lumLoadUsers() {
@@ -3503,7 +3503,7 @@ function lumOpenEdit(uid) {
     var INP = 'width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:#fff;padding:8px 10px;outline:none;';
     var form =
       '<div style="background:rgba(240,165,0,.06);border:1px solid rgba(240,165,0,.22);border-radius:11px;padding:16px;margin-bottom:10px">'+
-      '<div style="font-size:10px;font-weight:700;color:#f0a500;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px">&#x270F;&#xFE0F; Editing: '+_lxe(u.name||uid)+'</div>'+
+      '<div style="font-size:10px;font-weight:700;color:#b45309;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px">&#x270F;&#xFE0F; Editing: '+_lxe(u.name||uid)+'</div>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">'+
         '<div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px">Name</div>'+
         '<input id="lume-name" value="'+_lxe(u.name||'')+'" style="'+INP+'font-size:13px;font-family:inherit"></div>'+
@@ -3591,9 +3591,9 @@ function renderLoginStep0(card) {
     { id:'ceo',         label:'CEO / Executive',  sub:'Company-wide overview',         icon:'👑', color:'#f0c040' },
     { id:'brand_dir',   label:'Brand Director',   sub:'Enter PIN → auto-login',        icon:'🎯', color:'#a78bfa' },
     { id:'regional',    label:'Area Manager',     sub:'Enter PIN → auto-login',        icon:'🗺️', color:'#60a5fa' },
-    { id:'branch_mgr',  label:'Branch Manager',   sub:'Select branch + enter PIN',     icon:'🏪', color:'#34d399' },
+    { id:'branch_mgr',  label:'Branch Manager',   sub:'Select branch + enter PIN',     icon:'🏪', color:'#059669' },
     { id:'hr_manager',  label:'HR Manager',        sub:'Enter PIN → auto-login',        icon:'🧑‍💼', color:'#94a3b8' },
-    { id:'finance_dir', label:'Finance Director',  sub:'Enter PIN → auto-login',        icon:'💰', color:'#f59e0b' },
+    { id:'finance_dir', label:'Finance Director',  sub:'Enter PIN → auto-login',        icon:'💰', color:'#b45309' },
     { id:'staff',       label:'Staff',            sub:'Check-in & checklists only',    icon:'👤', color:'#64748b' }
   ];
   card.innerHTML =
@@ -3731,7 +3731,7 @@ function renderLoginPIN(card) {
     regional:    { icon:'🗺️', title:'Area Manager',   hint:'Enter your personal Area Manager PIN (set by Director)', color:'var(--regional)' },
     branch_mgr:  { icon:'🏪', title:branch ? xe(branch.name||'Branch') : 'Branch Manager', hint:'Enter branch PIN', color:'var(--branch-mgr)' },
     hr_manager:  { icon:'🧑‍💼', title:'HR Manager',       hint:'Enter your personal HR PIN (set by Admin)', color:'#94a3b8' },
-    finance_dir: { icon:'💰', title:'Finance Director', hint:'Enter your personal Finance PIN (set by Admin)', color:'#f59e0b' },
+    finance_dir: { icon:'💰', title:'Finance Director', hint:'Enter your personal Finance PIN (set by Admin)', color:'#b45309' },
     staff:       { icon:'👤', title:'Staff',        hint:'No PIN required — tap Login', color:'var(--staff)' }
   };
   var rh = roleHints[role] || roleHints.branch_mgr;
@@ -5000,8 +5000,8 @@ function pHeadcount() {
       h+='<tr><td><strong>'+(b.icon||'&#x1F37D;&#xFE0F;')+' '+xe(b.name)+'</strong></td>';
       h+='<td style="font-size:11px;color:var(--text-secondary)">'+xe(b.brand||'—')+'</td>';
       h+='<td class="mono" style="text-align:center;color:var(--ceo);font-weight:700">'+list.length+'</td>';
-      h+='<td class="mono" style="text-align:center;color:#34d399;font-weight:600">'+act+'</td>';
-      h+='<td class="mono" style="text-align:center;color:#f59e0b;font-weight:600">'+lv+'</td>';
+      h+='<td class="mono" style="text-align:center;color:#059669;font-weight:600">'+act+'</td>';
+      h+='<td class="mono" style="text-align:center;color:#b45309;font-weight:600">'+lv+'</td>';
       h+='<td class="mono" style="text-align:center;color:#f87171;font-weight:600">'+rs+'</td></tr>';
     });
     h+='</tbody></table></div>';
@@ -5030,8 +5030,8 @@ function pHeadcount() {
             var lv =list.filter(function(m){return m.status==='On Leave';}).length;
             card.innerHTML='<div style="font-weight:700;margin-bottom:6px">'+(b.icon||'&#x1F37D;&#xFE0F;')+' '+xe(b.name)+'</div>'+
               '<div style="font-size:11px;display:flex;gap:8px">'+
-              '<span style="color:#34d399">&#x2705; '+act+'</span>'+
-              '<span style="color:#f59e0b">&#x1F3D6;&#xFE0F; '+lv+'</span>'+
+              '<span style="color:#059669">&#x2705; '+act+'</span>'+
+              '<span style="color:#b45309">&#x1F3D6;&#xFE0F; '+lv+'</span>'+
               '<span style="color:var(--text-tertiary)">Total: '+list.length+'</span></div>';
           }
           if (loaded===branches.length) setTimeout(function(){ if(NX.page==='headcount') navTo('headcount'); },300);
@@ -5416,7 +5416,7 @@ function openEditBrandModal(brandName, brandColor, brandIcon) {
       '<div class="form-group"><label class="form-label">Accent Color</label>' +
         '<input class="form-input" id="eb-color" type="color" value="' + xe(brandColor||'#f0a500') + '" style="height:40px;padding:4px"></div>' +
     '</div>' +
-    '<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px;font-size:11px;color:#f59e0b;margin-bottom:14px">' +
+    '<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px;font-size:11px;color:#b45309;margin-bottom:14px">' +
       '&#x26A0;&#xFE0F; Changing brand name will rename it across all branches in Firebase.' +
     '</div>' +
     '<div style="display:flex;gap:8px">' +
@@ -5809,7 +5809,7 @@ function pAccessCtrl() {
 
   // ── Finance Directors ─────────────────────────────────────────────────────
   h += '<div class="card section"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
-  h += '<div style="font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em">&#x1F4B0; Finance Directors</div>';
+  h += '<div style="font-size:11px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:.08em">&#x1F4B0; Finance Directors</div>';
   h += '<button class="btn btn-sm" onclick="openAddUserModal(\'finance_dir\')">+ Add</button></div>';
   if (!finDirs.length) {
     h += '<div style="text-align:center;padding:20px;color:var(--text-tertiary);font-size:12px">No finance directors yet — click "+ Add" to create one</div>';
@@ -5820,7 +5820,7 @@ function pAccessCtrl() {
       h += '<div style="width:36px;height:36px;border-radius:9px;background:#f59e0b18;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">&#x1F4B0;</div>';
       h += '<div style="flex:1;min-width:120px"><div style="font-size:13px;font-weight:700;color:var(--text-primary)">' + xe(u.name||u.id) + '</div>';
       h += '<div style="font-size:10px;color:var(--text-secondary);margin-top:2px">Finance Director · All branches access</div></div>';
-      h += '<div style="font-family:var(--mono);font-size:11px;color:#f59e0b;background:#f59e0b12;padding:4px 10px;border-radius:6px">PIN: ' + xe(String(u.pin||'—')) + '</div>';
+      h += '<div style="font-family:var(--mono);font-size:11px;color:#b45309;background:#f59e0b12;padding:4px 10px;border-radius:6px">PIN: ' + xe(String(u.pin||'—')) + '</div>';
       h += '<div style="display:flex;gap:6px">';
       h += '<button class="btn btn-sm" onclick="openEditUserModal(\'' + xe(u.id) + '\')">Edit</button>';
       h += '<button class="btn btn-sm" style="color:var(--danger);border-color:rgba(248,113,113,.3)" onclick="confirmDeleteUser(\'' + xe(u.id) + '\',\'' + xe(u.name||'') + '\')">Delete</button>';
@@ -5986,7 +5986,7 @@ function openAddUserModal(presetRole) {
     brand_dir:   { label:'Brand Director',   color:'var(--brand-dir)',  icon:'🎯' },
     regional:    { label:'Area Manager',     color:'var(--regional)',   icon:'🗺️' },
     hr_manager:  { label:'HR Manager',       color:'#94a3b8',           icon:'🧑‍💼' },
-    finance_dir: { label:'Finance Director', color:'#f59e0b',           icon:'💰' }
+    finance_dir: { label:'Finance Director', color:'#b45309',           icon:'💰' }
   };
   var _rm = _ROLE_META[presetRole] || _ROLE_META['brand_dir'];
   var roleLabel = _rm.label;
@@ -6738,7 +6738,7 @@ function renderPage_(pageId) {
     '.bstb button{padding:8px 16px;border:none;border-bottom:2px solid transparent;background:none;color:var(--text-secondary);font-size:13px;cursor:pointer;margin-bottom:-1px;transition:all .15s}',
     '.bstb button.on{color:var(--text-primary);border-bottom-color:var(--text-primary)}',
     '.bts-st-btn{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all .15s}',
-    '.bcg{color:#34d399}.bcr{color:#f87171}.bca{color:#60a5fa}.bcgold{color:#f0c040}',
+    '.bcg{color:#059669}.bcr{color:#f87171}.bca{color:#60a5fa}.bcgold{color:#f0c040}',
     '.bmono{font-family:"JetBrains Mono",monospace}',
     '.bgrid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}',
     '.bgrid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}',
@@ -6843,9 +6843,9 @@ function pBranchDash() {
   function remBadge(d){
     if(d===null||d===undefined)return '<span style="color:var(--text-tertiary);font-size:10px">\u2014</span>';
     if(d<0)return '<span style="background:rgba(248,113,113,.15);color:#f87171;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700">Expired</span>';
-    if(d<=30)return '<span style="background:rgba(245,158,11,.12);color:#f59e0b;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700">'+d+'d left</span>';
+    if(d<=30)return '<span style="background:rgba(245,158,11,.12);color:#b45309;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700">'+d+'d left</span>';
     if(d<=60)return '<span style="background:rgba(251,191,36,.10);color:#fbbf24;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700">'+d+'d left</span>';
-    return '<span style="background:rgba(52,211,153,.10);color:#34d399;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700">'+d+'d left</span>';
+    return '<span style="background:rgba(52,211,153,.10);color:#059669;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700">'+d+'d left</span>';
   }
   var wv=0; BS.waste.forEach(function(w){if(w.date===todayStr)wv+=(+w.value||0);});
   var fcTarget=parseFloat((BS._branchConfig||{}).fcTarget)||30;
@@ -6875,7 +6875,7 @@ function pBranchDash() {
     var mv=monthVals[mi3];
     var isCurrentMonth=(mi3===11);
     var bh2=mv>0?Math.max(4,Math.round(mv/mxM*56)):4;
-    var bc2=isCurrentMonth?'var(--ceo)':'#2d3748';
+    var bc2=isCurrentMonth?'#4a5568':'#f59e0b';
     var mLabel=mthKeyD(-(11-mi3));
     monthlyBars+='<div title="'+mLabel+': '+formatSAR(mv)+'" style="flex:1;height:'+bh2+'px;background:'+bc2+';border-radius:2px 2px 0 0;opacity:'+(isCurrentMonth?1:.65)+';cursor:default;transition:height .3s"></div>';
   }
@@ -6902,7 +6902,7 @@ function pBranchDash() {
   // ROW 2: Active Staff | Low Stock | Wastage Today | Stock Value
   h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">';
   h += '<div class="card"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary);margin-bottom:4px">Active Staff</div>';
-  h += '<div class="mono" style="font-size:32px;font-weight:300;color:#34d399">'+act2+'</div>';
+  h += '<div class="mono" style="font-size:32px;font-weight:300;color:#059669">'+act2+'</div>';
   h += '<div style="font-size:11px;color:var(--text-secondary)">of '+BS.staff.length+' \xb7 '+onL2+' on leave</div></div>';
   h += '<div class="card" style="'+(low>0?'border-color:rgba(248,113,113,.3)':'')+'"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary);margin-bottom:4px">Low Stock Items</div>';
   h += '<div class="mono" style="font-size:32px;font-weight:300;color:#f87171">'+low+'</div>';
@@ -6946,7 +6946,7 @@ function pBranchDash() {
   h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span style="color:var(--text-tertiary)">Brand</span><span style="font-weight:700;color:var(--text-primary)">'+xe(b.brand||'—')+'</span></div>';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span style="color:var(--text-tertiary)">Location</span><span style="color:var(--text-secondary);text-align:right;max-width:200px">'+xe(b.location||'—')+'</span></div>';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span style="color:var(--text-tertiary)">Manager</span><span style="font-weight:600;color:var(--text-secondary)">'+xe(b.manager||'—')+'</span></div>';
-  h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span style="color:var(--text-tertiary)">Active Staff</span><span style="font-weight:700;color:#34d399">'+act2+'</span></div>';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span style="color:var(--text-tertiary)">Active Staff</span><span style="font-weight:700;color:#059669">'+act2+'</span></div>';
   if(_bc2.area)h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span style="color:var(--text-tertiary)">Dining Area</span><span style="color:var(--text-secondary)">'+xe(_bc2.area)+'</span></div>';
   h += '</div></div>';
   h += '</div>';
@@ -6993,9 +6993,9 @@ function pBranchDash() {
   h += '<div style="padding:12px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)">';
   h += '<span style="font-size:13px;font-weight:700">Health Cards</span>';
   if(hExp>0) h+='<span style="background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.25);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">'+hExp+' Expired</span>';
-  if(hSoon>0) h+='<span style="background:rgba(240,165,0,.15);color:#f59e0b;border:1px solid rgba(240,165,0,.25);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">'+hSoon+' &lt;30d</span>';
+  if(hSoon>0) h+='<span style="background:rgba(240,165,0,.15);color:#b45309;border:1px solid rgba(240,165,0,.25);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">'+hSoon+' &lt;30d</span>';
   if(hNear>0) h+='<span style="background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.25);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">'+hNear+' &lt;60d</span>';
-  if(hOk>0) h+='<span style="background:rgba(52,211,153,.12);color:#34d399;border:1px solid rgba(52,211,153,.2);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">'+hOk+' Valid</span>';
+  if(hOk>0) h+='<span style="background:rgba(52,211,153,.12);color:#059669;border:1px solid rgba(52,211,153,.2);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">'+hOk+' Valid</span>';
   h += '<button class="btn btn-sm" style="margin-left:auto" onclick="navTo(\'health-cards\')">All \u2192</button></div>';
   if(hRows){
     h+='<table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--surface-2)">';
@@ -7076,23 +7076,23 @@ function pBranchDash() {
     var isCur=ymj===thisMonthIdx;
     ytdBars+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0">'+
       '<div style="display:flex;align-items:flex-end;gap:2px;height:60px;width:100%;justify-content:center">'+
-        '<div title="'+monthsShort[ymj]+' '+lastYr+': '+formatSAR(lastV2)+'" style="width:8px;height:'+hL+'px;background:#2d3748;border-radius:2px 2px 0 0;opacity:.7"></div>'+
-        '<div title="'+monthsShort[ymj]+' '+thisYr+': '+formatSAR(thisV2)+'" style="width:8px;height:'+hT+'px;background:'+(isCur?'var(--ceo)':isFuture?'var(--surface-3)':'#f59e0b')+';border-radius:2px 2px 0 0;opacity:'+(isFuture?.3:1)+'"></div>'+
+        '<div title="'+monthsShort[ymj]+' '+lastYr+': '+formatSAR(lastV2)+'" style="width:8px;height:'+hL+'px;background:#c8920a;border-radius:2px 2px 0 0;opacity:.85"></div>'+
+        '<div title="'+monthsShort[ymj]+' '+thisYr+': '+formatSAR(thisV2)+'" style="width:8px;height:'+hT+'px;background:'+(isCur?'#c8920a':isFuture?'var(--surface-3)':'#4a5568')+';border-radius:2px 2px 0 0;opacity:'+(isFuture?.3:1)+'"></div>'+
       '</div>'+
-      '<div style="font-size:9px;color:var(--text-tertiary)">'+monthsShort[ymj]+'</div>'+
+      '<div style="font-size:9px;color:var(--text-secondary)">'+monthsShort[ymj]+'</div>'+
       '</div>';
   }
   h += '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:11px;font-weight:700">YTD '+thisYr+' vs '+lastYr+'</span>';
   h += '<span style="font-size:11px;color:'+yoyCol+';font-weight:700;font-family:var(--mono)">'+yoyArrow+' '+(Math.abs(ytdYoY)).toFixed(1)+'%</span></div>';
   h += '<div style="display:flex;gap:14px;font-size:10px;color:var(--text-secondary);margin-bottom:8px">';
-  h += '<div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border-radius:2px"></span>'+thisYr+': <strong style="color:#f59e0b">'+fsar(ytdThisTotal)+'</strong></div>';
-  h += '<div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;background:#2d3748;border-radius:2px;opacity:.7"></span>'+lastYr+': <strong>'+fsar(ytdLastTotal)+'</strong></div>';
+  h += '<div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;background:#4a5568;border-radius:2px"></span>'+thisYr+': <strong style="color:var(--text-primary)">'+fsar(ytdThisTotal)+'</strong></div>';
+  h += '<div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;background:#c8920a;border-radius:2px"></span>'+lastYr+': <strong style="color:#b45309">'+fsar(ytdLastTotal)+'</strong></div>';
   h += '</div>';
   h += '<div style="display:flex;align-items:flex-end;gap:2px;height:80px;margin-top:8px">'+ytdBars+'</div></div>';
   h += '</div>';
 
   // ROW 5: Recent Orders | Activity | Reminders
-  var stColors={pending:'rgba(245,158,11,.15);color:#f59e0b',partial:'rgba(96,165,250,.15);color:#60a5fa',done:'rgba(52,211,153,.15);color:#34d399',cancelled:'rgba(100,100,100,.15);color:#94a3b8'};
+  var stColors={pending:'rgba(245,158,11,.15);color:#b45309',partial:'rgba(96,165,250,.15);color:#60a5fa',done:'rgba(52,211,153,.15);color:#059669',cancelled:'rgba(100,100,100,.15);color:#94a3b8'};
   var stLabels={pending:'Pending',partial:'Partial',done:'Done',cancelled:'Cancelled'};
   var ordH=bOrders.slice(-5).reverse().map(function(o){
     var sty=stColors[o.status]||stColors.pending;
@@ -7103,7 +7103,7 @@ function pBranchDash() {
   }).join('')||'<div style="color:var(--text-tertiary);font-size:11px;font-style:italic;padding:8px 0">No orders yet</div>';
   var logH=(bLogs||[]).slice().reverse().slice(0,5).map(function(l){
     var isR=l.type==='receive',isTI=l.type==='transfer-in',isTO=l.type==='transfer-out';
-    var bgc=isTO||isTI?'rgba(192,132,252,.15);color:#c084fc':isR?'rgba(52,211,153,.15);color:#34d399':'rgba(248,113,113,.15);color:#f87171';
+    var bgc=isTO||isTI?'rgba(192,132,252,.15);color:#c084fc':isR?'rgba(52,211,153,.15);color:#059669':'rgba(248,113,113,.15);color:#f87171';
     var lbl=isTO?'Tr\u2192':isTI?'\u2190Tr':isR?'In':'Out';
     return '<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">'+
       '<span style="font-size:10px;border-radius:4px;padding:2px 7px;font-weight:700;background:'+bgc+';flex-shrink:0">'+lbl+'</span>'+
@@ -7166,7 +7166,7 @@ function pBranchDash() {
     if(!pt.length&&!pl.length&&!ua.length) return;
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px">';
     if(pt.length) h+='<div class="card" style="border-color:rgba(167,139,250,.4);cursor:pointer;padding:14px" onclick="navTo(&quot;bm-transfers&quot;)"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:26px">&#x1F500;</div><div><div style="font-size:13px;font-weight:700;color:#a78bfa">'+pt.length+' Transfer Request'+(pt.length>1?'s':'')+'</div><div style="font-size:11px;color:var(--text-secondary)">Awaiting approval</div></div></div></div>';
-    if(pl.length) h+='<div class="card" style="border-color:rgba(245,158,11,.4);cursor:pointer;padding:14px" onclick="navTo(&quot;bm-leave&quot;)"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:26px">&#x1F3D6;&#xFE0F;</div><div><div style="font-size:13px;font-weight:700;color:#f59e0b">'+pl.length+' Leave Request'+(pl.length>1?'s':'')+'</div><div style="font-size:11px;color:var(--text-secondary)">Pending your decision</div></div></div></div>';
+    if(pl.length) h+='<div class="card" style="border-color:rgba(245,158,11,.4);cursor:pointer;padding:14px" onclick="navTo(&quot;bm-leave&quot;)"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:26px">&#x1F3D6;&#xFE0F;</div><div><div style="font-size:13px;font-weight:700;color:#b45309">'+pl.length+' Leave Request'+(pl.length>1?'s':'')+'</div><div style="font-size:11px;color:var(--text-secondary)">Pending your decision</div></div></div></div>';
     if(ua.length) h+='<div class="card" style="border-color:rgba(248,113,113,.4);cursor:pointer;padding:14px" onclick="navTo(&quot;bm-announcements&quot;)"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:26px">&#x1F4E2;</div><div><div style="font-size:13px;font-weight:700;color:#f87171">'+ua.length+' Announcement'+(ua.length>1?'s':'')+'</div><div style="font-size:11px;color:var(--text-secondary)">From HR — needs acknowledgement</div></div></div></div>';
     h+='</div>';
   })();
@@ -7418,7 +7418,7 @@ function diagInventory(){
       html+='<div><span style="color:var(--text-tertiary)">Stock raw type:</span> '+stockType+'</div>';
       html+='<div><span style="color:var(--text-tertiary)">Stock entry count:</span> '+stockKeys.length+'</div>';
       html+='<div><span style="color:var(--text-tertiary)">Merged into bItems:</span> <strong style="color:'+(bItems.length?'#34d399':'#f87171')+'">'+bItems.length+'</strong></div>';
-      if(dbg.skipped)html+='<div style="color:#f59e0b">Skipped during merge: '+dbg.skipped+'</div>';
+      if(dbg.skipped)html+='<div style="color:#b45309">Skipped during merge: '+dbg.skipped+'</div>';
       html+='</div>';
       html+=sample;
       if(rawKeys.length===0){
@@ -7427,12 +7427,12 @@ function diagInventory(){
           'Items were never written there, or were written to a different path. Use <strong>Import CSV</strong> to populate it.'+
         '</div>';
       } else if(bItems.length===0){
-        html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);padding:10px;border-radius:6px;margin-top:10px;color:#f59e0b">'+
+        html+='<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);padding:10px;border-radius:6px;margin-top:10px;color:#b45309">'+
           '<strong>'+rawKeys.length+' entries found but 0 merged into the table.</strong><br><br>'+
           'Items are present but missing required fields (name). Check the sample above \u2014 the field name might be unusual.'+
         '</div>';
       } else {
-        html+='<div style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);padding:10px;border-radius:6px;margin-top:10px;color:#34d399">'+
+        html+='<div style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);padding:10px;border-radius:6px;margin-top:10px;color:#059669">'+
           '\u2713 Catalog loaded successfully. '+bItems.length+' items showing in the table.'+
         '</div>';
       }
@@ -7959,13 +7959,13 @@ function pOrdersHistoryNX() {
       h += '<span style="font-family:var(--mono);color:' + (done?'var(--success)':notRecv?'var(--warning)':'var(--text-primary)') + '">' + (it.received||0) + '/' + it.qty + ' ' + (it.unit||'') + (notRecv?' ⚠️':'') + '</span>';
       if (!done && !notRecv && o.status !== 'done' && o.status !== 'cancelled') {
         h += '<div style="display:flex;gap:4px;flex-shrink:0">';
-        h += '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);color:#34d399;border-color:rgba(52,211,153,.3)" onclick="bktReceiveItem(\'' + xe(o.id) + '\',\'' + xe(it.code) + '\')">✅ Receive</button>';
+        h += '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);color:#059669;border-color:rgba(52,211,153,.3)" onclick="bktReceiveItem(\'' + xe(o.id) + '\',\'' + xe(it.code) + '\')">✅ Receive</button>';
         h += '<button class="btn btn-sm" style="background:rgba(248,113,113,.1);color:#f87171;border-color:rgba(248,113,113,.3)" onclick="bktMarkNotReceived(\'' + xe(o.id) + '\',\'' + xe(it.code) + '\')">✗ Not Received</button>';
         h += '</div>';
       } else if (done) {
-        h += '<span style="font-size:10px;font-weight:700;color:#34d399;flex-shrink:0">✅ Done</span>';
+        h += '<span style="font-size:10px;font-weight:700;color:#059669;flex-shrink:0">✅ Done</span>';
       } else if (notRecv) {
-        h += '<span style="font-size:10px;font-weight:700;color:#f59e0b;flex-shrink:0">⚠️ Not Received</span>';
+        h += '<span style="font-size:10px;font-weight:700;color:#b45309;flex-shrink:0">⚠️ Not Received</span>';
       }
       h += '</div>';
     });
@@ -8259,8 +8259,8 @@ function pInvReport(){
   h+='<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr>';
   h+='<th>Code</th><th>Item</th><th>Unit</th>';
   h+='<th style="text-align:right;color:#60a5fa">Opening</th>';
-  h+='<th style="text-align:right;color:#34d399">+Received</th>';
-  h+='<th style="text-align:right;color:#34d399">+PO</th>';
+  h+='<th style="text-align:right;color:#059669">+Received</th>';
+  h+='<th style="text-align:right;color:#059669">+PO</th>';
   h+='<th style="text-align:right;color:#f87171">\u2212Wastage</th>';
   h+='<th style="text-align:right;color:#f87171">\u2212Pull-Out</th>';
   h+='<th style="text-align:right;color:var(--ceo)">=Calculated</th>';
@@ -8297,8 +8297,8 @@ function pInvReport(){
     h+='<td style="color:var(--text-primary);font-weight:600">'+bxe(it.name)+'</td>';
     h+='<td style="color:var(--text-tertiary);font-size:11px">'+bxe(it.unit||'\u2014')+'</td>';
     h+='<td class="bmono" style="text-align:right;color:#60a5fa">'+openQty+'</td>';
-    h+='<td class="bmono" style="text-align:right;color:#34d399">'+recvQty+'</td>';
-    h+='<td class="bmono" style="text-align:right;color:#34d399">'+poQty+'</td>';
+    h+='<td class="bmono" style="text-align:right;color:#059669">'+recvQty+'</td>';
+    h+='<td class="bmono" style="text-align:right;color:#059669">'+poQty+'</td>';
     h+='<td class="bmono" style="text-align:right;color:#f87171">'+wasteQty+'</td>';
     h+='<td class="bmono" style="text-align:right;color:#f87171">'+pullQty+'</td>';
     h+='<td class="bmono" style="text-align:right;font-weight:700;color:var(--ceo)">'+calcEnd+'</td>';
@@ -8341,7 +8341,7 @@ function invSaveEndingCount(id,month,val){
 }
 
 // ── Wastage ──────────────────────────────────────────
-function pWastage(){attachBranchListeners();var data=BS.waste.filter(function(w){return bmatch(w,['item','by','reason']);}).slice().sort(function(a,b){return(b.date||'').localeCompare(a.date||'');});var tot=0;data.forEach(function(w){tot+=(+w.value||0);});var tc=BS.waste.filter(function(w){return w.date===TODAY_BS;}).length;var rows=data.map(function(w){return '<tr><td class="bmono" style="color:var(--text-tertiary);font-size:11px">'+bfdate(w.date)+'</td><td style="font-weight:600;color:var(--text-primary)">'+bxe(w.item)+'</td><td class="bmono">'+bxe(w.qty)+' '+bxe(w.unit||'')+'</td><td>'+bpl(w.reason||'\u2014','#f87171')+'</td><td class="bmono" style="color:var(--danger);font-weight:600">'+bfsar(w.value)+'</td><td style="color:var(--text-secondary)">'+bxe(w.by||'\u2014')+'</td><td><button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchWaste(\''+bxe(w.id)+'\')">Del</button></td></tr>';}).join('');var h='<div class="page-header"><h1>Wastage Log</h1></div><div class="bgrid-3" style="margin-bottom:16px"><div class="bsc"><div class="bsc-lbl">Total Entries</div><div class="bsc-val bca">'+BS.waste.length+'</div></div><div class="bsc"><div class="bsc-lbl">Today</div><div class="bsc-val" style="color:#f59e0b">'+tc+'</div></div><div class="bsc"><div class="bsc-lbl">Cumulative Loss</div><div class="bsc-val bcr">'+bfsar(tot)+'</div></div></div>';h+='<div class="header-actions"><div></div><button class="btn btn-primary" onclick="openBranchWastageModal()">+ Log Wastage</button></div>';return h+'<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Reason</th><th>Est. Value</th><th>By</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:28px">No wastage entries</td></tr>')+'</tbody></table></div></div>';}
+function pWastage(){attachBranchListeners();var data=BS.waste.filter(function(w){return bmatch(w,['item','by','reason']);}).slice().sort(function(a,b){return(b.date||'').localeCompare(a.date||'');});var tot=0;data.forEach(function(w){tot+=(+w.value||0);});var tc=BS.waste.filter(function(w){return w.date===TODAY_BS;}).length;var rows=data.map(function(w){return '<tr><td class="bmono" style="color:var(--text-tertiary);font-size:11px">'+bfdate(w.date)+'</td><td style="font-weight:600;color:var(--text-primary)">'+bxe(w.item)+'</td><td class="bmono">'+bxe(w.qty)+' '+bxe(w.unit||'')+'</td><td>'+bpl(w.reason||'\u2014','#f87171')+'</td><td class="bmono" style="color:var(--danger);font-weight:600">'+bfsar(w.value)+'</td><td style="color:var(--text-secondary)">'+bxe(w.by||'\u2014')+'</td><td><button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchWaste(\''+bxe(w.id)+'\')">Del</button></td></tr>';}).join('');var h='<div class="page-header"><h1>Wastage Log</h1></div><div class="bgrid-3" style="margin-bottom:16px"><div class="bsc"><div class="bsc-lbl">Total Entries</div><div class="bsc-val bca">'+BS.waste.length+'</div></div><div class="bsc"><div class="bsc-lbl">Today</div><div class="bsc-val" style="color:#b45309">'+tc+'</div></div><div class="bsc"><div class="bsc-lbl">Cumulative Loss</div><div class="bsc-val bcr">'+bfsar(tot)+'</div></div></div>';h+='<div class="header-actions"><div></div><button class="btn btn-primary" onclick="openBranchWastageModal()">+ Log Wastage</button></div>';return h+'<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Reason</th><th>Est. Value</th><th>By</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:28px">No wastage entries</td></tr>')+'</tbody></table></div></div>';}
 function openBranchWastageModal(){var so='<option value="">\u2014</option>'+BS.staff.map(function(s2){return '<option>'+bxe(s2.name)+'</option>';}).join('');var html='<div class="modal-head"><h2>Log Wastage</h2><button class="modal-close" onclick="closeModalForce()">&#x2715;</button></div><div class="bfg"><label class="form-label">Date</label><input class="form-input" type="date" id="bw-date" value="'+TODAY_BS+'"></div><div class="form-row"><div class="bfg"><label class="form-label">Item *</label><input class="form-input" id="bw-item" placeholder="Item name"></div><div class="bfg"><label class="form-label">Quantity *</label><input class="form-input" type="number" id="bw-qty" step="0.01" placeholder="0"></div></div><div class="form-row"><div class="bfg"><label class="form-label">Unit</label><input class="form-input" id="bw-unit" placeholder="kg, pcs\u2026"></div><div class="bfg"><label class="form-label">Reason</label><select class="form-input form-select" id="bw-reason"><option value="">\u2014</option>'+WR.map(function(r){return '<option>'+bxe(r)+'</option>';}).join('')+'</select></div></div><div class="form-row"><div class="bfg"><label class="form-label">Est. Value (SAR)</label><input class="form-input" type="number" id="bw-val" step="0.01" placeholder="0"></div><div class="bfg"><label class="form-label">Reported By</label><select class="form-input form-select" id="bw-by">'+so+'</select></div></div><button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBranchWastage()">Log Wastage</button>';openModal(html);}
 function saveBranchWastage(){var item=bgv('bw-item'),qty=parseFloat(bgv('bw-qty'))||0;if(!item||qty<=0){showToast('Item and quantity required','error');return;}BS.waste.push({id:buid(),date:bgv('bw-date')||TODAY_BS,item:item,qty:qty,unit:bgv('bw-unit'),reason:bgv('bw-reason'),value:parseFloat(bgv('bw-val'))||0,by:bgv('bw-by')});bSaveColl('waste',BS.waste);closeModalForce();showToast('Wastage logged','success');navTo('wastage');}
 function delBranchWaste(id){if(!confirm('Delete this wastage entry?'))return;BS.waste=BS.waste.filter(function(w){return w.id!==id;});bSaveColl('waste',BS.waste);showToast('Deleted');navTo('wastage');}
@@ -8674,7 +8674,7 @@ function pSchedule() {
   },0);
   return h;
 }
-function printBranchSched(dept){var wk=bweekKey(),dates=bweekDates(),sc=BS.sch[wk]||{};var d0=new Date(dates[0]+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short'});var d6=new Date(dates[6]+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short'});var s=NX.session||{};var th='<tr style="background:#1a2340;color:#fff"><th style="padding:10px 14px;text-align:left;min-width:180px">Staff Member</th>';dates.forEach(function(dt,i){var it=dt===TODAY_BS;th+='<th style="padding:10px 8px;text-align:center;min-width:80px'+(it?';color:#f0a500':'')+' ">'+DAYS_WEEK[i]+'<br><span style="font-size:9px;font-weight:400;opacity:.8">'+new Date(dt+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+'</span></th>';});th+='</tr>';var tb='';var deptsR=dept==='All'?DEPTS:[dept];deptsR.forEach(function(dep){var mem=BS.staff.filter(function(m){return m.dept===dep;});if(!mem.length)return;tb+='<tr><td colspan="8" style="background:#f1f5f9;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#64748b;font-weight:700;padding:6px 14px">'+dep+'</td></tr>';mem.forEach(function(m){var ms=(sc[m.id]||{});var ini2='';String(m.name||'').split(' ').forEach(function(p){if(p&&ini2.length<2)ini2+=p[0].toUpperCase();});tb+='<tr><td style="padding:8px 14px;font-size:12px;font-weight:600;border-bottom:1px solid #f1f5f9"><div style="display:flex;align-items:center;gap:8px"><div style="width:24px;height:24px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">'+ini2+'</div>'+bxe(m.name)+'</div></td>';dates.forEach(function(dt,di){var val=(ms[DAYS_WEEK[di]]||'');var isOff=val.toUpperCase()==='OFF'||val.toUpperCase()==='DAY OFF';var it=dt===TODAY_BS;tb+='<td style="padding:8px 6px;text-align:center;font-size:11px;font-weight:600;color:'+(val?isOff?'#94a3b8':'#1a2340':'#cbd5e1')+';background:'+(it?'#fffbeb':isOff?'#f8fafc':'#fff')+';border-bottom:1px solid #f1f5f9;border-left:1px solid #f1f5f9">'+bxe(val||'\u2014')+'</td>';});tb+='</tr>';});});var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Schedule</title><style>@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}body{background:#fff;color:#111;font-size:12px}table{width:100%;border-collapse:collapse}.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10px;margin-bottom:14px;border-bottom:3px solid #1a2340}.foot{margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:30px}.foot-cell{border-top:1px solid #333;padding-top:5px;text-align:center;font-size:9px;color:#64748b}@media print{.np{display:none!important}}</style></head><body><div class="hdr"><div><img src="https://i.imgur.com/jeqtcE2.png" alt="ALFA.CO" style="height:44px;width:auto;display:block"><div style="font-size:10px;color:#888">'+bxe(s.branchName||s.entityName||'')+'</div></div><div style="text-align:center"><h1 style="font-size:16px;font-weight:800;color:#1a2340">Weekly Schedule</h1><p style="font-size:10px;color:#64748b">'+bxe(dept)+' \u00b7 '+bxe(wk)+' \u00b7 '+d0+' \u2013 '+d6+'</p></div><div style="text-align:right;font-size:10px;color:#64748b"><div>Printed: '+new Date().toLocaleDateString('en-GB')+'</div></div></div><table><thead>'+th+'</thead><tbody>'+tb+'</tbody></table><div class="foot"><div class="foot-cell">Prepared by</div><div class="foot-cell">Approved by Manager</div><div class="foot-cell">Date &amp; Signature</div></div><div class="np" style="text-align:center;margin-top:20px"><button onclick="window.print()" style="background:#1a2340;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer">Print / Save PDF</button></div></body></html>';var w=window.open('','_blank','width=1100,height=700');if(w){w.document.write(html);w.document.close();}else showToast('Allow pop-ups to print','error');}
+function printBranchSched(dept){var wk=bweekKey(),dates=bweekDates(),sc=BS.sch[wk]||{};var d0=new Date(dates[0]+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short'});var d6=new Date(dates[6]+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short'});var s=NX.session||{};var th='<tr style="background:#1a2340;color:#fff"><th style="padding:10px 14px;text-align:left;min-width:180px">Staff Member</th>';dates.forEach(function(dt,i){var it=dt===TODAY_BS;th+='<th style="padding:10px 8px;text-align:center;min-width:80px'+(it?';color:#b45309':'')+' ">'+DAYS_WEEK[i]+'<br><span style="font-size:9px;font-weight:400;opacity:.8">'+new Date(dt+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+'</span></th>';});th+='</tr>';var tb='';var deptsR=dept==='All'?DEPTS:[dept];deptsR.forEach(function(dep){var mem=BS.staff.filter(function(m){return m.dept===dep;});if(!mem.length)return;tb+='<tr><td colspan="8" style="background:#f1f5f9;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#64748b;font-weight:700;padding:6px 14px">'+dep+'</td></tr>';mem.forEach(function(m){var ms=(sc[m.id]||{});var ini2='';String(m.name||'').split(' ').forEach(function(p){if(p&&ini2.length<2)ini2+=p[0].toUpperCase();});tb+='<tr><td style="padding:8px 14px;font-size:12px;font-weight:600;border-bottom:1px solid #f1f5f9"><div style="display:flex;align-items:center;gap:8px"><div style="width:24px;height:24px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">'+ini2+'</div>'+bxe(m.name)+'</div></td>';dates.forEach(function(dt,di){var val=(ms[DAYS_WEEK[di]]||'');var isOff=val.toUpperCase()==='OFF'||val.toUpperCase()==='DAY OFF';var it=dt===TODAY_BS;tb+='<td style="padding:8px 6px;text-align:center;font-size:11px;font-weight:600;color:'+(val?isOff?'#94a3b8':'#1a2340':'#cbd5e1')+';background:'+(it?'#fffbeb':isOff?'#f8fafc':'#fff')+';border-bottom:1px solid #f1f5f9;border-left:1px solid #f1f5f9">'+bxe(val||'\u2014')+'</td>';});tb+='</tr>';});});var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Schedule</title><style>@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}body{background:#fff;color:#111;font-size:12px}table{width:100%;border-collapse:collapse}.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10px;margin-bottom:14px;border-bottom:3px solid #1a2340}.foot{margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:30px}.foot-cell{border-top:1px solid #333;padding-top:5px;text-align:center;font-size:9px;color:#64748b}@media print{.np{display:none!important}}</style></head><body><div class="hdr"><div><img src="https://i.imgur.com/jeqtcE2.png" alt="ALFA.CO" style="height:44px;width:auto;display:block"><div style="font-size:10px;color:#888">'+bxe(s.branchName||s.entityName||'')+'</div></div><div style="text-align:center"><h1 style="font-size:16px;font-weight:800;color:#1a2340">Weekly Schedule</h1><p style="font-size:10px;color:#64748b">'+bxe(dept)+' \u00b7 '+bxe(wk)+' \u00b7 '+d0+' \u2013 '+d6+'</p></div><div style="text-align:right;font-size:10px;color:#64748b"><div>Printed: '+new Date().toLocaleDateString('en-GB')+'</div></div></div><table><thead>'+th+'</thead><tbody>'+tb+'</tbody></table><div class="foot"><div class="foot-cell">Prepared by</div><div class="foot-cell">Approved by Manager</div><div class="foot-cell">Date &amp; Signature</div></div><div class="np" style="text-align:center;margin-top:20px"><button onclick="window.print()" style="background:#1a2340;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer">Print / Save PDF</button></div></body></html>';var w=window.open('','_blank','width=1100,height=700');if(w){w.document.write(html);w.document.close();}else showToast('Allow pop-ups to print','error');}
 
 // ── Timesheet ─────────────────────────────────────────
 function pTimesheet() {
@@ -8844,8 +8844,8 @@ function runBranchTsReport(){var eid=bgv('bts-r-emp'),mo=parseInt(bgv('bts-r-mo'
   // ── ALL STAFF: Day-by-day matrix for the month ──
   if(mo===0){
     // Year view stays as summary
-    var allRows='';BS.tsEmps.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).forEach(function(emp){var recs=getRecs(emp.id),cnt=countSt(recs),tot=recs.length,worked=cnt.present+cnt.late,pct=tot?Math.round(worked/tot*100)+'%':'\u2014';allRows+='<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="bav">'+bini(emp.name)+'</div><div><div style="font-size:12px;font-weight:600">'+bxe(emp.name)+'</div><div style="font-size:10px;color:'+bdc(emp.dept||'FOH')+'">'+bxe(emp.dept||'')+'</div></div></div></td><td class="bmono" style="text-align:center">'+tot+'</td><td class="bmono" style="text-align:center;color:#34d399">'+cnt.present+'</td><td class="bmono" style="text-align:center;color:#f59e0b">'+cnt.late+'</td><td class="bmono" style="text-align:center;color:#f87171">'+cnt.absent+'</td><td class="bmono" style="text-align:center;color:#f97316">'+cnt.sick+'</td><td class="bmono" style="text-align:center;color:#a78bfa">'+cnt.holiday+'</td><td class="bmono" style="text-align:center;color:#34d399">'+cnt.dayoff+'</td><td class="bmono" style="text-align:center">'+pct+'</td></tr>';});
-    out.innerHTML='<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Employee</th><th style="text-align:center">Total</th><th style="text-align:center;color:#34d399">Present</th><th style="text-align:center;color:#f59e0b">Late</th><th style="text-align:center;color:#f87171">Absent</th><th style="text-align:center;color:#f97316">Sick</th><th style="text-align:center;color:#a78bfa">Holiday</th><th style="text-align:center;color:#34d399">OFF</th><th style="text-align:center">Rate</th></tr></thead><tbody>'+(allRows||'<tr><td colspan="9" style="text-align:center;color:var(--text-tertiary);padding:20px">No records</td></tr>')+'</tbody></table></div></div>';
+    var allRows='';BS.tsEmps.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).forEach(function(emp){var recs=getRecs(emp.id),cnt=countSt(recs),tot=recs.length,worked=cnt.present+cnt.late,pct=tot?Math.round(worked/tot*100)+'%':'\u2014';allRows+='<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="bav">'+bini(emp.name)+'</div><div><div style="font-size:12px;font-weight:600">'+bxe(emp.name)+'</div><div style="font-size:10px;color:'+bdc(emp.dept||'FOH')+'">'+bxe(emp.dept||'')+'</div></div></div></td><td class="bmono" style="text-align:center">'+tot+'</td><td class="bmono" style="text-align:center;color:#059669">'+cnt.present+'</td><td class="bmono" style="text-align:center;color:#b45309">'+cnt.late+'</td><td class="bmono" style="text-align:center;color:#f87171">'+cnt.absent+'</td><td class="bmono" style="text-align:center;color:#f97316">'+cnt.sick+'</td><td class="bmono" style="text-align:center;color:#a78bfa">'+cnt.holiday+'</td><td class="bmono" style="text-align:center;color:#059669">'+cnt.dayoff+'</td><td class="bmono" style="text-align:center">'+pct+'</td></tr>';});
+    out.innerHTML='<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Employee</th><th style="text-align:center">Total</th><th style="text-align:center;color:#059669">Present</th><th style="text-align:center;color:#b45309">Late</th><th style="text-align:center;color:#f87171">Absent</th><th style="text-align:center;color:#f97316">Sick</th><th style="text-align:center;color:#a78bfa">Holiday</th><th style="text-align:center;color:#059669">OFF</th><th style="text-align:center">Rate</th></tr></thead><tbody>'+(allRows||'<tr><td colspan="9" style="text-align:center;color:var(--text-tertiary);padding:20px">No records</td></tr>')+'</tbody></table></div></div>';
     return;
   }
   // Month view: show 1..N daily grid + summary
@@ -8859,7 +8859,7 @@ function runBranchTsReport(){var eid=bgv('bts-r-emp'),mo=parseInt(bgv('bts-r-mo'
     var dt=new Date(parseInt(yr),mo-1,di);
     var dn=['Su','Mo','Tu','We','Th','Fr','Sa'][dt.getDay()];
     var isWeekend=dt.getDay()===5||dt.getDay()===6;
-    dayHdrs+='<th style="text-align:center;font-size:9px;padding:4px 2px;min-width:24px'+(isWeekend?';color:#f59e0b':'')+'"><div style="font-weight:700">'+di+'</div><div style="font-size:8px;font-weight:400;color:var(--text-tertiary)">'+dn+'</div></th>';
+    dayHdrs+='<th style="text-align:center;font-size:9px;padding:4px 2px;min-width:24px'+(isWeekend?';color:#b45309':'')+'"><div style="font-weight:700">'+di+'</div><div style="font-size:8px;font-weight:400;color:var(--text-tertiary)">'+dn+'</div></th>';
   }
   var matrixRows='';
   BS.tsEmps.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).forEach(function(emp){
@@ -8878,12 +8878,12 @@ function runBranchTsReport(){var eid=bgv('bts-r-emp'),mo=parseInt(bgv('bts-r-mo'
         dayCells+='<td style="text-align:center;color:var(--text-tertiary);font-size:10px">\u2014</td>';
       }
     }
-    matrixRows+='<tr><td style="position:sticky;left:0;background:var(--surface-1);z-index:1;min-width:160px"><div style="display:flex;align-items:center;gap:8px"><div class="bav">'+bini(emp.name)+'</div><div><div style="font-size:11px;font-weight:600">'+bxe(emp.name)+'</div><div style="font-size:9px;color:'+bdc(emp.dept||'FOH')+'">'+bxe(emp.dept||'')+'</div></div></div></td>'+dayCells+'<td style="text-align:center;font-family:var(--mono);color:#34d399;font-weight:700;background:var(--surface-1)">'+cnt.present+'</td><td style="text-align:center;font-family:var(--mono);color:#f59e0b">'+cnt.late+'</td><td style="text-align:center;font-family:var(--mono);color:#f87171">'+cnt.absent+'</td></tr>';
+    matrixRows+='<tr><td style="position:sticky;left:0;background:var(--surface-1);z-index:1;min-width:160px"><div style="display:flex;align-items:center;gap:8px"><div class="bav">'+bini(emp.name)+'</div><div><div style="font-size:11px;font-weight:600">'+bxe(emp.name)+'</div><div style="font-size:9px;color:'+bdc(emp.dept||'FOH')+'">'+bxe(emp.dept||'')+'</div></div></div></td>'+dayCells+'<td style="text-align:center;font-family:var(--mono);color:#059669;font-weight:700;background:var(--surface-1)">'+cnt.present+'</td><td style="text-align:center;font-family:var(--mono);color:#b45309">'+cnt.late+'</td><td style="text-align:center;font-family:var(--mono);color:#f87171">'+cnt.absent+'</td></tr>';
   });
   // Legend
   var legend='<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;font-size:11px;color:var(--text-secondary)">'+
     Object.keys(SC).map(function(k){return '<div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:4px;background:'+SC[k]+'25;color:'+SC[k]+';font-size:10px;font-weight:700">'+SLAB[k]+'</span> '+k.charAt(0).toUpperCase()+k.slice(1)+'</div>';}).join('')+'</div>';
-  out.innerHTML=legend+'<div class="btw" style="overflow-x:auto"><table class="btbl" style="font-size:11px"><thead><tr><th style="position:sticky;left:0;background:var(--surface-2);z-index:2;min-width:160px">Employee</th>'+dayHdrs+'<th style="text-align:center;background:var(--surface-2);color:#34d399">P</th><th style="text-align:center;background:var(--surface-2);color:#f59e0b">L</th><th style="text-align:center;background:var(--surface-2);color:#f87171">A</th></tr></thead><tbody>'+(matrixRows||'<tr><td colspan="'+(daysInMo+4)+'" style="text-align:center;color:var(--text-tertiary);padding:20px">No staff or no records</td></tr>')+'</tbody></table></div>';
+  out.innerHTML=legend+'<div class="btw" style="overflow-x:auto"><table class="btbl" style="font-size:11px"><thead><tr><th style="position:sticky;left:0;background:var(--surface-2);z-index:2;min-width:160px">Employee</th>'+dayHdrs+'<th style="text-align:center;background:var(--surface-2);color:#059669">P</th><th style="text-align:center;background:var(--surface-2);color:#b45309">L</th><th style="text-align:center;background:var(--surface-2);color:#f87171">A</th></tr></thead><tbody>'+(matrixRows||'<tr><td colspan="'+(daysInMo+4)+'" style="text-align:center;color:var(--text-tertiary);padding:20px">No staff or no records</td></tr>')+'</tbody></table></div>';
   return;
 }var emp=BS.tsEmps.find(function(e){return e.id===eid;});if(!emp){out.innerHTML='<div style="color:var(--danger);padding:12px">Employee not found.</div>';return;}var recs=getRecs(emp.id),cnt=countSt(recs),tot=recs.length,worked=cnt.present+cnt.late,pct=tot?Math.round(worked/tot*100)+'%':'\u2014';if(pb)pb.style.display='';var rows=recs.map(function(r){return '<tr><td class="bmono">'+bxe(r.date)+'</td><td class="bmono" style="text-align:center">'+(r.ci||'\u2014')+'</td><td class="bmono" style="text-align:center">'+(r.co||'\u2014')+'</td><td class="bmono" style="text-align:center;color:var(--info);font-weight:600">'+(r.brk||'\u2014')+'</td><td class="bmono" style="text-align:center">'+btsHrs(r.ci,r.co)+'</td><td>'+btsBadge(r.st)+'</td><td style="font-size:11px;color:var(--text-secondary)">'+(r.note||'')+'</td></tr>';}).join('');out.innerHTML='<div class="bcard" style="margin-bottom:14px"><div style="font-size:15px;font-weight:700">'+bxe(emp.name)+'</div><div style="font-size:11px;color:var(--ceo);margin-top:3px">'+bxe(emp.dept||'')+' \u00b7 '+(mo===0?'Full Year':MONTHS_FULL[mo-1])+' '+yr+'</div></div><div class="bgrid-4" style="margin-bottom:14px">'+[['Total',tot,'var(--text-primary)'],['Present',cnt.present,'#34d399'],['Absent',cnt.absent,'#f87171'],['Rate',pct,'#34d399']].map(function(x){return '<div style="text-align:center;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px"><div class="bmono" style="font-size:22px;font-weight:300;color:'+x[2]+'">'+bxe(String(x[1]))+'</div><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px;margin-top:3px">'+x[0]+'</div></div>';}).join('')+'</div>'+(recs.length?'<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th style="text-align:center">In</th><th style="text-align:center">Out</th><th style="text-align:center">Break</th><th style="text-align:center">Hours</th><th>Status</th><th>Note</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>':'<div style="color:var(--text-tertiary);text-align:center;padding:28px;font-style:italic">No records for this period.</div>');}
 function printBranchTsReport(){var eid=bgv('bts-r-emp'),mo=parseInt(bgv('bts-r-mo')),yr=bgv('bts-r-yr');if(!eid){showToast('Select an employee first','error');return;}var emp=BS.tsEmps.find(function(e){return e.id===eid;});if(!emp)return;var recs=[];if(mo===0){for(var mi=1;mi<=12;mi++){var k=yr+'-'+(mi<10?'0':'')+mi;recs=recs.concat((BS.tsAtt[emp.id]&&BS.tsAtt[emp.id][k])||[]);}}else{var k=yr+'-'+(mo<10?'0':'')+mo;recs=(BS.tsAtt[emp.id]&&BS.tsAtt[emp.id][k])||[];}var cnt={present:0,late:0,absent:0,sick:0,holiday:0,dayoff:0};recs.forEach(function(r){if(cnt[r.st]!==undefined)cnt[r.st]++;});var tot=recs.length,worked=cnt.present+cnt.late,pct=tot?Math.round(worked/tot*100)+'%':'\u2014';var TC={present:'#16a34a',late:'#d97706',absent:'#dc2626',sick:'#ea580c',holiday:'#7c3aed',dayoff:'#0891b2'};var TL={present:'Present',late:'Late',absent:'Absent',sick:'Sick Leave',holiday:'Holiday',dayoff:'OFF'};var rows=recs.map(function(r,i){var col=TC[r.st]||'#888';return '<tr style="background:'+(i%2===0?'#fff':'#f8fafc')+'"><td style="padding:7px 10px;font-family:monospace;font-size:11px;color:#64748b">'+bxe(r.date)+'</td><td style="padding:7px 10px;text-align:center;font-weight:600;font-family:monospace">'+(r.ci||'\u2014')+'</td><td style="padding:7px 10px;text-align:center;font-weight:600;font-family:monospace">'+(r.co||'\u2014')+'</td><td style="padding:7px 10px;text-align:center;font-weight:600;font-family:monospace;color:#0891b2">'+(r.brk||'\u2014')+'</td><td style="padding:7px 10px;text-align:center;font-weight:700;font-family:monospace">'+btsHrs(r.ci,r.co)+'</td><td style="padding:7px 10px;text-align:center"><span style="background:'+col+'20;color:'+col+';border:1px solid '+col+'40;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700">'+(TL[r.st]||r.st)+'</span></td><td style="padding:7px 10px;font-size:11px;color:#64748b">'+(r.note||'')+'</td></tr>';}).join('');var s=NX.session||{};var moLabel=mo===0?'Full Year '+yr:MONTHS_FULL[mo-1]+' '+yr;var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Timesheet \u2014 '+bxe(emp.name)+'</title><style>@page{size:A4;margin:10mm}*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}body{background:#fff;color:#111;font-size:12px}table{width:100%;border-collapse:collapse}th{background:#1a2340;color:#fff;padding:8px 10px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:1px}.c{text-align:center}.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}.stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 8px;text-align:center}.stat-n{font-size:22px;font-weight:300;font-family:monospace}.stat-l{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-top:3px}.foot{margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:30px}.foot-cell{border-top:1px solid #333;padding-top:5px;text-align:center;font-size:9px;color:#64748b}@media print{.np{display:none!important}}</style></head><body>';html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10px;margin-bottom:16px;border-bottom:3px solid #1a2340"><div><img src="https://i.imgur.com/jeqtcE2.png" alt="ALFA.CO" style="height:44px;width:auto;display:block"><div style="font-size:10px;color:#64748b">'+bxe(s.branchName||s.entityName||'')+'</div></div><div style="text-align:center"><h1 style="font-size:16px;font-weight:800;color:#1a2340">Employee Timesheet</h1><p style="font-size:11px;color:#64748b">'+bxe(emp.name)+' \u00b7 '+bxe(emp.dept||'')+' \u00b7 '+bxe(moLabel)+'</p></div><div style="text-align:right;font-size:10px;color:#64748b"><div>Printed: '+new Date().toLocaleDateString('en-GB')+'</div><div>Work Rate: '+pct+'</div></div></div>';html+='<div class="stats"><div class="stat"><div class="stat-n" style="color:#1a2340">'+tot+'</div><div class="stat-l">Total</div></div><div class="stat"><div class="stat-n" style="color:#16a34a">'+cnt.present+'</div><div class="stat-l">Present</div></div><div class="stat"><div class="stat-n" style="color:#d97706">'+cnt.late+'</div><div class="stat-l">Late</div></div><div class="stat"><div class="stat-n" style="color:#dc2626">'+cnt.absent+'</div><div class="stat-l">Absent</div></div><div class="stat"><div class="stat-n" style="color:#ea580c">'+cnt.sick+'</div><div class="stat-l">Sick</div></div><div class="stat"><div class="stat-n" style="color:#0d9488">'+pct+'</div><div class="stat-l">Rate</div></div></div>';html+=(recs.length?'<table><thead><tr><th>Date</th><th class="c">In</th><th class="c">Out</th><th class="c">Break</th><th class="c">Hours</th><th class="c">Status</th><th>Note</th></tr></thead><tbody>'+rows+'</tbody></table>':'<div style="text-align:center;padding:30px;color:#94a3b8;font-style:italic">No records.</div>');html+='<div class="foot"><div class="foot-cell">Employee Signature</div><div class="foot-cell">HR / Manager</div><div class="foot-cell">Date &amp; Stamp</div></div><div class="np" style="text-align:center;margin-top:20px"><button onclick="window.print()" style="background:#1a2340;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer">Print / Save PDF</button></div></body></html>';var w=window.open('','_blank','width=900,height=700');if(w){w.document.write(html);w.document.close();}else showToast('Allow pop-ups to print','error');}
@@ -8911,7 +8911,7 @@ function btsEditLeave(empId){
   }
   navTo(NX.page);
 }
-function btsPgEmps(){var sorted=BS.tsEmps.slice().sort(function(a,b){return(a.dept||'').localeCompare(b.dept||'')||a.name.localeCompare(b.name);});var rows=sorted.map(function(e){var used=0;BS.tsLeaves.forEach(function(l){if(l.empId===e.id&&l.type==='holiday'&&l.status==='approved')used+=l.days;});var rem=(e.leaveBalance||21)-used;return '<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="bav">'+bini(e.name)+'</div><div><div style="font-weight:600;font-size:12px">'+bxe(e.name)+'</div><div class="bmono" style="font-size:10px;color:var(--text-tertiary)">'+bxe(e.id)+'</div></div></div></td><td>'+bpl(e.dept||'\u2014',bdc(e.dept||'FOH'))+'</td><td style="font-size:11px">'+(e.phone?'<a href="tel:'+bxe(e.phone)+'" style="color:var(--ceo);text-decoration:none">'+bxe(e.phone)+'</a>':'<span style="color:var(--text-tertiary)">\u2014</span>')+'</td><td class="bmono" style="font-weight:600;color:'+(rem>5?'#34d399':rem>0?'#f59e0b':'#f87171')+'">'+rem+' / '+(e.leaveBalance||21)+' days</td><td><button onclick=\'btsEditLeave(\'+e.id+\')\'  style=\"padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);font-size:11px;cursor:pointer\">✏ Edit</button></td></tr>';}).join('');return '<div class="bcard" style="margin-bottom:16px;border-color:rgba(52,211,153,.2)"><div style="font-weight:600;color:#34d399;margin-bottom:6px">Auto-Sync with Staff Page</div><div style="font-size:11px;color:var(--text-secondary)">'+BS.tsEmps.length+' / '+BS.staff.length+' staff synced.</div></div><div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Employee</th><th>Department</th><th>Phone</th><th>Leave Balance</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" style="text-align:center;color:var(--text-tertiary);padding:24px">No employees yet</td></tr>')+'</tbody></table></div></div>';}
+function btsPgEmps(){var sorted=BS.tsEmps.slice().sort(function(a,b){return(a.dept||'').localeCompare(b.dept||'')||a.name.localeCompare(b.name);});var rows=sorted.map(function(e){var used=0;BS.tsLeaves.forEach(function(l){if(l.empId===e.id&&l.type==='holiday'&&l.status==='approved')used+=l.days;});var rem=(e.leaveBalance||21)-used;return '<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="bav">'+bini(e.name)+'</div><div><div style="font-weight:600;font-size:12px">'+bxe(e.name)+'</div><div class="bmono" style="font-size:10px;color:var(--text-tertiary)">'+bxe(e.id)+'</div></div></div></td><td>'+bpl(e.dept||'\u2014',bdc(e.dept||'FOH'))+'</td><td style="font-size:11px">'+(e.phone?'<a href="tel:'+bxe(e.phone)+'" style="color:var(--ceo);text-decoration:none">'+bxe(e.phone)+'</a>':'<span style="color:var(--text-tertiary)">\u2014</span>')+'</td><td class="bmono" style="font-weight:600;color:'+(rem>5?'#34d399':rem>0?'#f59e0b':'#f87171')+'">'+rem+' / '+(e.leaveBalance||21)+' days</td><td><button onclick=\'btsEditLeave(\'+e.id+\')\'  style=\"padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);font-size:11px;cursor:pointer\">✏ Edit</button></td></tr>';}).join('');return '<div class="bcard" style="margin-bottom:16px;border-color:rgba(52,211,153,.2)"><div style="font-weight:600;color:#059669;margin-bottom:6px">Auto-Sync with Staff Page</div><div style="font-size:11px;color:var(--text-secondary)">'+BS.tsEmps.length+' / '+BS.staff.length+' staff synced.</div></div><div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Employee</th><th>Department</th><th>Phone</th><th>Leave Balance</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" style="text-align:center;color:var(--text-tertiary);padding:24px">No employees yet</td></tr>')+'</tbody></table></div></div>';}
 
 // ── Health Cards ──────────────────────────────────────
 function pHealthCards(){
@@ -9127,7 +9127,7 @@ function pSales() {
     var bh=Math.max(4,Math.round(d2.sales/maxSales*80));
     var bBudget=Math.max(2,Math.round(d2.budget/maxSales*80));
     var isToday=d2.ds===todayStr;
-    var salesColor=isToday?'var(--ceo)':'#2d3748';
+    var salesColor=isToday?'#4a5568':'#4a5568';
     var budgetColor='rgba(100,180,255,.55)';
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">'
       +'<div style="height:80px;display:flex;align-items:flex-end;gap:1px;width:100%">'
@@ -9153,8 +9153,8 @@ function pSales() {
     var hc=Math.max(2,Math.round(cy2/maxM*70));var hl=Math.max(2,Math.round(ly2/maxM*70));
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">'
       +'<div style="height:70px;display:flex;align-items:flex-end;gap:1px;width:100%">'
-      +'<div style="flex:1;height:'+hc+'px;background:var(--ceo);border-radius:2px 2px 0 0;min-height:2px"></div>'
-      +'<div style="flex:1;height:'+hl+'px;background:#2d3748;border-radius:2px 2px 0 0;min-height:2px;opacity:.65"></div>'
+      +'<div style="flex:1;height:'+hc+'px;background:#4a5568;border-radius:2px 2px 0 0;min-height:2px"></div>'
+      +'<div style="flex:1;height:'+hl+'px;background:#f59e0b;border-radius:2px 2px 0 0;min-height:2px;opacity:.85"></div>'
       +'</div><div style="font-size:8px;color:var(--text-secondary);font-family:var(--mono)">'+mn+'</div></div>';
   }).join('');
 
@@ -9163,7 +9163,7 @@ function pSales() {
   h+='<div style="display:flex;align-items:flex-end;gap:3px;height:96px">'+bars7+'</div></div>';
   h+='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
   h+='<div style="font-size:11px;font-weight:700">'+cy+' vs '+ly+' — Monthly</div>';
-  h+='<div style="display:flex;gap:8px;font-size:9px"><span style="color:var(--ceo)">■ '+cy+'</span><span style="color:#2d3748;opacity:.8">■ '+ly+'</span></div></div>';
+  h+='<div style="display:flex;gap:8px;font-size:9px"><span style="color:#4a5568">■ '+cy+'</span><span style="color:#b45309">■ '+ly+'</span></div></div>';
   h+='<div style="display:flex;align-items:flex-end;gap:2px;height:80px">'+monthlyBars+'</div></div>';
   h+='</div>';
 
@@ -9268,7 +9268,7 @@ function pPettyCash(){
     pcNoBanner+
     '<div class="bgrid-3" style="margin-bottom:16px">'+
       '<div class="bsc"><div class="bsc-lbl">Total Spent</div><div class="bsc-val bcr" style="font-size:22px">'+bfsar(tot)+'</div></div>'+
-      '<div class="bsc"><div class="bsc-lbl">This Month</div><div class="bsc-val" style="font-size:22px;color:#f59e0b">'+bfsar(mTot)+'</div><div class="bsc-sub">'+bxe(tm)+'</div></div>'+
+      '<div class="bsc"><div class="bsc-lbl">This Month</div><div class="bsc-val" style="font-size:22px;color:#b45309">'+bfsar(mTot)+'</div><div class="bsc-sub">'+bxe(tm)+'</div></div>'+
       '<div class="bsc"><div class="bsc-lbl">Total Entries</div><div class="bsc-val bca">'+BS.pc.length+'</div></div>'+
     '</div>'+
     budgetBanner+
@@ -9500,7 +9500,7 @@ function pDSR(){
   var datePicker='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--surface-1);border:1px solid var(--border);border-radius:10px">';
   datePicker+='<span style="font-size:11px;color:var(--text-tertiary);font-weight:600;text-transform:uppercase;letter-spacing:.08em;flex-shrink:0">Report Date</span>';
   datePicker+='<input type="date" value="'+today+'" max="'+TODAY_BS+'" onchange="dsrChangeDate(this.value)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:5px 10px;color:var(--text-primary);font-size:13px;font-family:var(--font);outline:none;cursor:pointer">';
-  if(!isToday)datePicker+='<span style="font-size:11px;font-weight:700;color:#f59e0b;padding:2px 10px;background:rgba(245,158,11,.12);border-radius:20px">Viewing: '+today+'</span>';
+  if(!isToday)datePicker+='<span style="font-size:11px;font-weight:700;color:#b45309;padding:2px 10px;background:rgba(245,158,11,.12);border-radius:20px">Viewing: '+today+'</span>';
   datePicker+='<button onclick="dsrChangeDate(\''+TODAY_BS+'\')" style="padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);font-size:11px;cursor:pointer;font-family:var(--font)">Today</button>';
   datePicker+='</div>';
   var tabBar='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:12px">';
@@ -9509,7 +9509,7 @@ function pDSR(){
     tabBar+='<button onclick="dsrNav(\''+t[0]+'\')" style="padding:6px 14px;border-radius:8px;border:1px solid '+(act?'var(--accent)':'var(--border)')+';background:'+(act?'var(--accent)':'transparent')+';color:'+(act?'#000':'var(--text-secondary)')+';font-size:11px;font-weight:'+(act?'700':'500')+';cursor:pointer;font-family:var(--font)">'+t[1]+'</button>';
   });
   tabBar+='<button onclick="dsrSave()" style="margin-left:auto;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);font-size:11px;cursor:pointer">💾 Save</button>';
-  tabBar+='<button onclick="dsrEndShift()" style="padding:6px 14px;border-radius:8px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.08);color:#f59e0b;font-size:11px;font-weight:700;cursor:pointer">🌙 End Shift</button>';
+  tabBar+='<button onclick="dsrEndShift()" style="padding:6px 14px;border-radius:8px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.08);color:#b45309;font-size:11px;font-weight:700;cursor:pointer">🌙 End Shift</button>';
   tabBar+='<button onclick="dsrClear()" style="padding:6px 14px;border-radius:8px;border:1px solid rgba(248,113,113,.3);background:transparent;color:var(--danger);font-size:11px;cursor:pointer">⊗ Clear</button>';
   tabBar+='</div>';
 
@@ -9617,7 +9617,7 @@ function pDSR(){
         body+='<div style="flex:1"><div style="font-size:12px;font-weight:600">'+bxe(x.s.name||'Server '+(x.si+1))+'</div><div style="font-size:10px;color:var(--text-secondary)">'+x.t.method+' — '+bfsar(x.t.amount)+'</div></div>';
         body+='<span style="background:'+tc+'18;color:'+tc+';border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700">'+x.t.status.toUpperCase()+'</span>';
         if(x.t.status==='pending'){
-          body+='<button onclick="dsrTipApprove('+x.si+',\''+x.t.id+'\')" style="padding:4px 10px;border-radius:6px;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#34d399;font-size:11px;cursor:pointer">✓</button>';
+          body+='<button onclick="dsrTipApprove('+x.si+',\''+x.t.id+'\')" style="padding:4px 10px;border-radius:6px;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#059669;font-size:11px;cursor:pointer">✓</button>';
           body+='<button onclick="dsrTipReject('+x.si+',\''+x.t.id+'\')" style="padding:4px 10px;border-radius:6px;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);color:#f87171;font-size:11px;cursor:pointer">✕</button>';
         }
         body+='</div>';
@@ -9655,7 +9655,7 @@ function pDSR(){
       body+='<div style="'+card+'">';
       body+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">';
       body+='<div style="font-size:13px;font-weight:700;flex:1">'+bxe(s.name||'Server '+(si+1))+(s.sap?' <span style="color:var(--text-tertiary);font-size:10px">'+bxe(s.sap)+'</span>':'')+'</div>';
-      if(pend>0)body+='<span style="background:rgba(245,158,11,.15);color:#f59e0b;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">'+pend+' pending</span>';
+      if(pend>0)body+='<span style="background:rgba(245,158,11,.15);color:#b45309;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">'+pend+' pending</span>';
       body+='<span id="srv-tally-'+si+'" style="background:'+dc+'18;color:'+dc+';border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700">'+dl+'</span>';
       body+='<button onclick="dsrRmServer('+si+')" style="color:var(--danger);background:transparent;border:1px solid rgba(248,113,113,.3);border-radius:6px;padding:3px 9px;cursor:pointer;font-size:12px">×</button>';
       body+='</div>';
@@ -9687,7 +9687,7 @@ function pDSR(){
         body+='<input type="text" placeholder="Approval Code" value="'+bxe(t.approval||'')+'" oninput="dsrUpdTip('+si+',\''+t.id+'\',\'approval\',this.value)" style="'+fi+'width:100px;flex:none;font-size:11px">';
         body+='<span style="background:'+tc+'18;color:'+tc+';border:1px solid '+tc+'40;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;flex:none;white-space:nowrap">'+t.status.toUpperCase()+'</span>';
         if(t.status==='pending'){
-          body+='<button onclick="dsrTipApprove('+si+',\''+t.id+'\')" title="Approve tip" style="padding:5px 12px;border-radius:7px;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35);color:#34d399;font-size:12px;font-weight:700;cursor:pointer;flex:none;white-space:nowrap">✓ Approve</button>';
+          body+='<button onclick="dsrTipApprove('+si+',\''+t.id+'\')" title="Approve tip" style="padding:5px 12px;border-radius:7px;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35);color:#059669;font-size:12px;font-weight:700;cursor:pointer;flex:none;white-space:nowrap">✓ Approve</button>';
           body+='<button onclick="dsrTipReject('+si+',\''+t.id+'\')" title="Reject tip" style="padding:5px 12px;border-radius:7px;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.35);color:#f87171;font-size:12px;font-weight:700;cursor:pointer;flex:none">✕</button>';
         } else if(t.status==='approved'||t.status==='rejected'){
           body+='<button onclick="dsrTipReset('+si+',\''+t.id+'\')" title="Reset to pending" style="padding:4px 8px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);font-size:10px;cursor:pointer;flex:none">↩</button>';
@@ -9711,7 +9711,7 @@ function pDSR(){
         body+='<input type="number" step="0.01" placeholder="SAR" value="'+(v.amount||'')+'" oninput="dsrUpdVR('+si+',\'voids\',\''+v.id+'\',\'amount\',this.value);dsrRecalc('+si+')" style="'+fi+'width:80px;flex:none;font-size:11px">';
         body+='<span style="background:'+vc+'18;color:'+vc+';border:1px solid '+vc+'40;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;flex:none;white-space:nowrap">'+v.status.toUpperCase()+'</span>';
         if(v.status==='pending'){
-          body+='<button onclick="dsrApprVR('+si+',\'voids\',\''+v.id+'\')" style="padding:5px 12px;border-radius:7px;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35);color:#34d399;font-size:12px;font-weight:700;cursor:pointer;flex:none;white-space:nowrap">✓ OK</button>';
+          body+='<button onclick="dsrApprVR('+si+',\'voids\',\''+v.id+'\')" style="padding:5px 12px;border-radius:7px;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35);color:#059669;font-size:12px;font-weight:700;cursor:pointer;flex:none;white-space:nowrap">✓ OK</button>';
           body+='<button onclick="dsrRejVR('+si+',\'voids\',\''+v.id+'\')" style="padding:5px 10px;border-radius:7px;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.35);color:#f87171;font-size:12px;font-weight:700;cursor:pointer;flex:none">✕</button>';
         } else {
           body+='<button onclick="dsrApprVR('+si+',\'voids\',\''+v.id+'\')" style="padding:3px 8px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);font-size:10px;cursor:pointer;flex:none">↩</button>';
@@ -9722,7 +9722,7 @@ function pDSR(){
       body+='</div>';
       // Returns
       body+='<div style="padding-top:10px;border-top:1px solid var(--border)">';
-      body+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:10px;color:#f59e0b;font-weight:700;text-transform:uppercase">↩ Returns</span><button onclick="dsrAddRet('+si+')" style="padding:3px 10px;border-radius:6px;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.08);color:#f59e0b;font-size:11px;cursor:pointer">+ Return</button></div>';
+      body+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:10px;color:#b45309;font-weight:700;text-transform:uppercase">↩ Returns</span><button onclick="dsrAddRet('+si+')" style="padding:3px 10px;border-radius:6px;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.08);color:#b45309;font-size:11px;cursor:pointer">+ Return</button></div>';
       (s.returns||[]).forEach(function(v,vi){
         var vc=v.status==='approved'?'#34d399':v.status==='rejected'?'#94a3b8':'#f59e0b';
         var VRR=['Customer Complaint','Wrong Order','Burnt/Overcooked','Out of Stock','Manager Courtesy','Pricing Error','Other'];
@@ -9735,7 +9735,7 @@ function pDSR(){
         body+='<input type="number" step="0.01" placeholder="SAR" value="'+(v.amount||'')+'" oninput="dsrUpdVR('+si+',\'returns\',\''+v.id+'\',\'amount\',this.value);dsrRecalc('+si+')" style="'+fi+'width:80px;flex:none;font-size:11px">';
         body+='<span style="background:'+vc+'18;color:'+vc+';border:1px solid '+vc+'40;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;flex:none;white-space:nowrap">'+v.status.toUpperCase()+'</span>';
         if(v.status==='pending'){
-          body+='<button onclick="dsrApprVR('+si+',\'returns\',\''+v.id+'\')" style="padding:5px 12px;border-radius:7px;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35);color:#34d399;font-size:12px;font-weight:700;cursor:pointer;flex:none;white-space:nowrap">✓ OK</button>';
+          body+='<button onclick="dsrApprVR('+si+',\'returns\',\''+v.id+'\')" style="padding:5px 12px;border-radius:7px;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35);color:#059669;font-size:12px;font-weight:700;cursor:pointer;flex:none;white-space:nowrap">✓ OK</button>';
           body+='<button onclick="dsrRejVR('+si+',\'returns\',\''+v.id+'\')" style="padding:5px 10px;border-radius:7px;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.35);color:#f87171;font-size:12px;font-weight:700;cursor:pointer;flex:none">✕</button>';
         } else {
           body+='<button onclick="dsrApprVR('+si+',\'returns\',\''+v.id+'\')" style="padding:3px 8px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);font-size:10px;cursor:pointer;flex:none">↩</button>';
@@ -9812,7 +9812,7 @@ function pDSR(){
       if(pend2>0)alerts.push({c:'#f59e0b',i:'⏳',t:(s.name||'Server')+': '+pend2+' pending approval',d:'Go to Server Drops tab'});
     });
     body+='<div style="margin-bottom:16px">';
-    if(!alerts.length){body+='<div style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);border-radius:10px;padding:14px 18px;display:flex;gap:12px;align-items:center"><span style="font-size:24px">✓</span><div><div style="font-weight:700;color:#34d399">All checks passed</div><div style="font-size:11px;color:var(--text-secondary)">No discrepancies found</div></div></div>';}
+    if(!alerts.length){body+='<div style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);border-radius:10px;padding:14px 18px;display:flex;gap:12px;align-items:center"><span style="font-size:24px">✓</span><div><div style="font-weight:700;color:#059669">All checks passed</div><div style="font-size:11px;color:var(--text-secondary)">No discrepancies found</div></div></div>';}
     else alerts.forEach(function(a){body+='<div style="background:'+a.c+'18;border:1px solid '+a.c+'40;border-radius:10px;padding:12px 16px;display:flex;gap:12px;align-items:center;margin-bottom:8px"><span style="font-size:20px">'+a.i+'</span><div><div style="font-weight:700;color:'+a.c+'">'+a.t+'</div><div style="font-size:11px;color:var(--text-secondary)">'+a.d+'</div></div></div>';});
     body+='</div>';
     body+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
@@ -10144,7 +10144,7 @@ function pQRCheckin() {
   var statusRows=sorted.slice(0,8).map(function(e){var key2=todayStr.slice(0,7),recs2=(BS.tsAtt[e.id]&&BS.tsAtt[e.id][key2])||[];var r=recs2.find(function(x){return x.date===todayStr;});if(r&&(r.st==='present'||r.st==='late'))pCount++;else if(r&&r.st==='absent')aCount++;var ci=r?r.ci:'\u2014',co=r?r.co:'\u2014';var stCol=r&&TS_ST_BRANCH[r.st]?TS_ST_BRANCH[r.st].c:'var(--text-tertiary)';return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)"><div class="bav" style="width:28px;height:28px;font-size:10px">'+bini(e.name)+'</div><div style="flex:1;font-size:12px;font-weight:500">'+bxe(e.name)+'</div><span class="bmono" style="font-size:10px;color:var(--text-secondary)">'+bxe(ci)+(co!=='\u2014'?' \u2192 '+co:'')+'</span>'+(r?'<span style="color:'+stCol+';font-size:10px;font-weight:600">'+TS_ST_BRANCH[r.st].l+'</span>':'<span style="color:var(--text-tertiary);font-size:10px">\u2014</span>')+'</div>';}).join('');
   h+=statusRows;
   if(sorted.length>8)h+='<div style="font-size:11px;color:var(--text-tertiary);text-align:center;padding:8px">+'+(sorted.length-8)+' more staff</div>';
-  h+='<div style="margin-top:12px;display:flex;gap:10px;padding-top:10px;border-top:1px solid var(--border)"><div style="flex:1;text-align:center"><div class="bmono" style="font-size:22px;color:#34d399;font-weight:300">'+pCount+'</div><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px">Present</div></div><div style="flex:1;text-align:center"><div class="bmono" style="font-size:22px;color:#f87171;font-weight:300">'+aCount+'</div><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px">Absent</div></div><div style="flex:1;text-align:center"><div class="bmono" style="font-size:22px;color:var(--text-secondary);font-weight:300">'+(sorted.length-pCount-aCount)+'</div><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px">Not Recorded</div></div></div></div></div>';
+  h+='<div style="margin-top:12px;display:flex;gap:10px;padding-top:10px;border-top:1px solid var(--border)"><div style="flex:1;text-align:center"><div class="bmono" style="font-size:22px;color:#059669;font-weight:300">'+pCount+'</div><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px">Present</div></div><div style="flex:1;text-align:center"><div class="bmono" style="font-size:22px;color:#f87171;font-weight:300">'+aCount+'</div><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px">Absent</div></div><div style="flex:1;text-align:center"><div class="bmono" style="font-size:22px;color:var(--text-secondary);font-weight:300">'+(sorted.length-pCount-aCount)+'</div><div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:1px">Not Recorded</div></div></div></div></div>';
   return h;
 }
 function doQRCheckin(){var eid=bgv('qr-emp'),time=bgv('qr-time'),type=bgv('qr-type');if(!eid){showToast('Select a staff member','error');return;}var key=TODAY_BS.slice(0,7);if(!BS.tsAtt[eid])BS.tsAtt[eid]={};if(!BS.tsAtt[eid][key])BS.tsAtt[eid][key]=[];var recs=BS.tsAtt[eid][key];var ex=recs.find(function(r){return r.date===TODAY_BS;});if(type==='ci'){if(ex){ex.ci=time;if(!ex.st)ex.st='present';}else recs.push({date:TODAY_BS,ci:time,co:'',brk:'',note:'',st:'present'});showToast('Check-in recorded: '+time,'success');}else{if(ex)ex.co=time;else recs.push({date:TODAY_BS,ci:'',co:time,brk:'',note:'',st:'present'});showToast('Check-out recorded: '+time,'success');}bSaveTsAtt();navTo('qr-checkin');}
@@ -11614,7 +11614,7 @@ function pHrfHrDash() {
         '<td><strong>'+(b.icon||'\u{1F37D}\uFE0F')+' '+hxe(b.name)+'</strong></td>'+
         '<td style="font-size:11px;color:var(--text-secondary)">'+hxe(b.brand||'—')+'</td>'+
         '<td style="text-align:center;font-family:var(--mono);color:var(--hr-color);font-weight:700">'+st.length+'</td>'+
-        '<td style="text-align:center;font-family:var(--mono);color:#34d399">'+act+'</td>'+
+        '<td style="text-align:center;font-family:var(--mono);color:#059669">'+act+'</td>'+
         '<td style="text-align:center;font-family:var(--mono);color:#ffd166">'+lv+'</td>'+
         '<td style="text-align:center;font-family:var(--mono);color:#f87171">'+res+'</td></tr>';
     });
@@ -11631,7 +11631,7 @@ function pHrfHrDash() {
           '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px">'+hxe(lv.empName||lv.name||'Staff Member')+'</div>'+
           '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">'+hxe(lv.type||'Leave')+' \u00b7 '+hxe(lv.from||'')+' &rarr; '+hxe(lv.to||'')+(lv.days?' ('+lv.days+' days)':'')+'</div>'+
           '<div style="display:flex;gap:6px">'+
-          '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:#34d399" onclick="hrfApproveLeave(\''+hxe(lv._branchId)+'\',\''+hxe(lv._key||lv.id||'')+'\')">&#x2713; Approve</button>'+
+          '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:#059669" onclick="hrfApproveLeave(\''+hxe(lv._branchId)+'\',\''+hxe(lv._key||lv.id||'')+'\')">&#x2713; Approve</button>'+
           '<button class="btn btn-sm" style="background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.25);color:#f87171" onclick="hrfRejectLeave(\''+hxe(lv._branchId)+'\',\''+hxe(lv._key||lv.id||'')+'\')">&#x2715; Reject</button>'+
           '</div></div></div>';
       });
@@ -11768,7 +11768,7 @@ function pHrfEmployees(){
       var stCol=(m.status||'Active')==='Active'?'#34d399':m.status==='On Leave'?'#ffd166':'#f87171';
       var sponsorLabel=m.workerType==='3rdparty'?
         ('<span style="font-size:10px;color:#a78bfa;background:rgba(167,139,250,.12);padding:2px 7px;border-radius:10px;font-weight:600">3rd Party'+(m.companyId?' · '+hxe(m.companyId):'')+' </span>'):
-        '<span style="font-size:10px;color:#34d399;background:rgba(52,211,153,.1);padding:2px 7px;border-radius:10px;font-weight:600">Company</span>';
+        '<span style="font-size:10px;color:#059669;background:rgba(52,211,153,.1);padding:2px 7px;border-radius:10px;font-weight:600">Company</span>';
       rows+='<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="hrf-emp-avatar" style="width:32px;height:32px;font-size:11px">'+hini(m.name)+'</div>'+
         '<div><div style="font-weight:600;color:var(--text-primary)">'+hxe(m.name)+'</div>'+
         '<div style="font-size:11px;color:var(--text-tertiary)">'+hxe(m.sap||m.id||'\u2014')+'</div></div></div></td>'+
@@ -12393,7 +12393,7 @@ function pHrfLeave(){
         '<td style="text-align:center">'+hxe(l.days||'—')+'</td>'+
         '<td>'+hrfBadge(st.charAt(0).toUpperCase()+st.slice(1),sc)+'</td>'+
         '<td>'+(st==='pending'?
-          '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:#34d399;margin-right:4px" onclick="hrfApproveLeave(\''+hxe(l._branchId)+'\',\''+hxe(l._key||l.id||'')+'\')">&#x2713;</button>'+
+          '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:#059669;margin-right:4px" onclick="hrfApproveLeave(\''+hxe(l._branchId)+'\',\''+hxe(l._key||l.id||'')+'\')">&#x2713;</button>'+
           '<button class="btn btn-sm" style="background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.25);color:#f87171" onclick="hrfRejectLeave(\''+hxe(l._branchId)+'\',\''+hxe(l._key||l.id||'')+'\')">&#x2715;</button>'
           :'—')+'</td></tr>';
     });
@@ -12583,7 +12583,7 @@ function pHrfPayroll(){
           '<td><strong>'+hxe(m.name)+'</strong><div style="font-size:10px;color:var(--text-tertiary)">'+hxe(m._branchName)+'</div></td>'+
           '<td>'+hxe(m.dept||'\u2014')+'</td>'+
           '<td class="mono">'+hfsar(m._basic)+'</td>'+
-          '<td class="mono" style="color:#34d399">+'+hfsar(m._allow)+'</td>'+
+          '<td class="mono" style="color:#059669">+'+hfsar(m._allow)+'</td>'+
           '<td class="mono" style="color:#f87171">-'+hfsar(m._ded)+'</td>'+
           '<td class="mono" style="font-weight:700;color:var(--payroll-color)">'+hfsar(m._net)+'</td>'+
           '<td><span style="font-size:11px;font-weight:600;color:'+sc+'">'+m._payStatus.replace(/_/g,' ')+'</span></td>'+
@@ -12946,7 +12946,7 @@ function pHrfPurchaseOrders(){
       var stLbl=st==='finance_approved'?'Approved':st==='finance_rejected'?'Rejected':'Pending';
       var actions='';
       if(st==='pending_finance_review'){
-        actions='<button class="btn btn-sm" style="color:#34d399" data-poid="'+hxe(p.id||'')+'" onclick="hrfApprovePO(this.dataset.poid)">\u2713 Approve</button>'+
+        actions='<button class="btn btn-sm" style="color:#059669" data-poid="'+hxe(p.id||'')+'" onclick="hrfApprovePO(this.dataset.poid)">\u2713 Approve</button>'+
                 ' <button class="btn btn-sm" style="color:var(--danger)" data-poid="'+hxe(p.id||'')+'" onclick="hrfRejectPO(this.dataset.poid)">\u2715 Reject</button>';
       }
       actions+=' <button class="btn btn-sm" data-poid="'+hxe(p.id||'')+'" onclick="hrfViewPO(this.dataset.poid)">View</button>';
@@ -13100,7 +13100,7 @@ function pHrfApprovals(){
           '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text-primary)">'+hxe(lv.empName||lv.name||'—')+'</div>'+
           '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">'+hxe(lv._branchName)+' \u00b7 '+hxe(lv.type||'Leave')+' \u00b7 '+hxe(lv.from||'')+' &rarr; '+hxe(lv.to||'')+'</div>'+
           '<div style="display:flex;gap:6px">'+
-          '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:#34d399" onclick="hrfApproveLeave(\''+hxe(lv._branchId)+'\',\''+hxe(lv._key||lv.id||'')+'\')">&#x2713; Approve</button>'+
+          '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:#059669" onclick="hrfApproveLeave(\''+hxe(lv._branchId)+'\',\''+hxe(lv._key||lv.id||'')+'\')">&#x2713; Approve</button>'+
           '<button class="btn btn-sm" style="background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.25);color:#f87171" onclick="hrfRejectLeave(\''+hxe(lv._branchId)+'\',\''+hxe(lv._key||lv.id||'')+'\')">&#x2715; Reject</button>'+
           '</div></div></div>';
       });
@@ -13114,7 +13114,7 @@ function pHrfApprovals(){
           '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text-primary)">'+hxe(w.item||w.name||'Wastage Entry')+'</div>'+
           '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">'+hxe(w._branchName)+' \u00b7 '+hxe(w.date||'')+' \u00b7 '+hfsar(w.value||w.amount||0)+'</div>'+
           '<div style="display:flex;gap:6px">'+
-          '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:#34d399" onclick="hrfApproveExpense(\''+hxe(w._branchId)+'\',\''+hxe(w._key||w.id||'')+'\')">&#x2713; Approve</button>'+
+          '<button class="btn btn-sm" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.3);color:#059669" onclick="hrfApproveExpense(\''+hxe(w._branchId)+'\',\''+hxe(w._key||w.id||'')+'\')">&#x2713; Approve</button>'+
           '<button class="btn btn-sm" style="background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.25);color:#f87171" onclick="hrfRejectExpense(\''+hxe(w._branchId)+'\',\''+hxe(w._key||w.id||'')+'\')">&#x2715; Reject</button>'+
           '</div></div></div>';
       });
@@ -13545,8 +13545,8 @@ function pBmInvoices() {
 
   h += '<div class="bgrid-4" style="margin-bottom:16px">';
   h += '<div class="bsc"><div class="bsc-lbl">Total Invoices</div><div class="bsc-val bca">'+BS.invoices.length+'</div></div>';
-  h += '<div class="bsc"><div class="bsc-lbl">Pending Finance</div><div class="bsc-val" style="color:#f59e0b">'+pending+'</div></div>';
-  h += '<div class="bsc"><div class="bsc-lbl">Paid</div><div class="bsc-val" style="color:#34d399">'+paid+'</div></div>';
+  h += '<div class="bsc"><div class="bsc-lbl">Pending Finance</div><div class="bsc-val" style="color:#b45309">'+pending+'</div></div>';
+  h += '<div class="bsc"><div class="bsc-lbl">Paid</div><div class="bsc-val" style="color:#059669">'+paid+'</div></div>';
   h += '<div class="bsc"><div class="bsc-lbl">Total Value</div><div class="bsc-val bcr">'+bfsar(total)+'</div></div>';
   h += '</div>';
 
@@ -13785,7 +13785,7 @@ function pBmPayroll() {
           '<td><input class="form-input" style="width:90px" type="number" id="bpay-allow-'+bxe(m.id)+'" value="'+(ex.allowances||0)+'" placeholder="0"></td>'+
           '<td><input class="form-input" style="width:90px" type="number" id="bpay-ded-'+bxe(m.id)+'" value="'+(ex.deductions||0)+'" placeholder="0"></td>'+
           '<td><input class="form-input" style="width:90px" type="number" id="bpay-ot-'+bxe(m.id)+'" value="'+(ex.overtime||0)+'" placeholder="0"></td>'+
-          '<td class="bmono" style="font-weight:700;color:#34d399" id="bpay-net-'+bxe(m.id)+'">'+bfsar((ex.base||0)+(ex.allowances||0)-(ex.deductions||0)+(ex.overtime||0))+'</td>'+
+          '<td class="bmono" style="font-weight:700;color:#059669" id="bpay-net-'+bxe(m.id)+'">'+bfsar((ex.base||0)+(ex.allowances||0)-(ex.deductions||0)+(ex.overtime||0))+'</td>'+
           '</tr>';
       }).join('');
 
@@ -13849,13 +13849,13 @@ function pBmTransfers() {
     var history = (BS._bmTransfers||[]).filter(function(t){return t.status!=='pending';});
     var h = '<div class="page-header"><h1>&#x1F500; Transfer Requests</h1><p>Incoming stock transfer requests from other branches</p></div>';
     h += '<div class="bgrid-3" style="margin-bottom:16px">';
-    h += '<div class="bsc"><div class="bsc-lbl">Pending</div><div class="bsc-val" style="color:#f59e0b">'+pending.length+'</div></div>';
-    h += '<div class="bsc"><div class="bsc-lbl">Accepted</div><div class="bsc-val" style="color:#34d399">'+((BS._bmTransfers||[]).filter(function(t){return t.status==='accepted';}).length)+'</div></div>';
+    h += '<div class="bsc"><div class="bsc-lbl">Pending</div><div class="bsc-val" style="color:#b45309">'+pending.length+'</div></div>';
+    h += '<div class="bsc"><div class="bsc-lbl">Accepted</div><div class="bsc-val" style="color:#059669">'+((BS._bmTransfers||[]).filter(function(t){return t.status==='accepted';}).length)+'</div></div>';
     h += '<div class="bsc"><div class="bsc-lbl">Total</div><div class="bsc-val bca">'+((BS._bmTransfers||[]).length)+'</div></div>';
     h += '</div>';
 
     if(pending.length){
-      h += '<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#f59e0b">&#x23F3; Pending Approval ('+pending.length+')</div>';
+      h += '<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#b45309">&#x23F3; Pending Approval ('+pending.length+')</div>';
       pending.forEach(function(t){
         h += '<div class="bcard" style="margin-bottom:10px;border-color:rgba(245,158,11,.3)">';
         h += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">';
@@ -13953,7 +13953,7 @@ function pBmAnnouncements() {
     h += '<div class="bgrid-3" style="margin-bottom:16px">';
     h += '<div class="bsc"><div class="bsc-lbl">Total</div><div class="bsc-val bca">'+anns.length+'</div></div>';
     h += '<div class="bsc"><div class="bsc-lbl">Unread</div><div class="bsc-val" style="color:#f87171">'+unread.length+'</div></div>';
-    h += '<div class="bsc"><div class="bsc-lbl">Acknowledged</div><div class="bsc-val" style="color:#34d399">'+Object.keys(acks).length+'</div></div>';
+    h += '<div class="bsc"><div class="bsc-lbl">Acknowledged</div><div class="bsc-val" style="color:#059669">'+Object.keys(acks).length+'</div></div>';
     h += '</div>';
     if(!anns.length){
       h += '<div style="text-align:center;padding:48px;color:var(--text-tertiary)"><div style="font-size:48px;margin-bottom:12px">&#x1F4EC;</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">No Announcements</div><div style="font-size:12px">HR announcements will appear here.</div></div>';
@@ -13976,7 +13976,7 @@ function pBmAnnouncements() {
         if(!isRead){
           h += '<button class="btn btn-sm btn-primary" onclick="bmAcknowledge(\''+bxe(a.id)+'\')">&#x2713; Acknowledge</button>';
         } else {
-          h += '<span style="color:#34d399;font-size:11px;font-weight:700;white-space:nowrap">&#x2713; Read</span>';
+          h += '<span style="color:#059669;font-size:11px;font-weight:700;white-space:nowrap">&#x2713; Read</span>';
         }
         h += '</div></div>';
       });
