@@ -9127,12 +9127,10 @@ function pSales() {
     var bh=Math.max(4,Math.round(d2.sales/maxSales*80));
     var bBudget=Math.max(2,Math.round(d2.budget/maxSales*80));
     var isToday=d2.ds===todayStr;
-    var salesColor=isToday?'#92400e':'#4a5568';
-    var budgetColor='#4a5568';
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">'
       +'<div style="height:80px;display:flex;align-items:flex-end;gap:1px;width:100%">'
-      +'<div style="flex:1;height:'+bh+'px;background:'+salesColor+';border-radius:2px 2px 0 0;min-height:4px"></div>'
-      +'<div style="flex:1;height:'+bBudget+'px;background:'+budgetColor+';border-radius:2px 2px 0 0;min-height:2px"></div>'
+      +'<div style="flex:1;height:'+bh+'px;background:#4a5568;border-radius:2px 2px 0 0;min-height:4px"></div>'
+      +'<div style="flex:1;height:'+bBudget+'px;background:#f59e0b;border-radius:2px 2px 0 0;min-height:2px;opacity:.85"></div>'
       +'</div>'
       +'<div style="font-size:9px;color:'+(isToday?'var(--ceo)':'var(--text-secondary)')+';font-family:var(--mono);white-space:nowrap;font-weight:'+(isToday?'700':'400')+'">'+d2.ds.slice(5).replace('-',' ')+'</div>'
       +'</div>';
@@ -9159,7 +9157,7 @@ function pSales() {
   }).join('');
 
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
-  h+='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:11px;font-weight:700">Last 7 Days</div><div style="display:flex;gap:8px;font-size:9px"><span style="color:#92400e">■ Sales</span><span style="color:#4a5568">■ Budget</span></div></div>';
+  h+='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:11px;font-weight:700">Last 7 Days</div><div style="display:flex;gap:8px;font-size:9px"><span style="color:#4a5568">■ Sales</span><span style="color:#f59e0b">■ Budget</span></div></div>';
   h+='<div style="display:flex;align-items:flex-end;gap:3px;height:96px">'+bars7+'</div></div>';
   h+='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
   h+='<div style="font-size:11px;font-weight:700">'+cy+' vs '+ly+' — Monthly</div>';
