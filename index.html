@@ -7349,11 +7349,10 @@ function pBranchDash() {
   h += '</div></div>';
   h += '</div>';
 
-  // ── FOOD COST WIDGET — compact dashboard card ──────────────────────────
+  // ── FOOD COST WIDGET ─────────────────────────────────────────────────────
   var fcBarW = Math.min(100,fcPct).toFixed(1);
   var fcTargetPos = Math.min(99,fcTarget).toFixed(1);
   var fcStatusLbl = fcPct===0?'No Data':fcOk?'On Track':fcHigh?'Caution':'Over Target';
-  var fcStatusIcon = fcOk?'✓':fcHigh?'!':'✕';
   var MONTHS_FC=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var fcTrend3=[];
   for(var fmi=-2;fmi<=0;fmi++){
@@ -7362,112 +7361,107 @@ function pBranchDash() {
     var fmLbl=MONTHS_FC[fd2.getMonth()];
     var fmIssue=bLogs.reduce(function(acc,l){if(l.type!=='issue'||(l.date||'').indexOf(fmkey)!==0)return acc;var it=bfindItem(l.code);return acc+(l.cost||l.qty*(it?parseFloat(it.price||0):0));},0);
     var fmWaste=BS.waste.reduce(function(acc,w){return(w.date||'').indexOf(fmkey)===0?acc+(+w.value||0):acc;},0);
-    var fmTotal=fmIssue+fmWaste;
     var fmSales=branchSalesMTD(s.branchId||'',fmkey);
-    var fmPct=fmSales>0?(fmTotal/fmSales*100):0;
+    var fmPct=fmSales>0?((fmIssue+fmWaste)/fmSales*100):0;
     var fmCol=fmPct===0?'var(--text-tertiary)':fmPct<=fcTarget?'#00A63D':fmPct<=fcTarget*1.1?'#FE9900':'#FF2157';
     fcTrend3.push({lbl:fmLbl,pct:fmPct,col:fmCol,key:fmkey});
   }
   var maxTrendPct=Math.max.apply(null,fcTrend3.map(function(x){return Math.max(x.pct,fcTarget);}));
 
-  var NM='background:var(--nm-base,#E7E5E4);border-radius:14px;box-shadow:5px 5px 12px rgba(0,0,0,0.11),-4px -4px 10px rgba(255,255,255,0.88);';
-  var NM_INSET='box-shadow:inset 2px 2px 6px rgba(0,0,0,0.10),inset -2px -2px 5px rgba(255,255,255,0.80);';
+  // Outer card
+  h += '<div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">';
 
-  h += '<div style="background:var(--nm-base,#E7E5E4);border-radius:18px;margin-bottom:10px;box-shadow:6px 6px 16px rgba(0,0,0,0.12),-5px -5px 14px rgba(255,255,255,0.88);overflow:hidden">';
-
-  // ── Header bar ──
-  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.05);box-shadow:0 1px 0 rgba(255,255,255,0.82)">';
+  // ── Card header ──────────────────────────────────────────────────────────
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.05);box-shadow:0 1px 0 rgba(255,255,255,0.8)">';
   h += '<div style="display:flex;align-items:center;gap:8px">';
-  h += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-secondary)"><path d="M3 4h18M3 8h18M5 12h14M7 16h10M9 20h6"/></svg>';
-  h += '<span style="font-size:13px;font-weight:700;font-family:var(--font);color:var(--text-primary);letter-spacing:-0.03em">Food Cost</span>';
-  h += '<span style="'+NM_INSET+'background:var(--nm-base,#E7E5E4);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:600;color:var(--text-secondary);font-family:var(--mono)">'+tm+'</span>';
+  h += '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-tertiary)"><path d="M3 4h18M3 8h18M5 12h14M7 16h10M9 20h6"/></svg>';
+  h += '<span style="font-size:12px;font-weight:700;color:var(--text-primary);letter-spacing:-0.02em">Food Cost</span>';
+  h += '<span style="font-size:9px;font-weight:600;color:var(--text-tertiary);font-family:var(--mono);background:var(--surface-2);border-radius:20px;padding:2px 8px">'+tm+'</span>';
   h += '</div>';
-  h += '<div style="display:flex;align-items:center;gap:6px">';
-  h += '<button onclick="openFCTargetModal()" style="display:inline-flex;align-items:center;gap:4px;background:var(--nm-base,#E7E5E4);border:none;border-radius:20px;padding:5px 12px;font-size:10px;font-weight:700;color:var(--text-secondary);cursor:pointer;box-shadow:2px 2px 5px rgba(0,0,0,0.11),-2px -2px 5px rgba(255,255,255,0.86);font-family:var(--font);transition:all .15s">⚙️ Target: '+fcTarget+'%</button>';
-  h += '<button onclick="navTo(\'food-cost\')" style="background:var(--primary,#006666);border:none;border-radius:20px;padding:5px 14px;font-size:10px;font-weight:700;color:#fff;cursor:pointer;box-shadow:2px 2px 8px rgba(0,102,102,0.35);font-family:var(--font);transition:all .15s">Full View →</button>';
+  h += '<button onclick="openFCTargetModal()" style="display:inline-flex;align-items:center;gap:4px;background:transparent;border:none;border-radius:20px;padding:4px 10px;font-size:10px;font-weight:600;color:var(--text-tertiary);cursor:pointer;font-family:var(--font);transition:all .15s">⚙ Target: '+fcTarget+'%</button>';
+  h += '</div>';
+
+  // ── 3-column body ─────────────────────────────────────────────────────────
+  h += '<div style="display:grid;grid-template-columns:auto 1fr auto;gap:0">';
+
+  // COL 1 — % gauge + status
+  h += '<div style="padding:16px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border-right:1px solid rgba(0,0,0,0.05);min-width:90px">';
+  // Gauge circle
+  h += '<div style="position:relative;width:56px;height:56px">';
+  var _r=24,_c=2*Math.PI*_r;
+  var _f=fcPct>0?Math.min(100,fcPct)/100*_c:0;
+  h += '<svg width="56" height="56" viewBox="0 0 56 56">';
+  h += '<circle cx="28" cy="28" r="'+_r+'" fill="none" stroke="rgba(0,0,0,0.07)" stroke-width="5"/>';
+  if(fcPct>0)h += '<circle cx="28" cy="28" r="'+_r+'" fill="none" stroke="'+fcColor+'" stroke-width="5" stroke-dasharray="'+_f.toFixed(1)+' '+_c.toFixed(1)+'" stroke-dashoffset="'+(_c/4).toFixed(1)+'" stroke-linecap="round"/>';
+  h += '<text x="28" y="33" text-anchor="middle" fill="'+fcColor+'" font-size="11" font-weight="700" font-family="var(--mono)">'+fcPct.toFixed(1)+'%</text>';
+  h += '</svg>';
+  h += '</div>';
+  // Status pill
+  h += '<div style="background:'+fcColor+'15;border-radius:20px;padding:3px 10px;display:flex;align-items:center;gap:4px">';
+  h += '<div style="width:5px;height:5px;border-radius:50%;background:'+fcColor+'"></div>';
+  h += '<span style="font-size:9px;font-weight:700;color:'+fcColor+';font-family:var(--font)">'+fcStatusLbl+'</span>';
+  h += '</div>';
+  h += '</div>';
+
+  // COL 2 — 3 metric rows + progress bar
+  h += '<div style="padding:12px 16px;display:flex;flex-direction:column;gap:0">';
+
+  // Row 1
+  h += '<div style="padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.04)">';
+  h += '<div style="font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:3px;font-family:var(--mono)">FOOD INVOICES</div>';
+  h += '<div style="display:flex;align-items:baseline;gap:6px">';
+  h += '<span style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--text-primary);letter-spacing:-0.03em">'+fsar(issueCostM)+'</span>';
+  h += '<span style="font-size:10px;color:var(--text-tertiary);font-family:var(--mono)">'+(tA>0?(issueCostM/tA*100).toFixed(1)+'% of sales':'—')+'</span>';
   h += '</div></div>';
 
-  // ── Body: left 3 cards + right trend ──
-  h += '<div style="display:grid;grid-template-columns:1fr 180px">';
+  // Row 2
+  h += '<div style="padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.04)">';
+  h += '<div style="font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:3px;font-family:var(--mono)">WASTAGE</div>';
+  h += '<div style="display:flex;align-items:baseline;gap:6px">';
+  h += '<span style="font-size:16px;font-weight:700;font-family:var(--mono);color:#FF2157;letter-spacing:-0.03em">'+fsar(wasteM)+'</span>';
+  h += '<span style="font-size:10px;color:var(--text-tertiary);font-family:var(--mono)">'+(tA>0?(wasteM/tA*100).toFixed(1)+'% of sales':'—')+'</span>';
+  h += '</div></div>';
 
-  // LEFT
-  h += '<div style="padding:14px 16px">';
+  // Row 3 — total + bar
+  h += '<div style="padding:8px 0">';
+  h += '<div style="font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:3px;font-family:var(--mono)">TOTAL VS SALES</div>';
+  h += '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">';
+  h += '<span style="font-size:16px;font-weight:700;font-family:var(--mono);color:'+fcColor+';letter-spacing:-0.03em">'+fsar(totalFCM)+'</span>';
+  h += '<span style="font-size:10px;color:var(--text-tertiary);font-family:var(--mono)">/ '+fsar(tA)+'</span>';
+  h += '</div>';
+  // Progress bar — inset
+  h += '<div style="position:relative;height:7px;background:var(--surface-2);border-radius:99px;box-shadow:inset 1px 1px 4px rgba(0,0,0,0.09),inset -1px -1px 3px rgba(255,255,255,0.7)">';
+  h += '<div style="height:100%;width:'+fcBarW+'%;background:'+fcColor+';border-radius:99px;transition:width .6s"></div>';
+  h += '<div style="position:absolute;top:-3px;left:'+fcTargetPos+'%;transform:translateX(-50%);width:1.5px;height:13px;background:#FE9900;border-radius:2px"></div>';
+  h += '</div>';
+  h += '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:8px;color:var(--text-tertiary);font-family:var(--mono)">';
+  h += '<span>0%</span><span style="color:#FE9900;font-weight:700">▲ '+fcTarget+'%</span><span>100%</span>';
+  h += '</div>';
+  h += '</div>';
+  h += '</div>'; // end col 2
 
-  // Compact % + status — horizontal row
-  h += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">';
-  // Small circle dot indicator
-  h += '<div style="width:40px;height:40px;border-radius:50%;background:var(--nm-base,#E7E5E4);box-shadow:3px 3px 8px rgba(0,0,0,0.13),-3px -3px 8px rgba(255,255,255,0.88);display:flex;align-items:center;justify-content:center;flex-shrink:0">';
-  h += '<div style="width:18px;height:18px;border-radius:50%;background:'+fcColor+';box-shadow:0 0 7px '+fcColor+'55"></div>';
-  h += '</div>';
-  h += '<div>';
-  h += '<div style="font-size:22px;font-weight:700;font-family:var(--mono);color:'+fcColor+';letter-spacing:-0.04em;line-height:1">'+fcPct.toFixed(1)+'%</div>';
-  h += '<div style="font-size:8px;font-weight:700;color:var(--text-tertiary);letter-spacing:.12em;text-transform:uppercase;font-family:var(--mono);margin-top:1px">FOOD COST</div>';
-  h += '</div>';
-  // Status pill — inset
-  h += '<div style="'+NM_INSET+'background:var(--nm-base,#E7E5E4);border-radius:20px;padding:6px 12px;display:inline-flex;align-items:center;gap:6px;margin-left:4px">';
-  h += '<span style="font-size:11px;color:'+fcColor+';font-weight:700">'+fcStatusIcon+'</span>';
-  h += '<span style="font-size:11px;font-weight:700;color:'+fcColor+';font-family:var(--font)">'+fcStatusLbl+'</span>';
-  h += '</div>';
-  h += '</div>';
-
-  // 3 compact metric rows inside one card
-  h += '<div style="'+NM+'padding:0;overflow:hidden">';
-
-  // Row 1 — Food Invoices
-  h += '<div style="padding:11px 14px;border-bottom:1px solid rgba(0,0,0,0.05);box-shadow:0 1px 0 rgba(255,255,255,0.75);position:relative">';
-  h += '<div style="font-size:8px;font-weight:700;color:var(--text-tertiary);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;font-family:var(--mono)">FOOD INVOICES THIS MONTH</div>';
-  h += '<div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--text-primary);letter-spacing:-0.04em">'+fsar(issueCostM)+'</div>';
-  h += '<div style="font-size:10px;color:var(--text-tertiary);font-family:var(--mono);margin-top:2px">'+(tA>0?(issueCostM/tA*100).toFixed(1)+'% of sales':'No sales data')+'</div>';
-  h += '<div style="position:absolute;top:50%;right:14px;transform:translateY(-50%);width:0;height:0;border-style:solid;border-width:7px 0 7px 12px;border-color:transparent transparent transparent rgba(0,0,0,0.09)"></div>';
-  h += '</div>';
-
-  // Row 2 — Wastage
-  h += '<div style="padding:11px 14px;border-bottom:1px solid rgba(0,0,0,0.05);box-shadow:0 1px 0 rgba(255,255,255,0.75)">';
-  h += '<div style="font-size:8px;font-weight:700;color:var(--text-tertiary);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;font-family:var(--mono)">WASTAGE THIS MONTH</div>';
-  h += '<div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#FF2157;letter-spacing:-0.04em">'+fsar(wasteM)+'</div>';
-  h += '<div style="font-size:10px;color:var(--text-tertiary);font-family:var(--mono);margin-top:2px">'+(tA>0?(wasteM/tA*100).toFixed(1)+'% of sales':'—')+'</div>';
-  h += '</div>';
-
-  // Row 3 — Total vs Sales + progress bar
-  h += '<div style="padding:11px 14px">';
-  h += '<div style="font-size:8px;font-weight:700;color:var(--text-tertiary);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;font-family:var(--mono)">TOTAL FOOD COST VS SALES</div>';
-  h += '<div style="margin-bottom:10px">';
-  h += '<span style="font-size:16px;font-weight:700;font-family:var(--mono);color:'+fcColor+';letter-spacing:-0.04em">'+fsar(totalFCM)+'</span>';
-  h += '<span style="font-size:10px;color:var(--text-tertiary);font-family:var(--mono);margin-left:6px">/ '+fsar(tA)+' sales</span>';
-  h += '</div>';
-  h += '<div style="position:relative;height:8px;background:var(--nm-base,#E7E5E4);border-radius:99px;margin-bottom:5px;'+NM_INSET+'">';
-  h += '<div style="height:100%;width:'+fcBarW+'%;background:'+fcColor+';border-radius:99px;transition:width .5s"></div>';
-  h += '<div style="position:absolute;top:-3px;left:'+fcTargetPos+'%;transform:translateX(-50%);width:2px;height:14px;background:#FE9900;border-radius:2px"></div>';
-  h += '</div>';
-  h += '<div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-tertiary);font-family:var(--mono)">';
-  h += '<span>0%</span><span style="color:#FE9900;font-weight:700">Target '+fcTarget+'%</span><span>100%</span></div>';
-  h += '</div>';
-
-  h += '</div>'; // end 3-row card
-  h += '</div>'; // end LEFT
-
-  // RIGHT — 3-Month Trend
-  h += '<div style="padding:14px 14px 14px 12px;border-left:1px solid rgba(0,0,0,0.04);box-shadow:-1px 0 0 rgba(255,255,255,0.8)">';
-  h += '<div style="font-size:8px;font-weight:700;color:var(--text-tertiary);letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px;font-family:var(--mono)">3-MONTH TREND</div>';
+  // COL 3 — 3-month trend
+  h += '<div style="padding:12px 14px;border-left:1px solid rgba(0,0,0,0.05);min-width:130px">';
+  h += '<div style="font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:10px;font-family:var(--mono)">3-MONTH TREND</div>';
   fcTrend3.forEach(function(row){
     var bwt=row.pct>0?Math.min(100,row.pct/Math.max(maxTrendPct,1)*100).toFixed(0):0;
     var isCur=(row.key===tm);
-    h += '<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">';
-    h += '<div style="font-size:10px;font-weight:'+(isCur?'700':'400')+';color:'+(isCur?'var(--text-primary)':'var(--text-secondary)')+';font-family:var(--mono);width:26px;flex-shrink:0">'+row.lbl+'</div>';
-    h += '<div style="flex:1;height:8px;background:var(--nm-base,#E7E5E4);border-radius:99px;'+NM_INSET+'">';
+    h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">';
+    h += '<span style="font-size:9px;font-weight:'+(isCur?'700':'400')+';color:'+(isCur?'var(--text-primary)':'var(--text-tertiary)')+';font-family:var(--mono);width:24px;flex-shrink:0">'+row.lbl+'</span>';
+    h += '<div style="flex:1;height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden;box-shadow:inset 1px 1px 3px rgba(0,0,0,0.08)">';
     h += '<div style="height:100%;width:'+bwt+'%;background:'+row.col+';border-radius:99px"></div>';
     h += '</div>';
-    h += '<div style="font-size:9px;font-weight:700;color:'+row.col+';font-family:var(--mono);width:34px;text-align:right;flex-shrink:0">'+(row.pct>0?row.pct.toFixed(1)+'%':'—')+'</div>';
+    h += '<span style="font-size:9px;font-weight:700;color:'+row.col+';font-family:var(--mono);width:32px;text-align:right;flex-shrink:0">'+(row.pct>0?row.pct.toFixed(1)+'%':'—')+'</span>';
     h += '</div>';
   });
-  h += '<div style="display:flex;align-items:center;gap:5px;margin-top:4px">';
-  h += '<div style="width:18px;height:2px;background:#FE9900;border-radius:1px"></div>';
-  h += '<div style="font-size:8px;color:#FE9900;font-family:var(--mono);font-weight:600">Target '+fcTarget+'%</div>';
+  h += '<div style="display:flex;align-items:center;gap:5px;margin-top:6px">';
+  h += '<div style="width:14px;height:1.5px;background:#FE9900;border-radius:1px"></div>';
+  h += '<span style="font-size:8px;color:#FE9900;font-family:var(--mono)">Target '+fcTarget+'%</span>';
   h += '</div>';
-  h += '</div>'; // end RIGHT
+  h += '</div>'; // end col 3
 
-  h += '</div>'; // end grid
-  h += '</div>'; // end food cost widget
+  h += '</div>'; // end 3-col body
+  h += '</div>'; // end food cost card
 
 
   // ROW 3: Health Cards | On Leave | By Department
