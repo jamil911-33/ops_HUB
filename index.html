@@ -2298,7 +2298,7 @@ button[onclick="openLoginUserMgr()"]:hover {
         🔔
         <span class="notif-badge" id="notif-count" style="display:none">0</span>
       </button>
-      <button class="icon-btn" onclick="doLogout()" title="Sign out" style="color:#fff;font-size:12px;font-weight:700;padding:7px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,#c0392b,#e74c3c);display:flex;align-items:center;gap:6px;cursor:pointer;letter-spacing:.03em;box-shadow:0 2px 8px rgba(192,57,43,.35);transition:all .18s" onmouseover="this.style.opacity='.85';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">⎋ Sign Out</button>
+      <button class="icon-btn" onclick="doLogout()" title="Sign out" style="color:#fff!important;font-size:12px;font-weight:700;padding:7px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,#c0392b,#e74c3c);display:flex;align-items:center;gap:6px;cursor:pointer;letter-spacing:.03em;box-shadow:0 2px 8px rgba(192,57,43,.35);transition:all .18s" onmouseover="this.style.opacity='.85';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">⎋ Sign Out</button>
     </div>
   </div>
 
@@ -2970,6 +2970,7 @@ function loadBranchRegistry(cb) {
     if (NX.session) {
       renderSidebar();
       updateTopBar(NX.page);
+      setTimeout(function(){ if(typeof patchIcons==='function') patchIcons(); }, 150);
     }
   });
 }
@@ -8228,7 +8229,116 @@ function printBranchOrderPDF(id){var o=bfindOrder(id);if(!o)return;var s=NX.sess
 function pLowStock(){attachBranchListeners();var low=bItems.filter(function(i){return i.min>0&&i.qty<=i.min;}).sort(function(a,b){return a.qty-b.qty;});var h='<div class="page-header"><h1>Low Stock Alerts</h1><p>'+low.length+' items at or below minimum</p></div>';if(!low.length)return h+'<div class="empty-state"><div class="es-icon">\u2705</div><h3>All stock levels OK</h3></div>';var rows=low.map(function(it){var isCrit=it.qty===0;return '<tr><td style="font-weight:600;color:var(--text-primary)">'+bxe(it.name)+'</td><td class="bmono" style="color:var(--ceo);font-size:11px">'+bxe(it.code)+'</td><td class="bmono" style="font-size:16px;font-weight:700;color:'+(isCrit?'var(--danger)':'var(--warning)')+'">'+it.qty+'</td><td class="bmono" style="color:var(--text-secondary)">'+it.min+'</td><td class="bmono">'+bxe(it.unit)+'</td><td>'+bxe(it.location||'\u2014')+'</td><td>'+bpl(isCrit?'Out':'Low',isCrit?'#f87171':'#f59e0b')+'</td><td><button class="btn btn-sm btn-primary" onclick="navTo(\'inv-orders\')">Order</button></td></tr>';}).join('');return h+'<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Name</th><th>Code</th><th>Qty</th><th>Min</th><th>Unit</th><th>Location</th><th>Status</th><th>Action</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';}
 
 // ── Monthly Report ───────────────────────────────────
-function pInvReport(){attachBranchListeners();var tm=bmthKey(0);var totalValue=bItems.reduce(function(acc,i){return acc+(i.qty*(parseFloat(i.price)||0));},0);var received=bLogs.filter(function(l){return l.type==='receive'&&(l.date||'').indexOf(tm)===0;}).reduce(function(s2,l){return s2+l.qty;},0);var issued=bLogs.filter(function(l){return l.type==='issue'&&(l.date||'').indexOf(tm)===0;}).reduce(function(s2,l){return s2+l.qty;},0);var wasteVal=BS.waste.filter(function(w){return(w.date||'').indexOf(tm)===0;}).reduce(function(s2,w){return s2+(+w.value||0);},0);var h='<div class="page-header"><h1>Monthly Inventory Report</h1></div>';h+='<div class="header-actions"><select class="form-select" style="width:auto"><option>'+tm+'</option></select><button class="btn" onclick="showToast(\'Exporting\u2026\',\'success\')">\u2b07 Export PDF</button></div>';h+='<div class="bgrid-4" style="margin-bottom:20px"><div class="bsc"><div class="bsc-lbl">Stock Value</div><div class="bsc-val bcgold">'+bfsar(totalValue)+'</div><div class="bsc-sub">'+bItems.length+' items</div></div><div class="bsc"><div class="bsc-lbl">Received This Mo</div><div class="bsc-val bcg">'+received+' units</div></div><div class="bsc"><div class="bsc-lbl">Issued This Mo</div><div class="bsc-val bca">'+issued+' units</div></div><div class="bsc"><div class="bsc-lbl">Wastage Value</div><div class="bsc-val bcr">'+bfsar(wasteVal)+'</div></div></div>';var rows='';bItems.forEach(function(it){var isLow=it.min>0&&it.qty<=it.min;rows+='<tr><td class="bmono" style="font-size:10px;color:var(--ceo)">'+bxe(it.code)+'</td><td style="color:var(--text-primary)">'+bxe(it.name)+'</td><td>'+bxe(it.location||'\u2014')+'</td><td class="bmono" style="font-weight:700;color:'+(isLow?'var(--danger)':'var(--text-primary)')+'">'+it.qty+'</td><td class="bmono">'+bxe(it.unit)+'</td><td class="bmono" style="color:var(--text-secondary)">'+it.min+'</td><td class="bmono">'+bfsar(it.qty*parseFloat(it.price||0))+'</td><td>'+bpl(isLow?'Low':'OK',isLow?'#f87171':'#34d399')+'</td></tr>';});return h+'<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Code</th><th>Name</th><th>Location</th><th>Qty</th><th>Unit</th><th>Min</th><th>Value SAR</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';}
+function pInvReport(){
+  attachBranchListeners();
+  var mo=BS._invReportMo||0;
+  var tm=bmthKey(mo);
+  var moLabel=new Date(tm+'-01').toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  var totalValue=bItems.reduce(function(a,i){return a+(i.qty*(parseFloat(i.price)||0));},0);
+  var received=bLogs.filter(function(l){return l.type==='receive'&&(l.date||'').indexOf(tm)===0;}).reduce(function(a,l){return a+(+l.qty||0);},0);
+  var issued=bLogs.filter(function(l){return l.type==='issue'&&(l.date||'').indexOf(tm)===0;}).reduce(function(a,l){return a+(+l.qty||0);},0);
+  var wasteVal=BS.waste.filter(function(w){return(w.date||'').indexOf(tm)===0;}).reduce(function(a,w){return a+(+w.value||0);},0);
+  var h='<div class="page-header"><h1>Monthly Inventory Report</h1><p>'+moLabel+'</p></div>';
+  h+='<div class="header-actions" style="margin-bottom:14px">';
+  h+='<button class="btn btn-sm" onclick="BS._invReportMo=(BS._invReportMo||0)-1;navTo(\'inv-report\')">← Prev</button>';
+  h+='<span class="bmono" style="font-size:12px;padding:0 12px;color:var(--text-secondary)">'+moLabel+'</span>';
+  h+='<button class="btn btn-sm" onclick="BS._invReportMo=Math.min(0,(BS._invReportMo||0)+1);navTo(\'inv-report\')">Next →</button>';
+  h+='<button class="btn" onclick="showToast(\'Exporting\u2026\',\'success\')">\u2b07 Export PDF</button>';
+  h+='</div>';
+  h+='<div class="bgrid-4" style="margin-bottom:20px">';
+  h+='<div class="bsc"><div class="bsc-lbl">Stock Value</div><div class="bsc-val bcgold">'+bfsar(totalValue)+'</div><div class="bsc-sub">'+bItems.length+' items</div></div>';
+  h+='<div class="bsc"><div class="bsc-lbl">Received</div><div class="bsc-val bcg">'+received+' units</div></div>';
+  h+='<div class="bsc"><div class="bsc-lbl">Issued / Pull-Out</div><div class="bsc-val bca">'+issued+' units</div></div>';
+  h+='<div class="bsc"><div class="bsc-lbl">Wastage Value</div><div class="bsc-val bcr">'+bfsar(wasteVal)+'</div></div>';
+  h+='</div>';
+  var card='background:var(--surface-1);border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid var(--border)';
+  var secHdr='font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px';
+  h+='<div style="'+card+'">';
+  h+='<div style="'+secHdr+'">\ud83d\udccb Item Reconciliation \u2014 '+moLabel+'</div>';
+  h+='<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:12px">Opening + Received + PO \u2212 Wastage \u2212 Pull-Out = Calculated Ending &nbsp;|\u00a0 Enter physical count to see variance</div>';
+  h+='<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr>';
+  h+='<th>Code</th><th>Item</th><th>Unit</th>';
+  h+='<th style="text-align:right;color:#60a5fa">Opening</th>';
+  h+='<th style="text-align:right;color:#34d399">+Received</th>';
+  h+='<th style="text-align:right;color:#34d399">+PO</th>';
+  h+='<th style="text-align:right;color:#f87171">\u2212Wastage</th>';
+  h+='<th style="text-align:right;color:#f87171">\u2212Pull-Out</th>';
+  h+='<th style="text-align:right;color:var(--ceo)">=Calculated</th>';
+  h+='<th style="text-align:center;min-width:110px">Physical Count</th>';
+  h+='<th style="text-align:center">Variance</th>';
+  h+='</tr></thead><tbody>';
+  var ec=BS.endingCounts||(BS.endingCounts={});
+  var moEC=ec[tm]||(ec[tm]={});
+  var allTally=true;
+  bItems.forEach(function(it){
+    var iid=it.id||it.code;
+    var prevMo=bmthKey(mo-1);
+    var prevEC=ec[prevMo]&&ec[prevMo][iid];
+    var prevEndQty=prevEC!=null?parseFloat(prevEC):null;
+    var recvQty=bLogs.filter(function(l){return l.type==='receive'&&l.itemId===iid&&(l.date||'').indexOf(tm)===0;}).reduce(function(a,l){return a+(+l.qty||0);},0);
+    var poQty=bLogs.filter(function(l){return l.type==='po'&&l.itemId===iid&&(l.date||'').indexOf(tm)===0;}).reduce(function(a,l){return a+(+l.qty||0);},0);
+    var wasteQty=BS.waste.filter(function(w){return w.itemId===iid&&(w.date||'').indexOf(tm)===0;}).reduce(function(a,w){return a+(+w.qty||0);},0);
+    var pullQty=bLogs.filter(function(l){return l.type==='issue'&&l.itemId===iid&&(l.date||'').indexOf(tm)===0;}).reduce(function(a,l){return a+(+l.qty||0);},0);
+    var openQty=prevEndQty!=null?prevEndQty:Math.max(0,Math.round((it.qty-recvQty-poQty+wasteQty+pullQty)*100)/100);
+    var calcEnd=Math.round((openQty+recvQty+poQty-wasteQty-pullQty)*100)/100;
+    var physVal=moEC[iid];
+    var physQty=physVal!=null?parseFloat(physVal):null;
+    var variance=physQty!=null?Math.round((physQty-calcEnd)*100)/100:null;
+    var isTally=variance!=null&&Math.abs(variance)<0.01;
+    if(physQty!=null&&!isTally)allTally=false;
+    var varCell='<span style="color:var(--text-tertiary);font-size:11px">\u2014</span>';
+    if(variance!=null){
+      var vc=isTally?'#34d399':Math.abs(variance)<1?'#f59e0b':'#f87171';
+      var vl=isTally?'\u2713 Tally':(variance>0?'+':'')+variance+' '+(it.unit||'');
+      varCell='<span style="font-weight:700;color:'+vc+'">'+vl+'</span>';
+    }
+    h+='<tr>';
+    h+='<td class="bmono" style="font-size:10px;color:var(--ceo)">'+bxe(it.code)+'</td>';
+    h+='<td style="color:var(--text-primary);font-weight:600">'+bxe(it.name)+'</td>';
+    h+='<td style="color:var(--text-tertiary);font-size:11px">'+bxe(it.unit||'\u2014')+'</td>';
+    h+='<td class="bmono" style="text-align:right;color:#60a5fa">'+openQty+'</td>';
+    h+='<td class="bmono" style="text-align:right;color:#34d399">'+recvQty+'</td>';
+    h+='<td class="bmono" style="text-align:right;color:#34d399">'+poQty+'</td>';
+    h+='<td class="bmono" style="text-align:right;color:#f87171">'+wasteQty+'</td>';
+    h+='<td class="bmono" style="text-align:right;color:#f87171">'+pullQty+'</td>';
+    h+='<td class="bmono" style="text-align:right;font-weight:700;color:var(--ceo)">'+calcEnd+'</td>';
+    h+='<td style="text-align:center"><input type="number" min="0" step="0.01" value="'+(physQty!=null?physQty:'')+'" placeholder="Count" onchange="invSaveEndingCount(\''+iid+'\',\''+tm+'\',this.value)" style="width:84px;text-align:center;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text-primary);font-size:12px;font-family:var(--mono);outline:none"></td>';
+    h+='<td style="text-align:center">'+varCell+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table></div></div>';
+  if(bItems.length>0){
+    var counted=bItems.filter(function(it){return moEC[it.id||it.code]!=null;}).length;
+    var sc=counted<bItems.length?'#f59e0b':allTally?'#34d399':'#f87171';
+    var sl=counted<bItems.length?(counted+'/'+bItems.length+' items counted'):allTally?'\u2713 All items tally':('\u26a0 Variance found in some items');
+    var si=counted<bItems.length?'\ud83d\udcca':allTally?'\u2705':'\u26a0\ufe0f';
+    h+='<div style="margin-top:10px;padding:12px 16px;border-radius:10px;background:'+sc+'18;border:1px solid '+sc+'40;display:flex;align-items:center;gap:10px">';
+    h+='<span style="font-size:18px">'+si+'</span>';
+    h+='<div><div style="font-weight:700;color:'+sc+'">'+sl+'</div>';
+    h+='<div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">'+counted+' of '+bItems.length+' items physically counted this month</div></div></div>';
+  }
+  h+='</div>';
+  h+='<div style="'+card+'">';
+  h+='<div style="'+secHdr+'">\ud83d\udce6 Current Stock Levels</div>';
+  h+='<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Code</th><th>Name</th><th>Location</th><th>Qty</th><th>Unit</th><th>Min</th><th>Value SAR</th><th>Status</th></tr></thead><tbody>';
+  bItems.forEach(function(it){
+    var isLow=it.min>0&&it.qty<=it.min;
+    h+='<tr><td class="bmono" style="font-size:10px;color:var(--ceo)">'+bxe(it.code)+'</td><td style="color:var(--text-primary)">'+bxe(it.name)+'</td><td>'+bxe(it.location||'\u2014')+'</td><td class="bmono" style="font-weight:700;color:'+(isLow?'var(--danger)':'var(--text-primary)')+'">'+it.qty+'</td><td class="bmono">'+bxe(it.unit)+'</td><td class="bmono" style="color:var(--text-tertiary)">'+it.min+'</td><td class="bmono">'+bfsar(it.qty*parseFloat(it.price||0))+'</td><td>'+bpl(isLow?'Low':'OK',isLow?'#f87171':'#34d399')+'</td></tr>';
+  });
+  h+='</tbody></table></div></div></div>';
+  return h;
+}
+function invSaveEndingCount(id,month,val){
+  if(!BS.endingCounts)BS.endingCounts={};
+  if(!BS.endingCounts[month])BS.endingCounts[month]={};
+  var n=parseFloat(val);
+  if(isNaN(n)||val===''){delete BS.endingCounts[month][id];}
+  else{BS.endingCounts[month][id]=n;}
+  if(db&&NX.session&&NX.session.branchId){
+    db.ref(bPath('endingCounts')+'/'+month+'/'+id).set(isNaN(n)||val===''?null:n);
+  }
+  navTo('inv-report');
+}
 
 // ── Wastage ──────────────────────────────────────────
 function pWastage(){attachBranchListeners();var data=BS.waste.filter(function(w){return bmatch(w,['item','by','reason']);}).slice().sort(function(a,b){return(b.date||'').localeCompare(a.date||'');});var tot=0;data.forEach(function(w){tot+=(+w.value||0);});var tc=BS.waste.filter(function(w){return w.date===TODAY_BS;}).length;var rows=data.map(function(w){return '<tr><td class="bmono" style="color:var(--text-tertiary);font-size:11px">'+bfdate(w.date)+'</td><td style="font-weight:600;color:var(--text-primary)">'+bxe(w.item)+'</td><td class="bmono">'+bxe(w.qty)+' '+bxe(w.unit||'')+'</td><td>'+bpl(w.reason||'\u2014','#f87171')+'</td><td class="bmono" style="color:var(--danger);font-weight:600">'+bfsar(w.value)+'</td><td style="color:var(--text-secondary)">'+bxe(w.by||'\u2014')+'</td><td><button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchWaste(\''+bxe(w.id)+'\')">Del</button></td></tr>';}).join('');var h='<div class="page-header"><h1>Wastage Log</h1></div><div class="bgrid-3" style="margin-bottom:16px"><div class="bsc"><div class="bsc-lbl">Total Entries</div><div class="bsc-val bca">'+BS.waste.length+'</div></div><div class="bsc"><div class="bsc-lbl">Today</div><div class="bsc-val" style="color:#f59e0b">'+tc+'</div></div><div class="bsc"><div class="bsc-lbl">Cumulative Loss</div><div class="bsc-val bcr">'+bfsar(tot)+'</div></div></div>';h+='<div class="header-actions"><div></div><button class="btn btn-primary" onclick="openBranchWastageModal()">+ Log Wastage</button></div>';return h+'<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Reason</th><th>Est. Value</th><th>By</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:28px">No wastage entries</td></tr>')+'</tbody></table></div></div>';}
@@ -13993,6 +14103,24 @@ function patchIcons() {
     var sz = parseInt(el.getAttribute('data-nx-size')) || 20;
     var s = NX_SVG[ico];
     if (s) el.innerHTML = s.replace(/width="20"/g,'width="'+sz+'"').replace(/height="20"/g,'height="'+sz+'"');
+  });
+  // ── Broad sweep: any span/div that contains ONLY an emoji we have an SVG for ──
+  // Covers branch cards, dashboard panels, login role cards, etc.
+  var emojiOnlyRe = /^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}️✅⭐🔑🗺️📊📋📦📈📉💡⚠️✓🏪]+$/u;
+  document.querySelectorAll('span, div').forEach(function(el) {
+    if (el.children.length > 0) return; // skip elements with child elements
+    var t = (el.textContent || '').trim();
+    if (!t || t.length > 6) return;
+    var s = NX_SVG[t] || NX_SVG[t.replace(/\uFE0F/g,'')];
+    if (!s) return;
+    // Only replace if this element looks like an icon slot (small, no big text context)
+    var fs = parseFloat(window.getComputedStyle(el).fontSize) || 14;
+    if (fs > 10 && fs < 40) {
+      el.innerHTML = s.replace(/width="20"/g,'width="'+Math.round(fs)+'\"').replace(/height="20"/g,'height="'+Math.round(fs)+'"');
+      el.style.display = el.style.display || 'inline-flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+    }
   });
 }
 
