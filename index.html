@@ -2257,7 +2257,7 @@ h1, h2, h3, .page-header h1 {
 .btbl tbody tr td, .data-table td {
   padding: 11px 14px !important;
   border-bottom: 1px solid rgba(0,0,0,0.04) !important;
-  color: var(--text-secondary) !important;
+  color: var(--text-secondary);
   transition: background 0.12s !important;
 }
 .btbl tbody tr:hover td, .data-table tbody tr:hover td {
@@ -8383,9 +8383,9 @@ function pInvOrders() {
   var tab = BS.ordTab || 'market';
   var tabStyle = 'flex:1;padding:9px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font);transition:all .15s';
   var h = '<div style="display:flex;gap:0;margin-bottom:16px;background:var(--surface-1);border:1px solid var(--border);border-radius:11px;padding:3px">';
-  h += '<button onclick="BS.ordTab=\'market\';navTo(\'inv-orders\')" style="' + tabStyle + ';background:' + (tab==='market'?'var(--accent)':'transparent') + ';color:' + (tab==='market'?'#000':'var(--text-secondary)') + '">🛒 Market</button>';
+  h += '<button onclick="BS.ordTab=\'market\';navTo(\'inv-orders\')" style="' + tabStyle + ';background:' + (tab==='market'?'var(--primary)':'transparent') + ';color:' + (tab==='market'?'#fff':'var(--text-secondary)') + ';box-shadow:' + (tab==='market'?'3px 3px 10px rgba(0,102,102,0.35)':'none') + '">🛒 Market</button>';
   var ordCount = bOrders.length;
-  h += '<button onclick="BS.ordTab=\'orders\';navTo(\'inv-orders\')" style="' + tabStyle + ';background:' + (tab==='orders'?'var(--accent)':'transparent') + ';color:' + (tab==='orders'?'#000':'var(--text-secondary)') + '">📋 Orders' + (ordCount ? ' (' + ordCount + ')' : '') + '</button>';
+  h += '<button onclick="BS.ordTab=\'orders\';navTo(\'inv-orders\')" style="' + tabStyle + ';background:' + (tab==='orders'?'var(--primary)':'transparent') + ';color:' + (tab==='orders'?'#fff':'var(--text-secondary)') + ';box-shadow:' + (tab==='orders'?'3px 3px 10px rgba(0,102,102,0.35)':'none') + '">📋 Orders' + (ordCount ? ' (' + ordCount + ')' : '') + '</button>';
   h += '</div>';
   return h + (tab === 'market' ? pOrdersMarketNX() : pOrdersHistoryNX());
 }
@@ -9761,8 +9761,8 @@ function pSales() {
     return '<tr><td class="bmono" style="color:var(--text-tertiary);font-size:11px">'+bfdate(e.date)+'</td>'
       +'<td class="bmono" style="font-weight:700;color:var(--ceo)">'+bfsar(e.actual)+'</td>'
       +'<td class="bmono" style="color:var(--text-secondary)">'+bfsar(e.target)+'</td>'
-      +'<td class="bmono" style="color:'+dfc+';font-weight:600">'+(df>=0?'+':'')+bfsar(df)+'</td>'
-      +'<td class="bmono" style="color:'+dfc+';font-weight:600">'+bxe(p)+'</td>'
+      +'<td class="bmono"><span style="color:'+dfc+' !important;font-weight:700">'+(df>=0?'+':'')+bfsar(df)+'</span></td>'
+      +'<td class="bmono"><span style="color:'+dfc+' !important;font-weight:700">'+bxe(p)+'</span></td>'
       +'<td><div style="display:flex;gap:4px"><button class="btn btn-sm" onclick="openBranchSalesModal(\''+bxe(e.id)+'\')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="delBranchSales(\''+bxe(e.id)+'\')">Del</button></div></td></tr>';
   }).join('');
   h+='<div style="font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono);margin-bottom:6px">All Entries</div>';
