@@ -68,8 +68,8 @@ window.addEventListener('unhandledrejection', function(e) {
   --border:rgba(255,255,255,.07);
   --border-strong:rgba(255,255,255,.13);
   --text-primary:rgba(255,255,255,.93);
-  --text-secondary:rgba(255,255,255,.52);
-  --text-tertiary:rgba(255,255,255,.28);
+  --text-secondary:rgba(255,255,255,.72);
+  --text-tertiary:rgba(255,255,255,.50);
   --text-inverse:rgba(0,0,0,.88);
   --shadow:0 2px 12px rgba(0,0,0,.45);
   --shadow-lg:0 8px 40px rgba(0,0,0,.60);
@@ -113,8 +113,8 @@ window.addEventListener('unhandledrejection', function(e) {
   --border:rgba(0,0,0,.07);
   --border-strong:rgba(0,0,0,.14);
   --text-primary:rgba(8,12,28,.90);
-  --text-secondary:rgba(8,12,28,.50);
-  --text-tertiary:rgba(8,12,28,.28);
+  --text-secondary:rgba(8,12,28,.70);
+  --text-tertiary:rgba(8,12,28,.50);
   --shadow:0 2px 12px rgba(0,0,0,.08);
   --shadow-lg:0 8px 40px rgba(0,0,0,.14);
   --sidebar-bg:rgba(8,12,24,.97);
@@ -2577,6 +2577,80 @@ hr, .divider {
     -3px -3px 9px rgba(255,255,255,0.88) !important;
   border: 1px solid rgba(0,0,0,0.04) !important;
 }
+
+/* ══════════════════════════════════════════
+   GLOBAL FONT VISIBILITY UPGRADE
+   Raise all tiny/dim text to readable sizes
+   ══════════════════════════════════════════ */
+
+/* Base body text */
+body { font-size: 13px !important; color: var(--text-primary) !important; }
+
+/* Breadcrumb */
+.breadcrumb { font-size: 12px !important; color: var(--text-secondary) !important; }
+
+/* Table headers — was 9px */
+.btbl thead th, .data-table th,
+.btbl th {
+  font-size: 11px !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Table body cells — was 11px */
+.btbl tbody tr td, .data-table td {
+  font-size: 13px !important;
+  color: var(--text-primary) !important;
+}
+
+/* Card labels — was 9-10px */
+.card-label, .kpi-label, .bsc-lbl, .bc-stat-label,
+.secHdr, [class*="-lbl"], [class*="card-label"] {
+  font-size: 11px !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Card sub text */
+.card-sub, .kpi-meta, .bsc-sub, .bc-sub {
+  font-size: 12px !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Form labels */
+.form-label { font-size: 13px !important; color: var(--text-primary) !important; }
+
+/* Alert / notification meta */
+.alert-meta, .notif-msg { font-size: 12px !important; color: var(--text-secondary) !important; }
+.notif-time { font-size: 11px !important; color: var(--text-secondary) !important; }
+
+/* Page header subtext */
+.page-header p { font-size: 13px !important; color: var(--text-secondary) !important; }
+
+/* Branch stat cards */
+.bsc-lbl { font-size: 11px !important; color: var(--text-secondary) !important; }
+.bsc-sub  { font-size: 12px !important; color: var(--text-secondary) !important; }
+
+/* Inline mono/code text in tables */
+.bmono, .mono { font-size: 13px !important; }
+
+/* Chip / badge text */
+.chip { font-size: 12px !important; }
+
+/* HRF table cells */
+.hrf-table td, .hrf-table th { font-size: 12px !important; }
+
+/* Generic text-tertiary → bump to secondary */
+[style*="color:var(--text-tertiary)"],
+[style*="color: var(--text-tertiary)"] {
+  color: var(--text-secondary) !important;
+}
+
+/* All explicit tiny inline font-sizes in JS-generated HTML */
+[style*="font-size:9px"]  { font-size: 12px !important; }
+[style*="font-size:10px"] { font-size: 12px !important; }
+[style*="font-size:11px"] { font-size: 13px !important; }
+[style*="font-size: 9px"]  { font-size: 12px !important; }
+[style*="font-size: 10px"] { font-size: 12px !important; }
+[style*="font-size: 11px"] { font-size: 13px !important; }
 
 </style>
 
