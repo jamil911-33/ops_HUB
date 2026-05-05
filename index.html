@@ -9942,7 +9942,7 @@ function openBranchPCModal(id){
   html+='<button type="button" class="btn btn-sm" style="margin-bottom:8px" onclick="document.getElementById(\'bpc-inv-file\').click()">📷 Add Invoice</button>';
   html+='<div id="bpc-inv-preview" style="display:flex;flex-wrap:wrap;gap:8px">';
   existingInv.forEach(function(inv,i){
-    if(inv.type==='pdf'){html+='<div style="display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer" onclick="pcViewInvoicePDF(\''+inv.data+'\')"><span>📄 '+bxe(inv.name||'PDF')+'</span><button type="button" onclick="event.stopPropagation();pcRemoveInv('+i+')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;margin-left:4px">×</button></div>';}
+    if(inv.type==='pdf'){html+='<div style="display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer" onclick="pcViewInvoicePDF(window._pcModalInvoices['+i+'].data)"><span>📄 '+bxe(inv.name||'PDF')+'</span><button type="button" onclick="event.stopPropagation();pcRemoveInv('+i+')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;margin-left:4px">×</button></div>';}
     else{html+='<div style="position:relative;display:inline-block"><img src="'+inv.data+'" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="pcViewInvoice(this.src)"><button type="button" onclick="event.stopPropagation();pcRemoveInv('+i+')" style="position:absolute;top:-5px;right:-5px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:11px;line-height:18px;text-align:center;padding:0">×</button></div>';}
   });
   html+='</div></div>';
@@ -10120,7 +10120,7 @@ function pcHandleInvoiceUpload(input){
       var el=document.createElement('div');
       if(isPDF){
         el.style.cssText='display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer';
-        el.onclick=function(){pcViewInvoicePDF(inv.data);};
+        el.dataset.idx=idx;el.onclick=function(){pcViewInvoicePDF(window._pcModalInvoices[parseInt(this.dataset.idx)].data);};
         el.innerHTML='📄 '+inv.name+'<button type="button" onclick="event.stopPropagation();pcRemoveInv('+idx+')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;margin-left:4px">×</button>';
       } else {
         el.style.cssText='position:relative;display:inline-block';
@@ -10144,7 +10144,7 @@ function pcRemoveInv(i){
       var el=document.createElement('div');
       if(inv.type==='pdf'){
         el.style.cssText='display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer';
-        el.onclick=function(){pcViewInvoicePDF(inv.data);};
+        el.dataset.invIdx=idx;el.onclick=function(){pcViewInvoicePDF(window._pcModalInvoices[parseInt(this.dataset.invIdx)].data);};
         el.innerHTML='📄 '+bxe(inv.name)+'<button type="button" onclick="event.stopPropagation();pcRemoveInv('+idx+')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;margin-left:4px">×</button>';
       } else {
         el.style.cssText='position:relative;display:inline-block';
@@ -10163,11 +10163,12 @@ function pcViewInvoicePDF(data){
 }
 function pcViewInvoices(invArr){
   if(!invArr||!invArr.length){showToast('No invoices attached','error');return;}
+  window._pcViewInvCache=invArr;
   var h='<div class="modal-head"><h2>📎 Invoices ('+invArr.length+')</h2><button class="modal-close" onclick="closeModalForce()">✕</button></div>';
   h+='<div style="display:flex;flex-wrap:wrap;gap:10px;padding:4px">';
-  invArr.forEach(function(inv){
+  invArr.forEach(function(inv,i){
     if(inv.type==='pdf'){
-      h+='<div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer" onclick="pcViewInvoicePDF(''+inv.data+'')">📄 '+bxe(inv.name||'PDF')+'</div>';
+      h+='<div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer" onclick="pcViewInvoicePDF(window._pcViewInvCache['+i+'].data)">📄 '+bxe(inv.name||'PDF')+'</div>';
     } else {
       h+='<img src="'+inv.data+'" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="pcViewInvoice(this.src)">';
     }
