@@ -5511,6 +5511,48 @@ function pHeadcount() {
         });
       });
     }
+    // ── Area Manager Petty Cash Review ─────────────────────────────────────
+    h += '<div class="card section" style="margin-top:14px">';
+    h += '<div style="font-size:11px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">💰 Petty Cash — Awaiting Your Review</div>';
+    h += '<div id="am-pc-list"><div style="text-align:center;padding:14px;color:var(--text-tertiary);font-size:12px">Loading…</div></div>';
+    h += '</div>';
+    if (db) {
+      setTimeout(function() {
+        var container = document.getElementById('am-pc-list');
+        if (!container) return;
+        db.ref('admin/petty_cash_reviews').once('value', function(snap) {
+          var raw = snap.val() || {};
+          var myBranchIds = s.branchIds || [];
+          var cycles = Object.values(raw).filter(function(c) {
+            if (!c || c.status !== 'pending_am') return false;
+            return myBranchIds.length === 0 || myBranchIds.indexOf(c.branchId) >= 0;
+          });
+          if (!cycles.length) {
+            container.innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-tertiary);font-size:12px;font-style:italic">No petty cash cycles awaiting review</div>';
+            return;
+          }
+          var htm = cycles.map(function(cy) {
+            var invCount=0;(cy.entries||[]).forEach(function(e){invCount+=(e.invoices||[]).length;});
+            return '<div style="background:var(--surface-2);border:1px solid rgba(180,83,9,.2);border-radius:10px;padding:14px;margin-bottom:10px">' +
+              '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">' +
+                '<div style="font-size:20px">💰</div>' +
+                '<div style="flex:1">' +
+                  '<div style="font-weight:700;font-size:13px">' + xe(cy.branchName||cy.branchId) + ' — Cycle #' + cy.cycleNo + '</div>' +
+                  '<div style="font-size:12px;color:var(--text-secondary)">Total: <strong>' + (cy.total||0).toLocaleString('en',{minimumFractionDigits:2}) + ' SAR</strong> · ' + (cy.entries||[]).length + ' entries · ' + (invCount?'📎 '+invCount+' invoice(s)':'no invoices') + '</div>' +
+                  '<div style="font-size:11px;color:var(--text-tertiary)">Closed by: ' + xe(cy.closedBy||'—') + ' · ' + (cy.closedAt?new Date(cy.closedAt).toLocaleDateString():'') + '</div>' +
+                '</div>' +
+              '</div>' +
+              '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+                '<button class="btn btn-sm" onclick="pcAMExportReview('' + cy.id + '')">📄 View PDF</button>' +
+                '<button class="btn btn-sm" style="background:rgba(220,38,38,.1);border-color:rgba(220,38,38,.3);color:#c0392b" onclick="pcAMReject('' + cy.id + '')">✕ Reject</button>' +
+                '<button class="btn btn-primary btn-sm" onclick="pcAMApprove('' + cy.id + '')">✓ Approve</button>' +
+              '</div>' +
+            '</div>';
+          }).join('');
+          container.innerHTML = htm;
+        });
+      }, 300);
+    }
   }
   return h;
 }
@@ -9797,6 +9839,7 @@ function pPettyCash(){
         '<td>'+bpl(p.category||'\u2014','#b45309')+'</td>'+
         '<td>'+bpl(p.gl||'\u2014','#5b21b6')+'</td>'+
         '<td class="bmono" style="color:#c0392b;font-weight:600">'+bfsar(p.amount)+'</td>'+
+        '<td>'+(p.invoices&&p.invoices.length?'<span style="cursor:pointer;color:var(--primary)" onclick="pcViewInvoices('+JSON.stringify(p.invoices)+')" title="'+p.invoices.length+' invoice(s)">📎 '+p.invoices.length+'</span>':'—')+'</td>'+
         '<td><div style="display:flex;gap:4px">'+
           '<button class="btn btn-sm" data-pcid="'+bxe(p.id)+'" onclick="openBranchPCModal(this.dataset.pcid)">Edit</button>'+
           '<button class="btn btn-sm" style="color:var(--danger)" data-pcid="'+bxe(p.id)+'" onclick="delBranchPC(this.dataset.pcid)">Del</button>'+
@@ -9838,8 +9881,32 @@ function pPettyCash(){
       '<button class="btn" onclick="openPCBudgetModal()">\uD83D\uDCB0 Set Budget</button>'+
       '<button class="btn btn-primary" onclick="openBranchPCModal(null)">+ Add Entry</button>'+
     '</div></div>'+
-    '<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th>Item Purchased</th><th>For Who</th><th>Remarks</th><th>Cost Center</th><th>GL</th><th>Amount</th><th></th></tr></thead>'+
-    '<tbody>'+(rows||'<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:28px">\uD83E\uDDFE No entries yet \u2014 click \u201c+ Add Entry\u201d to start</td></tr>')+'</tbody></table></div></div>';
+    '<div class="btw"><div class="btw-s"><table class="btbl"><thead><tr><th>Date</th><th>Item Purchased</th><th>For Who</th><th>Remarks</th><th>Cost Center</th><th>GL</th><th>Amount</th><th>📎</th><th></th></tr></thead>'+
+    '<tbody>'+(rows||'<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:28px">\uD83E\uDDFE No entries yet \u2014 click \u201c+ Add Entry\u201d to start</td></tr>')+'</tbody></table></div></div>'+
+  (function(){
+    var arch=(BS.pcArchive||[]).slice().sort(function(a,b){return(b.closedAt||'').localeCompare(a.closedAt||'');});
+    if(!arch.length)return '';
+    var sC={pending_am:'#b45309',pending_finance:'#0057ff',finance_processing:'#5b21b6',money_sent:'#00875a',received:'#6b7280'};
+    var sL={pending_am:'⏳ Awaiting AM Review',pending_finance:'✅ AM Approved · Awaiting Finance',finance_processing:'🔄 Finance Processing',money_sent:'💰 Money Sent — Confirm Receipt',received:'✔ Received & Closed'};
+    var h='<div style="margin-top:22px;padding:16px 18px;background:var(--surface-1);border:1px solid var(--border);border-radius:12px"><div style="font-size:13px;font-weight:700;margin-bottom:14px;color:var(--text-primary)">📚 Closed Cycles</div>';
+    arch.forEach(function(cy){
+      var sc=sC[cy.status]||'#94a3b8';var sl=sL[cy.status]||cy.status;
+      var invCount=0;(cy.entries||[]).forEach(function(e){invCount+=(e.invoices||[]).length;});
+      h+='<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px">';
+      h+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">';
+      h+='<span style="font-weight:700;color:var(--text-primary)">Cycle #'+cy.cycleNo+'</span>';
+      h+='<span style="font-family:var(--mono);font-size:13px;color:#c0392b;font-weight:700">'+bfsar(cy.total||0)+'</span>';
+      h+='<span style="background:'+sc+'18;color:'+sc+';border:1px solid '+sc+'30;border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600">'+sl+'</span>';
+      h+='<span style="font-size:11px;color:var(--text-tertiary)">Closed: '+bfdate((cy.closedAt||'').slice(0,10))+'</span>';
+      h+='<div style="flex:1"></div>';
+      h+='<button class="btn btn-sm" onclick="pcExportCyclePDF(\''+cy.id+'\')" >📄 Export PDF</button>';
+      if(cy.status==="money_sent"){h+='<button class="btn btn-primary btn-sm" onclick="pcConfirmReceived(\''+cy.id+'\')">✅ Confirm Received</button>';}
+      h+='</div>';
+      h+='<div style="font-size:11px;color:var(--text-tertiary)">'+(cy.entries||[]).length+' entries · '+(invCount?'📎 '+invCount+' invoice(s)':'no invoices')+'</div>';
+      h+='</div>';
+    });
+    return h+'</div>';
+  })();
 }
 function openPCBudgetModal(){
   var cur=BS.pcBudget||0;
@@ -9868,20 +9935,32 @@ function openBranchPCModal(id){
     '<div class="bfg"><label class="form-label">Amount (SAR) *</label><input class="form-input" type="number" step="0.01" id="bpc-amt" value="'+(p?p.amount:'')+'" placeholder="0.00"></div></div>';
   html+='<div class="bfg"><label class="form-label">Remarks</label><input class="form-input" id="bpc-rem" value="'+bxe(p?p.remarks||'':'')+'"></div>';
   html+='<button class="btn btn-primary" style="width:100%;margin-top:8px" data-pcid="'+bxe(id||'')+'" onclick="saveBranchPC(this.dataset.pcid)">'+(p?'Save Changes':'Save Entry')+'</button>';
+  // Invoice attachment UI
+  var existingInv=(p&&p.invoices)?p.invoices:[];
+  html+='<div class="bfg" style="margin-top:6px"><label class="form-label">📎 Attach Invoice(s)</label>';
+  html+='<input type="file" id="bpc-inv-file" accept="image/*,application/pdf" multiple style="display:none" onchange="pcHandleInvoiceUpload(this)">';
+  html+='<button type="button" class="btn btn-sm" style="margin-bottom:8px" onclick="document.getElementById(\'bpc-inv-file\').click()">📷 Add Invoice</button>';
+  html+='<div id="bpc-inv-preview" style="display:flex;flex-wrap:wrap;gap:8px">';
+  existingInv.forEach(function(inv,i){
+    if(inv.type==='pdf'){html+='<div style="display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer" onclick="pcViewInvoicePDF(\''+inv.data+'\')"><span>📄 '+bxe(inv.name||'PDF')+'</span><button type="button" onclick="event.stopPropagation();pcRemoveInv('+i+')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;margin-left:4px">×</button></div>';}
+    else{html+='<div style="position:relative;display:inline-block"><img src="'+inv.data+'" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="pcViewInvoice(this.src)"><button type="button" onclick="event.stopPropagation();pcRemoveInv('+i+')" style="position:absolute;top:-5px;right:-5px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:11px;line-height:18px;text-align:center;padding:0">×</button></div>';}
+  });
+  html+='</div></div>';
   openModal(html);
+  window._pcModalInvoices=(p&&p.invoices)?p.invoices.slice():[];
 }
 function saveBranchPC(id){
   var dt=bgv('bpc-date'),desc=bgv('bpc-desc'),forw=bgv('bpc-for'),amt=bgv('bpc-amt');
   if(!dt||!desc||!forw||!amt){showToast('Required fields missing','error');return;}
   if(id){
     var i=BS.pc.findIndex(function(x){return x.id===id;});
-    if(i>=0){BS.pc[i].date=dt;BS.pc[i].description=desc;BS.pc[i].forwhat=forw;BS.pc[i].category=bgv('bpc-cat');BS.pc[i].gl=bgv('bpc-gl');BS.pc[i].remarks=bgv('bpc-rem');BS.pc[i].amount=parseFloat(amt)||0;BS.pc[i].cycleNo=BS.pcCycleNo||1;}
+    if(i>=0){BS.pc[i].date=dt;BS.pc[i].description=desc;BS.pc[i].forwhat=forw;BS.pc[i].category=bgv('bpc-cat');BS.pc[i].gl=bgv('bpc-gl');BS.pc[i].remarks=bgv('bpc-rem');BS.pc[i].amount=parseFloat(amt)||0;BS.pc[i].cycleNo=BS.pcCycleNo||1;BS.pc[i].invoices=window._pcModalInvoices||[];}
   } else {
     // Duplicate guard — same date + same description
     if(BS.pc.find(function(p){return p.date===dt&&(p.description||'').toLowerCase()===desc.toLowerCase();})){
       if(!confirm('A similar entry exists for this date. Add anyway?'))return;
     }
-    BS.pc.push({id:buid(),date:dt,description:desc,forwhat:forw,category:bgv('bpc-cat'),gl:bgv('bpc-gl'),remarks:bgv('bpc-rem'),amount:parseFloat(amt)||0,cycleNo:BS.pcCycleNo||1});
+    BS.pc.push({id:buid(),date:dt,description:desc,forwhat:forw,category:bgv('bpc-cat'),gl:bgv('bpc-gl'),remarks:bgv('bpc-rem'),amount:parseFloat(amt)||0,cycleNo:BS.pcCycleNo||1,invoices:window._pcModalInvoices||[]});
   }
   bSaveColl('pc',BS.pc);closeModalForce();showToast('Entry saved','success');navTo('petty-cash');
 }
@@ -9971,18 +10050,34 @@ function pcStartNewCycle(){
   // Archive current cycle
   if(!BS.pcArchive)BS.pcArchive=[];
   var total=entries.reduce(function(s,p){return s+(+p.amount||0);},0);
-  var archived={cycleNo:curNo,closedAt:new Date().toISOString(),total:total,entries:entries.slice(),status:'closed',closedBy:(NX.session&&NX.session.userName)||(NX.session&&NX.session.entityName)||''};
+  var branchId=(NX.session&&NX.session.branchId)||'';
+  var branchName=(NX.session&&NX.session.branchName)||branchId;
+  var archived={
+    id:'pc-'+branchId+'-'+curNo+'-'+Date.now(),
+    cycleNo:curNo,
+    closedAt:new Date().toISOString(),
+    total:total,
+    entries:entries.slice(),
+    status:'pending_am',
+    closedBy:(NX.session&&NX.session.userName)||(NX.session&&NX.session.entityName)||'',
+    branchId:branchId,
+    branchName:branchName
+  };
   BS.pcArchive.push(archived);
+  // Also push to global admin/petty_cash_reviews for AM + Finance
+  if(db){
+    db.ref('admin/petty_cash_reviews/'+archived.id).set(archived);
+  }
   // Bump cycle number
   var nextNo=parseInt(curNo,10);if(isNaN(nextNo))nextNo=1;nextNo++;
   BS.pcCycleNo=nextNo;
   // Persist
-  if(db&&NX.session&&NX.session.branchId){
-    var br='branches/'+NX.session.branchId;
+  if(db&&branchId){
+    var br='branches/'+branchId;
     db.ref(br+'/pcCycleNo').set(nextNo);
     db.ref(br+'/pcArchive').set(BS.pcArchive);
   }
-  showToast('Cycle #'+curNo+' archived. Now editing #'+nextNo,'success');
+  showToast('Cycle #'+curNo+' submitted for Area Manager review ✓','success');
   navTo('petty-cash');
 }
 function pcPrintCycle(){
@@ -10008,6 +10103,261 @@ function pcPrintCycle(){
 }
 
 // ── Reminder CRUD ──
+// ── Petty Cash Invoice Helpers ─────────────────────────────────────────────
+function pcHandleInvoiceUpload(input){
+  var files=Array.from(input.files);
+  if(!window._pcModalInvoices) window._pcModalInvoices=[];
+  var remaining=10-(window._pcModalInvoices.length);
+  if(files.length>remaining){showToast('Max 10 invoices per entry','error');files=files.slice(0,remaining);}
+  var preview=document.getElementById('bpc-inv-preview');
+  files.forEach(function(file){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var isPDF=file.type==='application/pdf';
+      var inv={id:buid(),name:file.name,type:isPDF?'pdf':'image',data:e.target.result};
+      window._pcModalInvoices.push(inv);
+      var idx=window._pcModalInvoices.length-1;
+      var el=document.createElement('div');
+      if(isPDF){
+        el.style.cssText='display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer';
+        el.onclick=function(){pcViewInvoicePDF(inv.data);};
+        el.innerHTML='📄 '+inv.name+'<button type="button" onclick="event.stopPropagation();pcRemoveInv('+idx+')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;margin-left:4px">×</button>';
+      } else {
+        el.style.cssText='position:relative;display:inline-block';
+        el.innerHTML='<img src="'+inv.data+'" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="pcViewInvoice(this.src)"><button type="button" onclick="event.stopPropagation();pcRemoveInv('+idx+')" style="position:absolute;top:-5px;right:-5px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:11px;line-height:18px;text-align:center;padding:0">×</button>';
+      }
+      if(preview) preview.appendChild(el);
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+}
+function pcRemoveInv(i){
+  if(!window._pcModalInvoices) return;
+  window._pcModalInvoices.splice(i,1);
+  var preview=document.getElementById('bpc-inv-preview');
+  if(preview) { var items=preview.children; if(items[i]) preview.removeChild(items[i]); }
+  // Re-render preview from scratch
+  if(preview){
+    preview.innerHTML='';
+    (window._pcModalInvoices||[]).forEach(function(inv,idx){
+      var el=document.createElement('div');
+      if(inv.type==='pdf'){
+        el.style.cssText='display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer';
+        el.onclick=function(){pcViewInvoicePDF(inv.data);};
+        el.innerHTML='📄 '+bxe(inv.name)+'<button type="button" onclick="event.stopPropagation();pcRemoveInv('+idx+')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;margin-left:4px">×</button>';
+      } else {
+        el.style.cssText='position:relative;display:inline-block';
+        el.innerHTML='<img src="'+inv.data+'" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="pcViewInvoice(this.src)"><button type="button" onclick="event.stopPropagation();pcRemoveInv('+idx+')" style="position:absolute;top:-5px;right:-5px;background:#c0392b;border:none;color:#fff;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:11px;line-height:18px;text-align:center;padding:0">×</button>';
+      }
+      preview.appendChild(el);
+    });
+  }
+}
+function pcViewInvoice(src){
+  openModal('<div class="modal-head"><h2>Invoice</h2><button class="modal-close" onclick="closeModalForce()">✕</button></div><div style="text-align:center"><img src="'+src+'" style="max-width:100%;max-height:70vh;border-radius:8px"></div>');
+}
+function pcViewInvoicePDF(data){
+  var w=window.open('','_blank');if(!w)return;
+  w.document.write('<iframe src="'+data+'" style="width:100%;height:100vh;border:none"></iframe>');
+}
+function pcViewInvoices(invArr){
+  if(!invArr||!invArr.length){showToast('No invoices attached','error');return;}
+  var h='<div class="modal-head"><h2>📎 Invoices ('+invArr.length+')</h2><button class="modal-close" onclick="closeModalForce()">✕</button></div>';
+  h+='<div style="display:flex;flex-wrap:wrap;gap:10px;padding:4px">';
+  invArr.forEach(function(inv){
+    if(inv.type==='pdf'){
+      h+='<div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer" onclick="pcViewInvoicePDF(''+inv.data+'')">📄 '+bxe(inv.name||'PDF')+'</div>';
+    } else {
+      h+='<img src="'+inv.data+'" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="pcViewInvoice(this.src)">';
+    }
+  });
+  h+='</div>';
+  openModal(h);
+}
+
+// Export cycle as PDF with embedded invoices
+function pcExportCyclePDF(cycleId){
+  var cy=(BS.pcArchive||[]).find(function(c){return c.id===cycleId;});
+  if(!cy){showToast('Cycle not found','error');return;}
+  var s=NX.session||{};
+  var w=window.open('','_blank','width=1000,height=800');
+  if(!w){showToast('Popup blocked — allow popups to export PDF','error');return;}
+  var entries=(cy.entries||[]).slice().sort(function(a,b){return(a.date||'').localeCompare(b.date||'');});
+  var total=cy.total||entries.reduce(function(s,p){return s+(+p.amount||0);},0);
+  var rowsHtml=entries.map(function(p,i){
+    var invHTML='';
+    if(p.invoices&&p.invoices.length){
+      invHTML='<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">';
+      p.invoices.forEach(function(inv){
+        if(inv.type==='image')invHTML+='<img src="'+inv.data+'" style="width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid #ccc">';
+        else invHTML+='<span style="font-size:10px;background:#f4f4f4;border:1px solid #ccc;border-radius:4px;padding:2px 6px">📄 '+inv.name+'</span>';
+      });
+      invHTML+='</div>';
+    }
+    return '<tr><td>'+(i+1)+'</td><td>'+p.date+'</td><td><strong>'+p.description+'</strong>'+invHTML+'</td><td>'+(p.forwhat||'')+'</td><td>'+(p.category||'')+'</td><td>'+(p.gl||'')+'</td><td>'+(p.remarks||'')+'</td><td style="text-align:right;font-family:monospace">'+(+p.amount||0).toFixed(2)+'</td></tr>';
+  }).join('');
+  var statLabels={pending_am:'Pending AM Review',pending_finance:'Pending Finance',finance_processing:'Finance Processing',money_sent:'Money Sent',received:'Received & Closed'};
+  var statLabel=statLabels[cy.status]||cy.status||'';
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Petty Cash Cycle #'+cy.cycleNo+'</title>'+
+    '<style>body{font-family:-apple-system,Arial,sans-serif;padding:24px;color:#111;font-size:12px}h1{margin:0 0 4px;font-size:18px}.meta{color:#666;font-size:11px;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-bottom:20px}th,td{border:1px solid #ddd;padding:7px 9px;text-align:left;vertical-align:top}th{background:#f5f5f5;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em}tfoot td{font-weight:700;background:#fafafa}.status-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}.inv-section{margin-top:30px;page-break-inside:avoid}.inv-section h3{font-size:13px;margin-bottom:10px}.inv-grid{display:flex;flex-wrap:wrap;gap:10px}.inv-img{width:150px;height:150px;object-fit:cover;border-radius:6px;border:1px solid #ddd}.sig{margin-top:40px;display:flex;gap:60px}.sig div{flex:1;border-top:1px solid #999;padding-top:8px;text-align:center;font-size:11px;color:#555}@media print{button{display:none}}</style>'+
+    '</head><body>'+
+    '<img src="https://i.imgur.com/jeqtcE2.png" alt="Logo" style="height:44px;margin-bottom:12px;display:block">'+
+    '<h1>Petty Cash Report — Cycle #'+cy.cycleNo+'</h1>'+
+    '<div class="meta">Branch: <strong>'+cy.branchName+'</strong> &nbsp;·&nbsp; Closed: '+new Date(cy.closedAt||Date.now()).toLocaleString()+' &nbsp;·&nbsp; Closed by: '+(cy.closedBy||'—')+' &nbsp;·&nbsp; Status: <span class="status-badge">'+statLabel+'</span></div>'+
+    '<table><thead><tr><th>#</th><th>Date</th><th>Item / Invoices</th><th>For / Dept</th><th>Cost Center</th><th>GL</th><th>Remarks</th><th>Amount (SAR)</th></tr></thead>'+
+    '<tbody>'+rowsHtml+'</tbody>'+
+    '<tfoot><tr><td colspan="7" style="text-align:right">TOTAL</td><td style="text-align:right;font-family:monospace">'+total.toFixed(2)+'</td></tr></tfoot></table>'+
+    // Embedded invoice gallery
+    (function(){
+      var allInv=[];
+      entries.forEach(function(p){(p.invoices||[]).forEach(function(inv){allInv.push({entry:p.description,inv:inv});});});
+      if(!allInv.length)return '';
+      var g='<div class="inv-section"><h3>📎 Attached Invoices ('+allInv.length+')</h3><div class="inv-grid">';
+      allInv.forEach(function(x){
+        if(x.inv.type==='image'){g+='<div style="text-align:center"><img class="inv-img" src="'+x.inv.data+'"><div style="font-size:9px;color:#666;margin-top:3px">'+x.entry+'</div></div>';}
+        else{g+='<div style="text-align:center;width:150px"><div style="background:#f4f4f4;border:1px solid #ddd;border-radius:6px;padding:20px;font-size:11px">📄<br>'+x.inv.name+'</div><div style="font-size:9px;color:#666;margin-top:3px">'+x.entry+'</div></div>';}
+      });
+      g+='</div></div>';
+      return g;
+    })()+
+    '<div class="sig"><div>Branch Manager Signature</div><div>Area Manager Signature</div><div>Finance Director Signature</div></div>'+
+    '<div style="text-align:center;margin-top:20px;font-size:9px;color:#aaa">Generated '+new Date().toLocaleString()+' · ALFA.CO</div>'+
+    '<script>setTimeout(function(){window.print();},800);<\/script></body></html>');
+  w.document.close();
+}
+
+// Confirm received — Branch Manager marks money received
+function pcConfirmReceived(cycleId){
+  if(!confirm('Confirm that you have received the cash for this cycle?'))return;
+  var idx=(BS.pcArchive||[]).findIndex(function(c){return c.id===cycleId;});
+  if(idx<0){showToast('Cycle not found','error');return;}
+  BS.pcArchive[idx].status='received';
+  BS.pcArchive[idx].receivedAt=new Date().toISOString();
+  BS.pcArchive[idx].receivedBy=(NX.session&&NX.session.userName)||'';
+  // Update Firebase
+  if(db){
+    var branchId=(NX.session&&NX.session.branchId)||'';
+    if(branchId) db.ref('branches/'+branchId+'/pcArchive').set(BS.pcArchive);
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/status').set('received');
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/receivedAt').set(BS.pcArchive[idx].receivedAt);
+  }
+  showToast('Cash receipt confirmed ✓ Cycle archived','success');
+  navTo('petty-cash');
+}
+
+
+// ── AM Petty Cash Approve/Reject ──────────────────────────────────────────
+function pcAMApprove(cycleId){
+  if(!confirm('Approve this petty cash cycle and forward to Finance?'))return;
+  if(db){
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/status').set('pending_finance');
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/amApprovedAt').set(new Date().toISOString());
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/amApprovedBy').set((NX.session&&NX.session.userName)||'AM');
+  }
+  // Update branch copy
+  var cycle=null;
+  if(db){
+    db.ref('admin/petty_cash_reviews/'+cycleId).once('value',function(snap){
+      var cy=snap.val();if(!cy)return;
+      db.ref('branches/'+cy.branchId+'/pcArchive').once('value',function(s2){
+        var arr=s2.val()||[];
+        var i=arr.findIndex?arr.findIndex(function(c){return c.id===cycleId;}):arr.map(function(c,j){return c.id===cycleId?j:-1;}).find(function(j){return j>=0;});
+        if(i>=0){arr[i].status='pending_finance';db.ref('branches/'+cy.branchId+'/pcArchive').set(arr);}
+      });
+    });
+  }
+  showToast('Cycle approved — forwarded to Finance ✓','success');
+  setTimeout(function(){var c=document.getElementById('am-pc-list');if(c)c.innerHTML='<div style="text-align:center;padding:14px;color:var(--text-tertiary);font-size:12px;font-style:italic">No petty cash cycles awaiting review</div>';},300);
+}
+function pcAMReject(cycleId){
+  var reason=prompt('Reason for rejection (optional):');
+  if(reason===null)return;
+  if(db){
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/status').set('rejected');
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/rejectedAt').set(new Date().toISOString());
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/rejectedBy').set((NX.session&&NX.session.userName)||'AM');
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/rejectReason').set(reason||'');
+    // Update branch copy
+    db.ref('admin/petty_cash_reviews/'+cycleId).once('value',function(snap){
+      var cy=snap.val();if(!cy)return;
+      db.ref('branches/'+cy.branchId+'/pcArchive').once('value',function(s2){
+        var arr=s2.val()||[];
+        var i=arr.findIndex?arr.findIndex(function(c){return c.id===cycleId;}):arr.map(function(c,j){return c.id===cycleId?j:-1;}).find(function(j){return j>=0;});
+        if(i>=0){arr[i].status='rejected';arr[i].rejectReason=reason||'';db.ref('branches/'+cy.branchId+'/pcArchive').set(arr);}
+      });
+    });
+  }
+  showToast('Cycle rejected','error');
+  setTimeout(function(){var c=document.getElementById('am-pc-list');if(c)c.innerHTML='<div style="text-align:center;padding:14px;color:var(--text-tertiary);font-size:12px;font-style:italic">No petty cash cycles awaiting review</div>';},300);
+}
+function pcAMExportReview(cycleId){
+  if(!db){showToast('Database not available','error');return;}
+  db.ref('admin/petty_cash_reviews/'+cycleId).once('value',function(snap){
+    var cy=snap.val();
+    if(!cy){showToast('Cycle not found','error');return;}
+    // Use the same export function - temporarily load cycle
+    var fakeBS={pcArchive:[cy]};
+    var origBS=window.BS;
+    window.BS=fakeBS;
+    pcExportCyclePDF(cycleId);
+    window.BS=origBS;
+  });
+}
+
+// ── Finance Petty Cash: Mark Money Sent ──────────────────────────────────
+function pcFinanceMarkProcessing(cycleId){
+  if(db){
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/status').set('finance_processing');
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/processingAt').set(new Date().toISOString());
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/processingBy').set((NX.session&&NX.session.userName)||'Finance');
+    db.ref('admin/petty_cash_reviews/'+cycleId).once('value',function(snap){
+      var cy=snap.val();if(!cy)return;
+      db.ref('branches/'+cy.branchId+'/pcArchive').once('value',function(s2){
+        var arr=s2.val()||[];
+        var i=arr.findIndex?arr.findIndex(function(c){return c.id===cycleId;}):arr.map(function(c,j){return c.id===cycleId?j:-1;}).find(function(j){return j>=0;});
+        if(i>=0){arr[i].status='finance_processing';db.ref('branches/'+cy.branchId+'/pcArchive').set(arr);}
+      });
+    });
+  }
+  showToast('Marked as processing','success');
+  setTimeout(function(){navTo(NX.page||'hrf-approvals');},800);
+}
+function pcFinanceMarkSent(cycleId){
+  if(!confirm('Confirm that money has been sent to the branch?'))return;
+  if(db){
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/status').set('money_sent');
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/sentAt').set(new Date().toISOString());
+    db.ref('admin/petty_cash_reviews/'+cycleId+'/sentBy').set((NX.session&&NX.session.userName)||'Finance');
+    // Update branch copy
+    db.ref('admin/petty_cash_reviews/'+cycleId).once('value',function(snap){
+      var cy=snap.val();if(!cy)return;
+      db.ref('branches/'+cy.branchId+'/pcArchive').once('value',function(s2){
+        var arr=s2.val()||[];
+        var i=arr.findIndex?arr.findIndex(function(c){return c.id===cycleId;}):arr.map(function(c,j){return c.id===cycleId?j:-1;}).find(function(j){return j>=0;});
+        if(i>=0){arr[i].status='money_sent';db.ref('branches/'+cy.branchId+'/pcArchive').set(arr);}
+      });
+    });
+  }
+  showToast('Money sent confirmed — Branch notified ✓','success');
+  var c=document.getElementById('fin-pc-list');
+  if(c)c.innerHTML='<div style="text-align:center;padding:14px;color:var(--text-tertiary);font-size:12px;font-style:italic">Refreshing…</div>';
+  setTimeout(function(){navTo(NX.page||'hrf-fin-dash');},1000);
+}
+function pcFinanceExport(cycleId){
+  if(!db){showToast('Database not available','error');return;}
+  db.ref('admin/petty_cash_reviews/'+cycleId).once('value',function(snap){
+    var cy=snap.val();
+    if(!cy){showToast('Cycle not found','error');return;}
+    var fakeBS={pcArchive:[cy]};
+    var origBS=window.BS;
+    window.BS=fakeBS;
+    pcExportCyclePDF(cycleId);
+    window.BS=origBS;
+  });
+}
+
+
 function openReminderModal(id){
   var r=id?(BS.rem||[]).find(function(x){return x.id===id;}):null;
   var html='<div class="modal-head"><h2>'+(r?'Edit Reminder':'Add Reminder')+'</h2><button class="modal-close" onclick="closeModalForce()">\u2715</button></div>';
@@ -10418,8 +10768,14 @@ function pDSR(){
     }
     var haveTotal=DENOMS_MF.have.reduce(function(a,d){return a+(parseFloat((D.denoms||{})['mfh_'+d.v.replace('.','_')])||0)*parseFloat(d.v);},0);
     var changeTotal=DENOMS_MF.change.reduce(function(a,d){return a+(parseFloat((D.denoms||{})['mfc_'+d.v.replace('.','_')])||0)*parseFloat(d.v);},0);
-    var closedPC=(D.closedPetty||[]).reduce(function(a,p){return a+(parseFloat(p.amount)||0);},0);
-    var ongoingPC=(D.ongoingPetty||[]).reduce(function(a,p){return a+(parseFloat(p.amount)||0);},0);
+    // Auto-pull from Petty Cash current cycle
+  var pcCurCycle=BS.pcCycleNo||1;
+  var pcCurTotal=(BS.pc||[]).filter(function(p){return (p.cycleNo||1)===pcCurCycle;}).reduce(function(s,p){return s+(+p.amount||0);},0);
+  var ongoingPC=pcCurTotal||(D.ongoingPetty||[]).reduce(function(a,p){return a+(parseFloat(p.amount)||0);},0);
+  // Auto-pull closed petty cash from pcArchive
+  var closedArchive=(BS.pcArchive||[]).filter(function(c){return c.status&&c.status!=='received';});
+  var closedPC_auto=closedArchive.reduce(function(s,c){return s+(c.total||0);},0);
+  var closedPC=closedPC_auto||(D.closedPetty||[]).reduce(function(a,p){return a+(parseFloat(p.amount)||0);},0);
     var mfCompany=parseFloat(D.mfCompany)||0;
     var mfTotal=haveTotal+changeTotal+closedPC+ongoingPC;
     var mfDiff=mfTotal-mfCompany;
@@ -13005,6 +13361,47 @@ function pHrfSchedule(){
       h+='</tr>';
     });
     h+='</tbody></table></div>';
+    // Finance Petty Cash section
+    if(!isHR){
+      h+='<div class="hrf-section"><div style="font-size:14px;font-weight:700;margin-bottom:14px">💰 Petty Cash — Pending Finance Processing</div>';
+      h+='<div id="fin-pc-list"><div style="text-align:center;padding:18px;color:var(--text-tertiary);font-size:12px">Loading…</div></div>';
+      h+='</div>';
+      setTimeout(function(){
+        var cont=document.getElementById('fin-pc-list');
+        if(!cont||!db)return;
+        db.ref('admin/petty_cash_reviews').once('value',function(snap){
+          var raw=snap.val()||{};
+          var cycles=Object.values(raw).filter(function(c){
+            return c&&(c.status==='pending_finance'||c.status==='finance_processing');
+          });
+          if(!cycles.length){
+            cont.innerHTML='<div style="text-align:center;padding:18px;color:var(--text-tertiary);font-size:12px;font-style:italic">No petty cash cycles pending finance action</div>';
+            return;
+          }
+          var htm=cycles.map(function(cy){
+            var invCount=0;(cy.entries||[]).forEach(function(e){invCount+=(e.invoices||[]).length;});
+            var isPending=cy.status==='pending_finance';
+            return '<div class="hrf-approval-card" style="flex-direction:column;align-items:stretch">'+
+              '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
+                '<div style="width:40px;height:40px;border-radius:10px;background:rgba(180,83,9,.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💰</div>'+
+                '<div style="flex:1">'+
+                  '<div style="font-weight:700;font-size:13px">'+hxe(cy.branchName||cy.branchId)+' — Cycle #'+cy.cycleNo+'</div>'+
+                  '<div style="font-size:12px;color:var(--text-secondary)">Total: <strong>SAR '+(cy.total||0).toLocaleString('en',{minimumFractionDigits:2})+'</strong> · '+(cy.entries||[]).length+' entries · '+(invCount?'📎 '+invCount+' inv.':'no invoices')+'</div>'+
+                  '<div style="font-size:11px;color:var(--text-tertiary)">AM Approved by '+hxe(cy.amApprovedBy||'—')+' · '+( cy.amApprovedAt?new Date(cy.amApprovedAt).toLocaleDateString():'' )+'</div>'+
+                '</div>'+
+                '<span style="background:'+(isPending?'rgba(0,87,255,.1)':'rgba(91,33,182,.1)')+';color:'+(isPending?'#0057ff':'#5b21b6')+';border:1px solid '+(isPending?'rgba(0,87,255,.2)':'rgba(91,33,182,.2)')+';border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600">'+(isPending?'Pending Finance':'🔄 Processing')+'</span>'+
+              '</div>'+
+              '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+                '<button class="btn btn-sm" onclick="pcFinanceExport(\''+cy.id+'\')">📄 View / Export PDF</button>'+
+                (isPending?'<button class="btn btn-sm" style="background:rgba(91,33,182,.1);border-color:rgba(91,33,182,.3);color:#5b21b6" onclick="pcFinanceMarkProcessing(\''+cy.id+'\')">🔄 Mark Processing</button>':'')+
+                '<button class="btn btn-primary btn-sm" onclick="pcFinanceMarkSent(\''+cy.id+'\')">💸 Confirm Money Sent</button>'+
+              '</div>'+
+            '</div>';
+          }).join('');
+          cont.innerHTML=htm;
+        });
+      },400);
+    }
     return h;
   }
   var c1=branches.filter(function(b){return HRF.staff[b.id];}).length;
